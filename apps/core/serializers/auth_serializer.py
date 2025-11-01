@@ -1,12 +1,10 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from apps.core.models import User
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
 
-        # Add custom claims
         token['is_superuser'] = user.is_superuser
         token['email'] = user.email
         token['first_name'] = user.first_name
