@@ -1,7 +1,6 @@
 import uuid
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
 from apps.core.models import User, Core
 
 class ParentChild(Core):
@@ -33,7 +32,7 @@ class ParentProfile(models.Model):
     children = models.ManyToManyField(
         'StudentProfile',
         through=ParentChild,
-        related_name="parent_profiles"  
+        related_name="parent_profiles"
     )
 
     def __str__(self):
@@ -58,7 +57,7 @@ class TeacherProfile(models.Model):
     bio = models.TextField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    subjects = models.ManyToManyField("school.Subject", related_name="teacher_profiles", blank=True)  # Changed related_name
+    subjects = models.ManyToManyField("school.Subject", related_name="teacher_profiles", blank=True)
 
     class Meta:
         db_table = "teacher_profiles"
@@ -79,7 +78,7 @@ class StudentProfile(Core):
     )
 
     grade = models.ForeignKey(
-        'school.Grade',  
+        'school.Grade',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -88,7 +87,7 @@ class StudentProfile(Core):
     )
 
     school = models.ForeignKey(
-        'school.School', 
+        'school.School',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -98,24 +97,23 @@ class StudentProfile(Core):
     contact_name = models.CharField(max_length=255, null=True, blank=True)
     guardian_contact = models.CharField(max_length=50, null=True, blank=True)
     enrollment_date = models.DateTimeField(auto_now_add=True)
-
     subjects = models.ManyToManyField(
-        'school.Subject', 
-        through="StudentSubject",
-        related_name="student_profiles", 
+        'school.Subject',
+        through="school.StudentSubject",  
+        related_name="student_profiles",
     )
 
     bookings = models.ManyToManyField(
-        'school.TutoringBooking',  
-        through="StudentBooking",
-        related_name="student_profiles",  
+        'school.TutoringBooking',
+        through="school.StudentBooking",  
+        related_name="student_profiles",
         blank=True,
     )
 
     parents = models.ManyToManyField(
-        ParentProfile,
+        'ParentProfile',
         through=ParentChild,
-        related_name="student_profiles",  
+        related_name="student_profiles",
     )
 
     class Meta:

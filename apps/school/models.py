@@ -44,15 +44,16 @@ class Subject(Core):
         Grade, on_delete=models.CASCADE, related_name="subjects"
     )
 
+   
     teachers = models.ManyToManyField(
         'users.TeacherProfile',
         through="TeacherSubject",
-        related_name="school_subjects",  
+        related_name="school_subjects",
     )
     students = models.ManyToManyField(
         'users.StudentProfile',
-        through="StudentSubject",
-        related_name="school_subjects", 
+        through="StudentSubject",  
+        related_name="school_subjects",
     )
 
     def __str__(self):
@@ -65,7 +66,6 @@ class Subject(Core):
             models.Index(fields=["name"]),
             models.Index(fields=["code"]),
         ]
-
 
 class TeacherSubject(models.Model):
     """Intermediate table for many-to-many between Teacher and Subject."""
@@ -92,12 +92,11 @@ class TeacherSubject(models.Model):
     def __str__(self):
         return f"{self.teacher.user.first_name} - {self.subject.name}"
 
-
 class StudentSubject(models.Model):
     """Intermediate table for many-to-many between Student and Subject."""
     id = models.BigAutoField(primary_key=True)
     student = models.ForeignKey(
-        'users.StudentProfile',  
+        'users.StudentProfile',
         on_delete=models.CASCADE,
         related_name="student_subject_links",
     )
@@ -117,6 +116,28 @@ class StudentSubject(models.Model):
 
     def __str__(self):
         return f"{self.student.user.first_name} - {self.subject.name}"
+
+
+class StudentBooking(models.Model):
+    """Through model for Student-Booking relationship"""
+    id = models.BigAutoField(primary_key=True)
+    student = models.ForeignKey(
+        'users.StudentProfile',
+        on_delete=models.CASCADE,
+        related_name="student_booking_links",
+    )
+    booking = models.ForeignKey(
+        'TutoringBooking',
+        on_delete=models.CASCADE,
+        related_name="student_booking_links",
+    )
+    
+    class Meta:
+        db_table = "student_bookings"
+        unique_together = ("student", "booking")
+        
+    def __str__(self):
+        return f"{self.student} - {self.booking}"
 
 
 class Topic(Core):
