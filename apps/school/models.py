@@ -10,6 +10,21 @@ class School(Core):
     city = models.CharField(max_length=50)
     country = models.CharField(max_length=50)
     contact = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return self.name
+
+class Grade(Core):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    level = models.CharField(max_length=100, null=True, blank=True)
+    
+    class Meta:
+        db_table = "grades"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class BookingStatus(models.TextChoices):
@@ -19,27 +34,25 @@ class BookingStatus(models.TextChoices):
     CANCELLED = "cancelled", "Cancelled"
     COMPLETED = "completed", "Completed"
 
-class Subject(models.Model):
+class Subject(Core):
     """Represents a subject taught in a specific class (e.g., Mathematics, Biology)."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(max_length=30, unique=True, null=True, blank=True)
     name = models.CharField(max_length=150, db_index=True)
     description = models.TextField(blank=True, null=True)
     grade = models.ForeignKey(
-        "Gade", on_delete=models.CASCADE, related_name="subjects"
+        Grade, on_delete=models.CASCADE, related_name="subjects"
     )
-    created_on = models.DateTimeField(auto_now_add=True)
 
-    # Relationships (reverse)
     teachers = models.ManyToManyField(
-        "TeacherProfile",
+        'users.TeacherProfile',
         through="TeacherSubject",
-        related_name="subjects",
+        related_name="school_subjects",  
     )
     students = models.ManyToManyField(
-        "StudentProfile",
+        'users.StudentProfile',
         through="StudentSubject",
-        related_name="subjects",
+        related_name="school_subjects", 
     )
 
     def __str__(self):
@@ -58,7 +71,7 @@ class TeacherSubject(models.Model):
     """Intermediate table for many-to-many between Teacher and Subject."""
     id = models.BigAutoField(primary_key=True)
     teacher = models.ForeignKey(
-        "TeacherProfile",
+        'users.TeacherProfile',  
         on_delete=models.CASCADE,
         related_name="teacher_subject_links",
     )
@@ -84,7 +97,7 @@ class StudentSubject(models.Model):
     """Intermediate table for many-to-many between Student and Subject."""
     id = models.BigAutoField(primary_key=True)
     student = models.ForeignKey(
-        "StudentProfile",
+        'users.StudentProfile',  
         on_delete=models.CASCADE,
         related_name="student_subject_links",
     )
@@ -106,18 +119,17 @@ class StudentSubject(models.Model):
         return f"{self.student.user.first_name} - {self.subject.name}"
 
 
-class Topic(models.Model):
+class Topic(Core):
     """High-level topic under a specific subject."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject = models.ForeignKey(
-        "Subject",
+        Subject,
         on_delete=models.CASCADE,
         related_name="topics",
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
-    created_on = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "topics"
@@ -130,18 +142,18 @@ class Topic(models.Model):
         return f"{self.subject.name}: {self.title}"
 
 
-class Subtopic(models.Model):
+class Subtopic(Core):
     """Subtopic or lesson content under a topic."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     topic = models.ForeignKey(
-        "Topic",
+        Topic,
         on_delete=models.CASCADE,
         related_name="subtopics",
     )
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
-    created_on = models.DateTimeField(auto_now_add=True)
+    
 
     class Meta:
         db_table = "subtopics"
@@ -153,21 +165,8 @@ class Subtopic(models.Model):
     def __str__(self):
         return f"{self.topic.title} → {self.title}"
 
-class Grade(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    level = models.CharField(max_length=100, null=True, blank=True)
-    created_on = models.DateTimeField(default=timezone.now)
 
-    class Meta:
-        db_table = "grades"
-        ordering = ["-created_on"]
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class LiveSession(models.Model):
+class LiveSession(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     title = models.CharField(max_length=200)
@@ -177,12 +176,12 @@ class LiveSession(models.Model):
     scheduled_end = models.DateTimeField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     capacity = models.PositiveIntegerField(default=0)
-    created_on = models.DateTimeField(default=timezone.now)
+
     subject = models.ForeignKey(
-        "Subject", on_delete=models.SET_NULL, null=True, blank=True, related_name="live_sessions"
+        Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_sessions"
     )
     teacher = models.ForeignKey(
-        "TeacherProfile", on_delete=models.CASCADE, related_name="live_sessions"
+        'users.TeacherProfile', on_delete=models.CASCADE, related_name="live_sessions"  
     )
 
     class Meta:
@@ -196,10 +195,10 @@ class LiveSession(models.Model):
 class SessionBooking(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     live_session = models.ForeignKey(
-        "LiveSession", on_delete=models.CASCADE, related_name="bookings"
+        LiveSession, on_delete=models.CASCADE, related_name="bookings"
     )
     student = models.ForeignKey(
-        "StudentProfile", on_delete=models.CASCADE, related_name="session_bookings"
+        'users.StudentProfile', on_delete=models.CASCADE, related_name="session_bookings" 
     )
     status = models.CharField(
         max_length=20,
@@ -212,10 +211,10 @@ class SessionBooking(Core):
 
     class Meta:
         db_table = "session_bookings"
-        ordering = ["-created_on"]
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["created_on"]),
+            models.Index(fields=["created_at"]),
         ]
 
     def __str__(self):
@@ -225,10 +224,10 @@ class SessionBooking(Core):
 class TutoringBooking(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     teacher = models.ForeignKey(
-        "TeacherProfile", on_delete=models.CASCADE, related_name="tutoring_bookings"
+        'users.TeacherProfile', on_delete=models.CASCADE, related_name="tutoring_bookings" 
     )
     student = models.ForeignKey(
-        "StudentProfile", on_delete=models.CASCADE, related_name="tutoring_bookings"
+        'users.StudentProfile', on_delete=models.CASCADE, related_name="tutoring_bookings"  
     )
     start_at = models.DateTimeField(db_index=True)
     end_at = models.DateTimeField(null=True, blank=True)
@@ -258,12 +257,12 @@ class RevisionMaterial(Core):
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
     file_url = models.URLField(max_length=1000)
-    uploaded_by = models.ForeignKey("TeacherProfile", on_delete=models.SET_NULL, null=True, related_name="materials")
-    subject = models.ForeignKey("Subject", on_delete=models.SET_NULL, null=True, related_name="revision_materials")
+    uploaded_by = models.ForeignKey('users.TeacherProfile', on_delete=models.SET_NULL, null=True, related_name="materials") 
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, related_name="revision_materials")
     
     class Meta:
         db_table = "revision_materials"
-        ordering = ["-created_on"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.title}"
@@ -278,8 +277,8 @@ class Assessment(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
-    subject = models.ForeignKey("Subject", on_delete=models.SET_NULL, null=True, related_name="assessments")
-    teacher = models.ForeignKey("TeacherProfile", on_delete=models.CASCADE, related_name="assessments")
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, related_name="assessments")
+    teacher = models.ForeignKey('users.TeacherProfile', on_delete=models.CASCADE, related_name="assessments") 
     assessment_type = models.CharField(max_length=10, choices=AssessmentType.choices, default=AssessmentType.MCQ)
     due_date = models.DateTimeField(null=True, blank=True)
     max_score = models.PositiveIntegerField(default=100)
@@ -287,7 +286,7 @@ class Assessment(Core):
 
     class Meta:
         db_table = "assessments"
-        ordering = ["-created_on"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.title}"
@@ -295,7 +294,7 @@ class Assessment(Core):
 
 class Question(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assessment = models.ForeignKey("Assessment", on_delete=models.CASCADE, related_name="questions")
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="questions")
     text = models.TextField()
     order = models.PositiveIntegerField(default=0)
     points = models.PositiveIntegerField(default=1)
@@ -310,7 +309,7 @@ class Question(models.Model):
 
 class Choice(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    question = models.ForeignKey("Question", on_delete=models.CASCADE, related_name="choices")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
     text = models.CharField(max_length=1000)
     is_correct = models.BooleanField(default=False)
 
@@ -323,9 +322,9 @@ class Choice(models.Model):
 
 class AssessmentAssignment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assessment = models.ForeignKey("Assessment", on_delete=models.CASCADE, related_name="assignments")
-    class_assigned = models.ForeignKey("Class", on_delete=models.CASCADE, null=True, blank=True, related_name="assessments")
-    subject = models.ForeignKey("Subject", on_delete=models.CASCADE, null=True, blank=True)
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="assignments")
+    class_assigned = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True, related_name="assessments")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True)
     assigned_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -335,8 +334,8 @@ class AssessmentAssignment(models.Model):
 
 class AssessmentSubmission(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assessment = models.ForeignKey("Assessment", on_delete=models.CASCADE, related_name="submissions")
-    student = models.ForeignKey("StudentProfile", on_delete=models.CASCADE, related_name="submissions")
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="submissions")
+    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE, related_name="assessment_submissions") 
     submitted_at = models.DateTimeField(default=timezone.now)
     file_url = models.URLField(max_length=500, null=True, blank=True)
     answers = models.JSONField(null=True, blank=True)

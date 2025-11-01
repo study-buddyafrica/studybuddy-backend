@@ -1,5 +1,7 @@
 from django.db import models
-from apps.core.models import Core
+from djmoney.models.fields import MoneyField
+from djmoney.money import Money
+from apps.core.models import Core, User
 import uuid
 
 
@@ -15,14 +17,15 @@ class Wallet(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     user = models.OneToOneField(
-        "User",
+        User,
         on_delete=models.CASCADE,
         related_name="wallet"
     )
 
-    balance = models.DecimalField(
-        max_digits=12,
+    balance = MoneyField(
+        max_digits=14,  
         decimal_places=2,
+        default_currency='KES',
         default=0.00
     )
 
@@ -32,21 +35,61 @@ class Wallet(Core):
         default="personal",
     )
 
-    currency = models.CharField(
-        max_length=10,
-        default="KES",
-    )
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         db_table = "wallets"
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["account_type"]),
-            models.Index(fields=["currency"]),
+            models.Index(fields=["is_active"]),
         ]
 
     def __str__(self):
-        return f"{self.user.email} - {self.account_type} ({self.balance} {self.currency})"
+        return f"{self.user.email} - {self.account_type} ({self.balance})"
+
+    def can_make_transaction(self, amount):
+        """Check if wallet has sufficient balance for transaction"""
+        if isinstance(amount, Money):
+            return self.balance >= amount
+        else:
+    
+            return self.balance >= Money(amount, self.balance.currency)
+
+    def get_available_balance(self):
+        """Get available balance"""
+        return self.balance
+
+    def deposit(self, amount, currency='KES'):
+        """Deposit money into wallet"""
+        if isinstance(amount, Money):
+            deposit_amount = amount
+        else:
+            deposit_amount = Money(amount, currency)
+        
+        if deposit_amount.currency != self.balance.currency:
+            raise ValueError(f"Cannot deposit {deposit_amount.currency} into {self.balance.currency} wallet")
+        
+        self.balance += deposit_amount
+        self.save()
+        return self.balance
+
+    def withdraw(self, amount, currency='KES'):
+        """Withdraw money from wallet"""
+        if isinstance(amount, Money):
+            withdraw_amount = amount
+        else:
+            withdraw_amount = Money(amount, currency)
+        
+        if withdraw_amount.currency != self.balance.currency:
+            raise ValueError(f"Cannot withdraw {withdraw_amount.currency} from {self.balance.currency} wallet")
+        
+        if not self.can_make_transaction(withdraw_amount):
+            raise ValueError("Insufficient balance")
+        
+        self.balance -= withdraw_amount
+        self.save()
+        return self.balance
     
 
 class Transaction(Core):
@@ -79,7 +122,7 @@ class Transaction(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     wallet = models.ForeignKey(
-        "Wallet",
+        Wallet,
         on_delete=models.CASCADE,
         related_name="transactions"
     )
@@ -90,14 +133,10 @@ class Transaction(Core):
         db_index=True,
     )
 
-    amount = models.DecimalField(
-        max_digits=12,
+    amount = MoneyField(
+        max_digits=14,
         decimal_places=2,
-    )
-
-    currency = models.CharField(
-        max_length=10,
-        default="KES",
+        default_currency='KES'
     )
 
     transaction_type = models.CharField(
@@ -137,6 +176,14 @@ class Transaction(Core):
 
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    related_transaction = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="related_transactions"
+    )
+
     class Meta:
         db_table = "transactions"
         ordering = ["-timestamp"]
@@ -144,10 +191,30 @@ class Transaction(Core):
             models.Index(fields=["transaction_identifier"]),
             models.Index(fields=["transaction_type"]),
             models.Index(fields=["status"]),
+            models.Index(fields=["timestamp"]),
+            models.Index(fields=["wallet", "timestamp"]),
         ]
 
     def __str__(self):
-        return f"{self.transaction_identifier} - {self.transaction_type} ({self.status})"
+        return f"{self.transaction_identifier} \
+        - {self.transaction_type} ({self.status}) - {self.amount}"
+
+    def is_successful(self):
+        return self.status == "success"
+
+    def mark_as_successful(self):
+        self.status = "success"
+        self.save()
+
+    def mark_as_failed(self, description=None):
+        self.status = "failed"
+        if description:
+            self.description = description
+        self.save()
+
+    def get_amount_display(self):
+        """Get formatted amount with currency"""
+        return f"{self.amount.amount} {self.amount.currency}"
 
 
 class PaymentWebhookLog(Core):
@@ -155,9 +222,9 @@ class PaymentWebhookLog(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     transaction = models.ForeignKey(
-        "Transaction",
+        Transaction,
         on_delete=models.CASCADE,
-        related_name="webhooks",
+        related_name="webhook_logs",
         null=True,
         blank=True,
     )
@@ -192,6 +259,12 @@ class PaymentWebhookLog(Core):
         blank=True,
     )
 
+    response_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Response sent back to webhook caller"
+    )
+
     class Meta:
         db_table = "payment_webhook_logs"
         ordering = ["-received_at"]
@@ -199,7 +272,14 @@ class PaymentWebhookLog(Core):
             models.Index(fields=["webhook_ref"]),
             models.Index(fields=["processed"]),
             models.Index(fields=["event_type"]),
+            models.Index(fields=["received_at"]),
         ]
 
     def __str__(self):
         return f"Webhook {self.webhook_ref or self.id} - {self.event_type or 'Unknown'}"
+
+    def mark_as_processed(self, response_data=None):
+        self.processed = True
+        if response_data:
+            self.response_data = response_data
+        self.save()
