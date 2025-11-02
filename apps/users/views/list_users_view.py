@@ -44,3 +44,15 @@ class UserListView(generics.ListAPIView):
             "count": queryset.count(),
             "results": serializer.data
         })  
+
+class UserDetailView(generics.RetrieveAPIView):
+    """Retrieve single user detail"""
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return User.objects.all()
+        return User.objects.filter(id=user.id)
