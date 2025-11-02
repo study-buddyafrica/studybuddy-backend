@@ -110,7 +110,7 @@ class ParentChildAdmin(admin.ModelAdmin):
 
 @admin.register(Availability)
 class AvailabilityAdmin(admin.ModelAdmin):
-    list_display = ('teacher', 'date', 'end_date', 'is_blocked', 'timezone')
+    list_display = ('teacher', 'date', 'end_date', 'is_blocked')
     list_filter = ('is_blocked', 'date', 'teacher')
     search_fields = (
         'teacher__user__email', 

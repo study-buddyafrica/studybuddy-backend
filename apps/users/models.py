@@ -58,6 +58,9 @@ class TeacherProfile(models.Model):
     phone = models.CharField(max_length=50, null=True, blank=True)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     subjects = models.ManyToManyField("school.Subject", related_name="teacher_profiles", blank=True)
+    is_verified= models.BooleanField(default=False)
+    grade =models.ManyToManyField('school.Grade', related_name='teacher_grades', blank=True, null=True)
+    experience = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         db_table = "teacher_profiles"
@@ -138,7 +141,6 @@ class Availability(models.Model):
     )
     date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
-    timezone = models.CharField(max_length=50, null=True, blank=True)
     is_blocked = models.BooleanField(default=False)
 
     class Meta:
