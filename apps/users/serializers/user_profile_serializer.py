@@ -1,9 +1,9 @@
 import json
-from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import serializers
 from apps.core.redis_client import r
-
-User = get_user_model()
+from apps.core.models import User
+from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -14,8 +14,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "email", "first_name", "last_name",
-            "username", "password", "confirm_password", "role",
+            "id", "email", "first_name", "last_name", "birth_date",
+            "profile_picture", "username", "password", "confirm_password", "role",
         ]
         read_only_fields = ["id"]
 
@@ -29,22 +29,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         """General validation for user registration."""
         if data["password"] != data["confirm_password"]:
             raise serializers.ValidationError({"password": "Passwords do not match."})
-        
         if len(data.get("first_name", "")) < 2:
             raise serializers.ValidationError({"first_name": "First name must be at least 2 characters."})
-        
         if len(data.get("last_name", "")) < 2:
             raise serializers.ValidationError({"last_name": "Last name must be at least 2 characters."})
-        
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         """
-        Create a user directly and apply Redis-based rate limiting.
+        Create a user and their associated profile automatically.
+        Rate limit requests using Redis.
         """
         email = validated_data["email"]
         rate_limit_key = f"user_create_rate_limit:{email}"
 
+        # Check Redis rate limit
         if r.exists(rate_limit_key):
             raise serializers.ValidationError(
                 "Please wait 60 seconds before trying to register again."
@@ -52,8 +52,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         validated_data.pop("confirm_password", None)
 
+        # Create user
         user = User.objects.create_user(**validated_data)
 
+        # Create related profile based on role
+        role = user.role
+        if role == "teacher":
+            TeacherProfile.objects.create(user=user)
+        elif role == "student":
+            StudentProfile.objects.create(user=user)
+        elif role == "parent":
+            ParentProfile.objects.create(user=user)
+
+        # Set rate limit flag
         r.setex(rate_limit_key, 60, "1")
 
         return user
