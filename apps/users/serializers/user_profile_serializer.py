@@ -1,4 +1,3 @@
-# apps/users/serializers.py
 import json
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -46,19 +45,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         email = validated_data["email"]
         rate_limit_key = f"user_create_rate_limit:{email}"
 
-        # Prevent rapid re-submissions (60 seconds cooldown)
         if r.exists(rate_limit_key):
             raise serializers.ValidationError(
                 "Please wait 60 seconds before trying to register again."
             )
 
-        # Remove confirm_password from data
         validated_data.pop("confirm_password", None)
 
-        # Create user
         user = User.objects.create_user(**validated_data)
 
-        # Set rate limit (60 seconds)
         r.setex(rate_limit_key, 60, "1")
 
         return user
