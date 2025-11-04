@@ -130,28 +130,6 @@ class StudentSubject(models.Model):
         return f"{self.student.user.first_name} - {self.subject.name}"
 
 
-class StudentBooking(models.Model):
-    """Through model for Student-Booking relationship"""
-    id = models.BigAutoField(primary_key=True)
-    student = models.ForeignKey(
-        'users.StudentProfile',
-        on_delete=models.CASCADE,
-        related_name="student_booking_links",
-    )
-    booking = models.ForeignKey(
-        'TutoringBooking',
-        on_delete=models.CASCADE,
-        related_name="student_booking_links",
-    )
-    
-    class Meta:
-        db_table = "student_bookings"
-        unique_together = ("student", "booking")
-        
-    def __str__(self):
-        return f"{self.student} - {self.booking}"
-
-
 class Topic(Core):
     """High-level topic under a specific subject."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -210,6 +188,9 @@ class SessionBooking(Core):
         default=BookingStatus.PENDING,
         db_index=True,
     )
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
+    scheduled_start = models.DateTimeField()
+    scheduled_end = models.DateTimeField(null=True, blank=True)
     is_allowed = models.BooleanField(default=False)
     attended = models.BooleanField(default=False)
     teacher = models.ForeignKey(
@@ -233,8 +214,6 @@ class LiveSession(Core):
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
     meeting_link = models.URLField(max_length=500, null=True, blank=True)
-    scheduled_start = models.DateTimeField()
-    scheduled_end = models.DateTimeField(null=True, blank=True)
     capacity = models.PositiveIntegerField(default=0)
     session = models.OneToOneField(
         SessionBooking,
@@ -248,42 +227,10 @@ class LiveSession(Core):
         'users.TeacherProfile', on_delete=models.CASCADE, related_name="live_sessions"  
     )
 
-    class Meta:
-        db_table = "live_sessions"
-        ordering = ["-scheduled_start"]
 
     def __str__(self):
         return f"{self.title} ({self.scheduled_start:%Y-%m-%d})"
 
-class TutoringBooking(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    teacher = models.ForeignKey(
-        'users.TeacherProfile', on_delete=models.CASCADE, related_name="tutoring_bookings" 
-    )
-    student = models.ForeignKey(
-        'users.StudentProfile', on_delete=models.CASCADE, related_name="tutoring_bookings"  
-    )
-    start_at = models.DateTimeField(db_index=True)
-    end_at = models.DateTimeField(null=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(
-        max_length=20,
-        choices=BookingStatus.choices,
-        default=BookingStatus.PENDING,
-        db_index=True,
-    )
-    
-
-    class Meta:
-        db_table = "tutoring_bookings"
-        ordering = ["-start_at"]
-        indexes = [
-            models.Index(fields=["status"]),
-            models.Index(fields=["start_at"]),
-        ]
-
-    def __str__(self):
-        return f"Tutoring: {self.student} ↔ {self.teacher} ({self.status})"
 
 
 class RevisionMaterial(Core):

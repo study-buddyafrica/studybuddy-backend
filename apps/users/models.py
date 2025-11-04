@@ -111,13 +111,6 @@ class StudentProfile(Core):
         related_name="student_profiles",
     )
 
-    bookings = models.ManyToManyField(
-        'school.TutoringBooking',
-        through="school.StudentBooking",  
-        related_name="student_profiles",
-        blank=True,
-    )
-
     parents = models.ManyToManyField(
         'ParentProfile',
         through=ParentChild,
