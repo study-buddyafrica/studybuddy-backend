@@ -34,6 +34,8 @@ class ParentProfile(models.Model):
         through=ParentChild,
         related_name="parent_profiles"
     )
+    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"Parent: {self.user.first_name}"
@@ -61,6 +63,8 @@ class TeacherProfile(models.Model):
     is_verified= models.BooleanField(default=False)
     grade =models.ManyToManyField('school.Grade', related_name='teacher_grades', blank=True, null=True)
     experience = models.PositiveSmallIntegerField(default=0)
+    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
 
     class Meta:
         db_table = "teacher_profiles"
@@ -96,7 +100,8 @@ class StudentProfile(Core):
         blank=True,
         related_name="students",
     )
-
+    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     contact_name = models.CharField(max_length=255, null=True, blank=True)
     guardian_contact = models.CharField(max_length=50, null=True, blank=True)
     enrollment_date = models.DateTimeField(auto_now_add=True)
