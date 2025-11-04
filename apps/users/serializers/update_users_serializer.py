@@ -5,7 +5,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     """For updating user details safely"""
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "birth_date", "profile_picture", "role"]
+        fields = ["first_name", "last_name",  "role"]
         read_only_fields = ["role"]
 
     def update(self, instance, validated_data):
