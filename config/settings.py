@@ -14,7 +14,6 @@ DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26']
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -40,6 +39,7 @@ INSTALLED_APPS = [
 
 
 ]
+
 
 X_FRAME_OPTIONS = 'ALLOWALL'
 

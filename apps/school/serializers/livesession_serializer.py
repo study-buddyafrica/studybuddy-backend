@@ -16,7 +16,6 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             "id",
             "session_booking_id",
             "meeting_link",
-            "attended",
             "started_at",
             "ended_at",
         ]
