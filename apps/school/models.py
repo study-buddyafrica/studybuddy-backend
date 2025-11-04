@@ -215,6 +215,8 @@ class LiveSession(Core):
     description = models.TextField(null=True, blank=True)
     meeting_link = models.URLField(max_length=500, null=True, blank=True)
     capacity = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
     session = models.OneToOneField(
         SessionBooking,
         on_delete=models.CASCADE,
