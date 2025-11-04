@@ -18,15 +18,6 @@ class SessionBookingCreateView(generics.CreateAPIView):
         return SessionBooking.objects.filter(student__user=self.request.user)
 
 
-class IsStudent(permissions.BasePermission):
-    """Custom permission — only allow logged-in students."""
-    def has_permission(self, request, view):
-        return (
-            request.user
-            and request.user.is_authenticated
-            and hasattr(request.user, "student_profile")
-        )
-
 class SessionBookingCreateUpdateView(generics.GenericAPIView):
     """
     Handles:
@@ -94,12 +85,10 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     booking.status = "completed"
                     booking.save()
 
-                    # Credit teacher wallet
                     teacher_wallet = booking.teacher.user.wallet
                     teacher_wallet.balance.amount += booking.cost
                     teacher_wallet.save()
 
-                    # Log teacher credit transaction
                     teacher_tx = self._log_transaction(
                         teacher_wallet,
                         booking.cost,

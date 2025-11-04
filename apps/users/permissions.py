@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework.permissions import BasePermission
 from apps.users.models import ParentProfile,ParentChild,StudentProfile
 
 class CanEditParentProfile(permissions.BasePermission):
@@ -27,18 +28,35 @@ class CanEditStudentProfile(permissions.BasePermission):
     def has_object_permission(self, request, view, obj: StudentProfile):
         user = request.user
 
-        # Admins or superusers
         if user.is_staff or user.is_superuser:
             return True
 
-        # Student editing their own profile
         if hasattr(user, "student_profile") and obj.user == user:
             return True
 
-        # Parent linked to this student
         if hasattr(user, "parent_profile"):
             return ParentChild.objects.filter(
                 parent=user.parent_profile, child=obj
             ).exists()
 
         return False
+    
+
+
+class IsStudent(permissions.BasePermission):
+    """Custom permission — only allow logged-in students."""
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and hasattr(request.user, "student_profile")
+        )
+
+
+class IsTeacherOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            hasattr(request.user, "teacher_profile")
+            or request.user.is_superuser
+            or request.user.is_staff
+        )
