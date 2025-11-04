@@ -199,6 +199,34 @@ class Subtopic(Core):
         return f"{self.topic.title} → {self.title}"
 
 
+class SessionBooking(Core):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    student = models.ForeignKey(
+        'users.StudentProfile', on_delete=models.CASCADE, related_name="student_session_bookings" 
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=BookingStatus.choices,
+        default=BookingStatus.PENDING,
+        db_index=True,
+    )
+    is_allowed = models.BooleanField(default=False)
+    attended = models.BooleanField(default=False)
+    teacher = models.ForeignKey(
+        'users.TeacherProfile', on_delete=models.CASCADE, related_name="teacher_session_bookings" 
+    )
+
+    class Meta:
+        db_table = "session_bookings"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Booking: {self.student} → {self.live_session} ({self.status})"
+
 class LiveSession(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -207,9 +235,12 @@ class LiveSession(Core):
     meeting_link = models.URLField(max_length=500, null=True, blank=True)
     scheduled_start = models.DateTimeField()
     scheduled_end = models.DateTimeField(null=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     capacity = models.PositiveIntegerField(default=0)
-
+    session = models.OneToOneField(
+        SessionBooking,
+        on_delete=models.CASCADE,
+        related_name="live_session"
+    )
     subject = models.ForeignKey(
         Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_sessions"
     )
@@ -223,36 +254,6 @@ class LiveSession(Core):
 
     def __str__(self):
         return f"{self.title} ({self.scheduled_start:%Y-%m-%d})"
-
-
-class SessionBooking(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    live_session = models.ForeignKey(
-        LiveSession, on_delete=models.CASCADE, related_name="bookings"
-    )
-    student = models.ForeignKey(
-        'users.StudentProfile', on_delete=models.CASCADE, related_name="session_bookings" 
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=BookingStatus.choices,
-        default=BookingStatus.PENDING,
-        db_index=True,
-    )
-    
-    attended = models.BooleanField(default=False)
-
-    class Meta:
-        db_table = "session_bookings"
-        ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["status"]),
-            models.Index(fields=["created_at"]),
-        ]
-
-    def __str__(self):
-        return f"Booking: {self.student} → {self.live_session} ({self.status})"
-
 
 class TutoringBooking(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

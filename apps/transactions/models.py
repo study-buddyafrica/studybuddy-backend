@@ -8,9 +8,8 @@ import uuid
 class Wallet(Core):
     """Represents a user's wallet with balance and account type."""
     ACCOUNT_TYPE_CHOICES = [
-        ("personal", "Personal"),
+        ("student", "Student"),
         ("teacher", "Teacher"),
-        ("school", "School"),
         ("admin", "Admin"),
     ]
 
