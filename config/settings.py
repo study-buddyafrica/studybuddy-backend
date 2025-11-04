@@ -165,7 +165,7 @@ DATABASES = {}
 if DEBUG == False or POSTGRES_LOCALLY == True:
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.getenv('DATABASE_URL')
+            default=os.getenv('TEST_DATABASE_URI')
         )
 
     }
