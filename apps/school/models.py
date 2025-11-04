@@ -10,6 +10,18 @@ class School(Core):
     city = models.CharField(max_length=50)
     country = models.CharField(max_length=50)
     contact = models.CharField(max_length=50)
+    is_approved = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_schools"
+    )
+
+    class Meta:
+        db_table = "schools"
+        ordering = ["name"]
     
     def __str__(self):
         return self.name
