@@ -51,6 +51,8 @@ CSP_DEFAULT_SRC = ("'self'",)
 """# Allow embedding in iframes from these specific origins"""
 CSP_FRAME_ANCESTORS = ("'self'", 
                         "http://localhost:5173",
+                        "http://localhost:3000",
+                        "https://studybuddy.africa",
                         "http://localhost:5174")
 
 
@@ -60,6 +62,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:5174',
+    "https://studybuddy.africa",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -75,7 +78,8 @@ CORS_ALLOW_METHODS = [
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
-    'http://localhost:5174'
+    'http://localhost:5174',
+    "https://studybuddy.africa",
 
 ]
 
