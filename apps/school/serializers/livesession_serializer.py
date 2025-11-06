@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.school.models import LiveSession, SessionBooking
 from apps.transactions.models import Transaction, Wallet
-from apps.school.utils import generate_google_meet_link
+from apps.core.utils.google_calendar import generate_google_meet_link
 from djmoney.money import Money
 import uuid
 

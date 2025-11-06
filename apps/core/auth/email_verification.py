@@ -1,8 +1,8 @@
 import random
 from datetime import timedelta
 from django.utils import timezone
-from apps.core.send_email import send_email
-from apps.core.redis_client import r
+from apps.core.utils.send_email import send_email
+from apps.core.utils.redis_client import r
 
 def generate_verification_code(length=6):
     """Generate a 6 digit random verification code"""

@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
-from apps.core.redis_client import r
+from apps.core.utils.redis_client import r
 from apps.core.models import User
 from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
 
