@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
+from datetime import timedelta
 import uuid
 
 class Core(models.Model):
@@ -42,6 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_verified =models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -54,3 +56,22 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
 
     def __str__(self):
         return f"{self.email}"
+
+
+
+class EmailVerificationCode(Core):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="email_verifications",
+        null=True, blank=True
+    )
+    code = models.CharField(max_length=6, db_index=True)
+    
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=2)  
+
+    def __str__(self):
+        return f"{self.user.email} - {self.code}"

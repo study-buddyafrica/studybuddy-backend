@@ -40,14 +40,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         Create a user and their associated profile automatically.
         Rate limit requests using Redis.
         """
-        email = validated_data["email"]
-        rate_limit_key = f"user_create_rate_limit:{email}"
-
-        # Check Redis rate limit
-        if r.exists(rate_limit_key):
-            raise serializers.ValidationError(
-                "Please wait 60 seconds before trying to register again."
-            )
 
         validated_data.pop("confirm_password", None)
 
@@ -63,8 +55,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         elif role == "parent":
             ParentProfile.objects.create(user=user)
 
-        # Set rate limit flag
-        r.setex(rate_limit_key, 60, "1")
 
         return user
 

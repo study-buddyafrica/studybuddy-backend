@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, EmailVerificationCode
 
 class CustomUserAdmin(UserAdmin):
     """Custom admin configuration for User model"""
     
-    list_display = ('email', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'created_at')
-    list_filter = ('role', 'is_staff', 'is_active', 'created_at')
+    list_display = ('is_verified','email', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'created_at')
+    list_filter = ('role', 'is_staff', 'is_active', 'created_at','is_verified')
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
@@ -27,3 +27,4 @@ class CustomUserAdmin(UserAdmin):
     readonly_fields = ('created_at', 'updated_at', 'last_login')
 
 admin.site.register(User, CustomUserAdmin)
+admin.site.register(EmailVerificationCode)
