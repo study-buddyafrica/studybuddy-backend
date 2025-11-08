@@ -56,4 +56,34 @@ class LiveSessionSerializer(serializers.ModelSerializer):
 
         return live_session
 
-   
+    
+    def update(self, instance, validated_data):
+        """Mark session as attended and credit teacher."""
+        attended = booking.attended
+
+        if attended is True and not instance.attended:
+            instance.attended = True
+            instance.ended_at = timezone.now()
+            instance.save()
+
+            booking = instance.session_booking
+            teacher_wallet = Wallet.objects.get(user=booking.teacher.user)
+            amount = booking.cost
+
+            # Credit teacher
+            teacher_wallet.balance += amount
+            teacher_wallet.save()
+
+            # Log transaction
+            Transaction.objects.create(
+                wallet=teacher_wallet,
+                transaction_identifier=str(uuid.uuid4()),
+                amount=amount,
+                transaction_type="deposit",
+                payment_method="wallet",
+                status="success",
+                description=f"Credit for attended session with {booking.student.user.get_full_name()}",
+                metadata_info={"session_booking_id": str(booking.id)},
+            )
+
+        return instance
