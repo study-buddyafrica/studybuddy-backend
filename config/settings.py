@@ -160,7 +160,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-POSTGRES_LOCALLY = False
+POSTGRES_LOCALLY = True
 DATABASES = {}
 
 if DEBUG == False or POSTGRES_LOCALLY == True:
