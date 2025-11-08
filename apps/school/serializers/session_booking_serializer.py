@@ -37,7 +37,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
             raise ValidationError("Invalid teacher selected.")
 
         student_wallet = getattr(user, "wallet", None)
-        teacher_rate = teacher.hourly_rate.amount if teacher.hourly_rate else 0
+        teacher_rate = teacher.hourly_rate
 
         if not student_wallet:
             raise ValidationError("Student wallet not found.")
@@ -47,7 +47,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                 f"Insufficient balance. Required at least: {teacher_rate} KES."
             )
 
-        scheduled_start = validated_data["scheduled_start"]
+        scheduled_start = validated_data.pop("scheduled_start", None)
 
         affordable_hours = int(student_wallet.balance.amount // teacher_rate)
         if affordable_hours < 1:

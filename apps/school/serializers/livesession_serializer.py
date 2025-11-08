@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.school.models import LiveSession, SessionBooking
 from apps.transactions.models import Transaction, Wallet
-from apps.core.utils.google_calendar import generate_google_meet_link
+from apps.core.utils.google_calendar import create_google_meet_event
 from djmoney.money import Money
 import uuid
 
@@ -33,55 +33,27 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         if not booking.is_allowed:
             raise ValidationError("This booking is not allowed. Check wallet or approval status.")
 
-        if booking.student.user != user:
-            raise ValidationError("You can only start your own sessions.")
-        
         if LiveSession.objects.filter(session_booking=booking).exists():
             raise ValidationError("A live session for this booking already exists.")
 
-        meet_link = generate_google_meet_link(
-            summary=f"Session with {booking.teacher.user.get_full_name()}",
+        # Generate Google Meet link using teacher OAuth
+        meet_link = create_google_meet_event(
+            teacher=booking.teacher,
+            summary=f"Session with {booking.teacher.user.first_name} {booking.teacher.user.last_name}",
             start_time=booking.scheduled_start,
             end_time=booking.scheduled_end,
-            attendees=[
-                booking.student.user.email,
-                booking.teacher.user.email,
-            ]
+            description=f"Session for {booking.student.user.first_name} {booking.student.user.last_name}",
+            attendees_emails=[booking.student.user.email, booking.teacher.user.email],
         )
 
         live_session = LiveSession.objects.create(
             session_booking=booking,
+            teacher=booking.teacher,
             meeting_link=meet_link,
             started_at=timezone.now(),
+            ended_at=booking.scheduled_end
         )
 
         return live_session
 
-    def update(self, instance, validated_data):
-        """Mark session as attended and credit teacher."""
-        attended = validated_data.get("attended", None)
-
-        if attended is True and not instance.attended:
-            instance.attended = True
-            instance.ended_at = timezone.now()
-            instance.save()
-
-            booking = instance.session_booking
-            teacher_wallet = Wallet.objects.get(user=booking.teacher.user)
-            amount = booking.cost
-
-            teacher_wallet.balance += amount
-            teacher_wallet.save()
-
-            Transaction.objects.create(
-                wallet=teacher_wallet,
-                transaction_identifier=str(uuid.uuid4()),
-                amount=amount,
-                transaction_type="deposit",
-                payment_method="wallet",
-                status="success",
-                description=f"Credit for attended session with {booking.student.user.get_full_name()}",
-                metadata_info={"session_booking_id": str(booking.id)},
-            )
-
-        return instance
+   

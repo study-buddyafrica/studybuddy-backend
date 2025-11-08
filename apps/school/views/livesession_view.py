@@ -13,7 +13,7 @@ class LiveSessionCreateView(generics.GenericAPIView):
     Automatically generates a Google Meet link.
     """
     serializer_class = LiveSessionSerializer
-    permission_classes = [IsAuthenticated, IsStudent]
+    permission_classes = [IsAuthenticated,IsTeacherOrAdmin]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={"request": request})

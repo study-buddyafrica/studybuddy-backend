@@ -65,6 +65,9 @@ class TeacherProfile(models.Model):
     experience = models.PositiveSmallIntegerField(default=0)
     profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
+    google_access_token = models.TextField(null=True, blank=True)
+    google_refresh_token = models.TextField(null=True, blank=True)
+    google_token_expiry = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "teacher_profiles"

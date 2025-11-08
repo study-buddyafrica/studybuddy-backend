@@ -1,3 +1,4 @@
 from django.contrib import admin
+from apps.school.models import SessionBooking
 
-# Register your models here.
+admin.site.register(SessionBooking)

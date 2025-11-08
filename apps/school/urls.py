@@ -11,3 +11,8 @@ urlpatterns = [
     path("teacher/live-session/update/<uuid:pk>/", LiveSessionUpdateView.as_view(), name="live-session-update"),
 
 ]
+
+{
+  "teacher_id": "23dcef70-dd8a-4e84-b915-52ec0f9c9379",
+  "scheduled_start": "2025-11-08T11:19:05.738Z"
+}
