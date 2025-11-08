@@ -206,7 +206,7 @@ class SessionBooking(Core):
         ]
 
     def __str__(self):
-        return f"Booking: {self.student} → {self.live_session} ({self.status})"
+        return f"Booking: {self.student} ({self.status})"
 
 class LiveSession(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

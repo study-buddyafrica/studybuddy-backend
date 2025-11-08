@@ -33,10 +33,10 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         if not booking.is_allowed:
             raise ValidationError("This booking is not allowed. Check wallet or approval status.")
 
-        if LiveSession.objects.filter(session_booking=booking).exists():
+        if LiveSession.objects.filter(session=booking).exists():
             raise ValidationError("A live session for this booking already exists.")
 
-        # Generate Google Meet link using teacher OAuth
+      
         meet_link = create_google_meet_event(
             teacher=booking.teacher,
             summary=f"Session with {booking.teacher.user.first_name} {booking.teacher.user.last_name}",
@@ -47,7 +47,7 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         )
 
         live_session = LiveSession.objects.create(
-            session_booking=booking,
+            session=booking,
             teacher=booking.teacher,
             meeting_link=meet_link,
             started_at=timezone.now(),
