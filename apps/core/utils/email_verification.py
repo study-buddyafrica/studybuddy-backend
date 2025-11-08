@@ -15,7 +15,7 @@ def send_verification_email(user):
         to_email=user.email,
         subject=subject,
         context=context,
-        text_body=f"Your verification code is {code}. It expires in 2 minutes."
+       text_body = f"Your verification code is **{code}** (expires in 2 minutes)."
     )
 
     return code
