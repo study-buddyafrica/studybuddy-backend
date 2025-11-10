@@ -12,8 +12,6 @@ class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
             "grade",
             "experience",
             "profile_picture",
-            "birth_date",
-            "academic_certificate",
         ]
         read_only_fields = ["id", "user", "is_verified", "tsc_number"]
 

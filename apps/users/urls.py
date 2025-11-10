@@ -9,9 +9,10 @@ from apps.users.views.update_profile_views import (
     ParentProfileUpdateView,StudentProfileUpdateView,
     TeacherProfileUpdateView
 )
-
+from apps.users.views.teachers_verification_views import TeacherProfileViewSet
 
 user_router = DefaultRouter()
+user_router.register("teachers", TeacherProfileViewSet, basename="teacher")
 
 urlpatterns = [
     path("users/users-list/", UserListView.as_view(), name="user-list"),

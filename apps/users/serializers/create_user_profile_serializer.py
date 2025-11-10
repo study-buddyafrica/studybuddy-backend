@@ -45,8 +45,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         # Create user
         user = User.objects.create_user(**validated_data)
-        user =User.objects.create(is_active=False)
-
         # Create related profile based on role
         role = user.role
         if role == "teacher":
