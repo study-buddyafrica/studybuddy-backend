@@ -1,7 +1,20 @@
 import uuid
+import os
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from apps.core.models import User, Core
+
+def certificate_upload_path(instance, filename):
+    ext = filename.split('.')[-1]
+    new_filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join("certificates", new_filename)
+
+def validate_pdf(value):
+    if not value.name.lower().endswith('.pdf'):
+        raise ValidationError("Only PDF files are allowed.")
+    if value.size > 10 * 1024 * 1024:  
+        raise ValidationError("File too large ( >5MB ).")
 
 class ParentChild(Core):
     parent = models.ForeignKey(
@@ -36,6 +49,8 @@ class ParentProfile(models.Model):
     )
     profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=50, null=True, blank=True)
+    id_number = models.CharField(max_length=15, null=True, blank=True)
 
     def __str__(self):
         return f"Parent: {self.user.first_name}"
@@ -55,7 +70,8 @@ class TeacherProfile(models.Model):
         blank=True, 
         db_index=True,
     )
-    academic_certificate = models.FileField()
+    tsc_number_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
+    academic_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -68,6 +84,8 @@ class TeacherProfile(models.Model):
     google_access_token = models.TextField(null=True, blank=True)
     google_refresh_token = models.TextField(null=True, blank=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)
+    gender = models.CharField(max_length=50, null=True, blank=True)
+    id_number = models.CharField(max_length=15, null=True, blank=True)
 
     class Meta:
         db_table = "teacher_profiles"
@@ -108,6 +126,8 @@ class StudentProfile(Core):
     contact_name = models.CharField(max_length=255, null=True, blank=True)
     guardian_contact = models.CharField(max_length=50, null=True, blank=True)
     enrollment_date = models.DateTimeField(auto_now_add=True)
+    gender = models.CharField(max_length=50, null=True, blank=True)
+    id_number = models.CharField(max_length=15, null=True, blank=True)
     subjects = models.ManyToManyField(
         'school.Subject',
         through="school.StudentSubject",  
