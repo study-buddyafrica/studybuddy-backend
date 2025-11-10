@@ -13,7 +13,7 @@ SECRET_KEY =os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26','127.0.0.1', '76ba58280b4d.ngrok-free.app']
+ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26','127.0.0.1', '2488746afbce.ngrok-free.app']
 
 # Application definition
 
