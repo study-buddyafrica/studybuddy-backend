@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url 
+from intasend import APIService
 
 load_dotenv()
 
@@ -12,7 +13,7 @@ SECRET_KEY =os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26','127.0.0.1']
+ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26','127.0.0.1', '76ba58280b4d.ngrok-free.app']
 
 # Application definition
 
@@ -248,3 +249,8 @@ CACHES = {
     }
 }   
 
+# intasend
+INTASEND_PUBLISHABLE_KEY=os.getenv('INTASEND_PUBLISHABLE_KEY')
+INTASEND_SECRET_KEY =os.getenv('INTASEND_TOKEN')
+INTASEND_ENV ='sandbox',
+INTASEND_WEBHOOK_CHALLENGE ='studyyddubbuddy'
