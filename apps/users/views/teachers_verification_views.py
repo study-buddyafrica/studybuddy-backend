@@ -43,8 +43,7 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
             teacher = TeacherProfile.objects.select_related("user").get(pk=pk)
         except TeacherProfile.DoesNotExist:
             return Response({"detail": "Teacher not found."}, status=404)
-
-        # Required fields for approval
+        
         required_fields = [
             teacher.tsc_number,
             teacher.tsc_number_certificate,
@@ -54,7 +53,6 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
             teacher.hourly_rate,
         ]
 
-        # For ManyToMany, check if any related subjects exist
         has_subjects = teacher.subjects.exists()
 
         if not all(required_fields) or not has_subjects:
