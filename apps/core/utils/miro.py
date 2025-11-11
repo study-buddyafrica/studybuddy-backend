@@ -111,9 +111,8 @@ class MiroAPI:
 
 # ---------------------- Example Usage ---------------------- #
 if __name__ == "__main__":
-    miro = MiroAPI()  # uses MIRO_ACCESS_TOKEN from env
+    miro = MiroAPI()  
 
-    # Create a board
     board = miro.create_board(name="Math Session Whiteboard", description="Board for Algebra lesson")
     print("Board created:", board["url"])
 
