@@ -68,7 +68,7 @@ class DepositAPIView(APIView):
                 "amount": float(checkout_amount),
                 "currency": "KES",
                 "email": user.email,
-                "first_name": user.first_name or "User",
+                "first_name": user.first_name or " ",
                 "last_name": user.last_name or "",
                 "hosted": True,
                 "redirect_url": redirect_url,
