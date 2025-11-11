@@ -40,7 +40,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
                 {"detail": "Session already marked as attended."},
                 status=status.HTTP_200_OK
             )
-        
+
         with transaction.atomic():
             student_wallet, _ = Wallet.objects.select_for_update().get_or_create(
                 user=booking.student.user,
@@ -57,7 +57,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
 
             if student_wallet.balance < amount:
                 return Response(
-                    {"detail": "Insufficient balance in your wallet."},
+                    {"detail": f"Insufficient balance in your wallet. Required: {amount.amount} KES."},
                     status=status.HTTP_402_PAYMENT_REQUIRED
                 )
             
@@ -67,6 +67,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
             student_wallet.save(update_fields=["balance"])
             teacher_wallet.save(update_fields=["balance"])
 
+            # Update booking and live session
             booking.attended = True
             booking.status = "completed"
             booking.save(update_fields=["attended", "status"])
@@ -77,7 +78,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
             Transaction.objects.create(
                 wallet=student_wallet,
                 transaction_identifier=str(uuid.uuid4()),
-                amount=-amount.amount,  
+                amount=-amount.amount,
                 transaction_type="debit",
                 payment_method="wallet",
                 status="success",
@@ -95,6 +96,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
                 description=f"Credit for attended session with {booking.student.user.username}",
                 metadata_info={"session_booking_id": str(booking.id)},
             )
+
         serializer = LiveSessionSerializer(live_session, context={"request": request})
         return Response({
             "detail": "Session attended, payment processed, and teacher credited.",

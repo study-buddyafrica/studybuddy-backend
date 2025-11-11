@@ -3,7 +3,6 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.school.models import LiveSession, SessionBooking
-from apps.transactions.models import Transaction, Wallet
 from apps.core.utils.dailyco import DailyCoAPI
 
 
