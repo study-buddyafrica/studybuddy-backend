@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta
-from django.core.exceptions import ValidationError
 import uuid
 
+from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.school.models import SessionBooking
 from apps.school.serializers.session_booking_serializer import SessionBookingSerializer
 from apps.transactions.models import Transaction
@@ -176,3 +176,32 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             return Response(self.get_serializer(booking).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Action not permitted."}, status=status.HTTP_403_FORBIDDEN)
+    
+
+class SessionBookingListView(generics.ListAPIView):
+    """
+    List live sessions:
+      - Superuser: sees all sessions
+      - Teachers: sees sessions they are teaching
+      - Students: sees sessions they booked
+    """
+    serializer_class = SessionBookingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+
+        qs = SessionBooking.objects.select_related(
+            "teacher__user",
+            "student__user"
+        )
+
+        if user.is_superuser:
+            return qs.order_by("-scheduled_start")
+
+        student_qs = qs.filter(student__user=user)
+
+        teacher_qs = qs.filter(teacher__user=user)
+
+        return (student_qs | teacher_qs).distinct().order_by("-scheduled_start")

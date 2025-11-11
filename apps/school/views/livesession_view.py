@@ -2,7 +2,9 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ValidationError
+from rest_framework import generics, permissions
 
+from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.school.models import LiveSession
 from apps.school.serializers.livesession_serializer import LiveSessionSerializer
 from apps.users.permissions import IsStudent,IsTeacherOrAdmin
@@ -56,3 +58,32 @@ class LiveSessionUpdateView(generics.UpdateAPIView):
             self.get_serializer(updated_session).data,
             status=status.HTTP_200_OK,
         )
+
+
+class LiveSessionListView(generics.ListAPIView):
+    """
+    List live sessions:
+      - Superuser: sees all sessions
+      - Teachers: sees sessions they are teaching
+      - Students: sees sessions they booked
+    """
+    serializer_class = LiveSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+
+        qs = LiveSession.objects.select_related(
+            "teacher__user",
+            "session__student__user"
+        )
+
+        if user.is_superuser:
+            return qs.order_by("-started_at")
+
+        student_qs = qs.filter(session__student__user=user)
+
+        teacher_qs = qs.filter(teacher__user=user)
+
+        return (student_qs | teacher_qs).distinct().order_by("-started_at")

@@ -81,6 +81,9 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             started_at=timezone.now(),
             ended_at=booking.scheduled_end
         )
+        booking.status = "accepted"  
+        booking.teacher = booking.teacher 
+        booking.save(update_fields=["status", "teacher"])
 
         live_session.teacher_meeting_link = teacher_token["room_url"]
         live_session.student_meeting_link = student_token["room_url"]
@@ -91,7 +94,7 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         """
         Mark session as attended and credit teacher.
         """
-        booking = instance.session_booking
+        booking = instance.session
 
         if getattr(instance, "attended", False):
             return instance  # Already marked as attended
@@ -122,3 +125,4 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             )
 
         return instance
+        
