@@ -188,7 +188,7 @@ class SessionBooking(Core):
         default=BookingStatus.PENDING,
         db_index=True,
     )
-    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     scheduled_start = models.DateTimeField()
     scheduled_end = models.DateTimeField(null=True, blank=True)
     is_allowed = models.BooleanField(default=False)

@@ -1,5 +1,7 @@
 from django.urls import path
+
 from apps.school.views.school_view import SchoolListCreateView
+from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.session_booking_view import (
     SessionBookingCreateView,
     SessionBookingCreateUpdateView,
@@ -12,6 +14,7 @@ from apps.school.views.livesession_view import (
 
 urlpatterns = [
     path("schools/", SchoolListCreateView.as_view(), name="school-list-create"),
+    path("student/live-session/<uuid:pk>/join/", StudentJoinLiveSessionView.as_view(), name='join-livesession'),
     path("live-sessions/", LiveSessionListView.as_view(), name="livesession-list-view"),
     path("booked-sessions/", SessionBookingListView.as_view(), name="bookedsession-list-view"),
     path("student/session-bookings/", SessionBookingCreateView.as_view(), name="session-booking-create"),
