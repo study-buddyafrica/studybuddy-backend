@@ -26,16 +26,16 @@ class ParentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(TeacherProfile)
 class TeacherProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'get_email', 'tsc_number', 'hourly_rate', "is_verified")
+    list_display = ('user', 'get_email', 'tsc_number', 'hourly_rate', "is_verified",'tsc_number_certificate','experience')
     list_filter = ('user__is_active',)
     search_fields = ('user__email', 'user__first_name', 'user__last_name', 'tsc_number')
     readonly_fields = ('get_email', 'get_subjects')
     fieldsets = (
         ('User Information', {
-            'fields': ('user', 'get_email')
+            'fields': ('user', 'get_email','id_number','gender','birth_date','profile_picture')
         }),
         ('Professional Information', {
-            'fields': ('tsc_number', 'academic_certificate', 'bio', 'phone', 'hourly_rate',"is_verified")
+            'fields': ('tsc_number', 'academic_certificate', 'bio', 'phone', 'hourly_rate',"is_verified",'tsc_number_certificate','experience','grade', 'subjects')
         }),
     
     )

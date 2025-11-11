@@ -30,12 +30,6 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return TeacherProfile.objects.all()
-        return TeacherProfile.objects.filter(user=user)
-
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrStaff])
     def verify_teacher(self, request, pk=None):
         """Verify a teacher only if all required details exist."""
