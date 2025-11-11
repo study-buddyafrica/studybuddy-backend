@@ -295,11 +295,13 @@ def deposit_success_view(request):
 
 
 class WalletViewSet(viewsets.ModelViewSet):
+    permission_classes =[IsAuthenticated]
     serializer_class = WalletSerializer
     queryset = Wallet.objects.all()
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
+    permission_classes =[IsAuthenticated]
     serializer_class = TransactionSerializer
     queryset = Transaction.objects.all()
     
