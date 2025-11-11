@@ -42,6 +42,9 @@ class LiveSessionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context["request"].user
         session_booking_id = validated_data.pop("session_booking_id")
+        description = validated_data.get("description")
+        title =validated_data.get("title")
+
 
         try:
             booking = SessionBooking.objects.select_related("teacher", "student").get(id=session_booking_id)
@@ -91,7 +94,9 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             meeting_link=teacher_token["room_url"],
             whiteboard_link=DEFAULT_WHITEBOARD_LINK, 
             started_at=timezone.now(),
-            ended_at=booking.scheduled_end
+            ended_at=booking.scheduled_end,
+            title=title,
+            description=description
         )
 
         booking.status = "accepted"
