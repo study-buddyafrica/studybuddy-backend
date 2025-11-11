@@ -231,7 +231,7 @@ class LiveSession(Core):
 
 
     def __str__(self):
-        return f"{self.title} ({self.scheduled_start:%Y-%m-%d})"
+        return f"{self.title} ({self.started_at:%Y-%m-%d})"
 
 
 

@@ -14,7 +14,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/',include('apps.core.urls')),
     path('api/', include('apps.users.urls')),
-    # path('api/',include('apps.school.urls')),
+    path('api/',include('apps.school.urls')),
     path('api/',include('apps.transactions.urls'))
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
