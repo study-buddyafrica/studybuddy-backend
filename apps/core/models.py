@@ -43,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_verified =models.BooleanField(default=False)
+    account_confirmed =models.BooleanField(default=False)
 
     objects = UserManager()
 

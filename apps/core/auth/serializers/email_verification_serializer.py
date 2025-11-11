@@ -10,7 +10,7 @@ class EmailVerificationSerializer(serializers.Serializer):
         user = request.user
         code = attrs.get("code")
 
-        if user.is_verified:
+        if user.account_confirmed:
             raise serializers.ValidationError("Your email is already verified.")
 
         try:
@@ -30,8 +30,8 @@ class EmailVerificationSerializer(serializers.Serializer):
     def save(self, **kwargs):
         user = self.context["request"].user
         verification = self.validated_data["verification"]
-        user.is_verified = True
-        user.save(update_fields=["is_verified"])
+        user.account_confirmed = True
+        user.save(update_fields=["account_confirmed"])
         verification.delete()
         EmailVerificationCode.objects.filter(user=user).delete()
 

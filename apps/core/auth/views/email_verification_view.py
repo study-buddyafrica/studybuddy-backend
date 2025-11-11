@@ -12,7 +12,7 @@ class RequestEmailVerificationView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        if user.is_verified:
+        if user.account_confirmed:
             return Response(
                 {"detail": "Your email is already verified."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -26,7 +26,6 @@ class RequestEmailVerificationView(generics.GenericAPIView):
             )
 
         send_verification_email(user)
-        print(user.email)
         return Response(
             {"message": "Verification code sent successfully to your email."},
             status=status.HTTP_200_OK,

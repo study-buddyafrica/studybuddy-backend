@@ -5,8 +5,8 @@ from .models import User, EmailVerificationCode
 class CustomUserAdmin(UserAdmin):
     """Custom admin configuration for User model"""
     
-    list_display = ('is_verified','email', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'created_at')
-    list_filter = ('role', 'is_staff', 'is_active', 'created_at','is_verified')
+    list_display = ('account_confirmed','email', 'first_name', 'last_name', 'role', 'is_staff', 'is_active', 'created_at')
+    list_filter = ('role', 'is_staff', 'is_active', 'created_at','account_confirmed')
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
