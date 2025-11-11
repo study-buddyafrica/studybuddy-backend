@@ -89,16 +89,19 @@ class MiroAPI:
     def share_board_with_users(self, board_id: str, user_emails: List[str], role: str = "editor") -> Dict:
         """
         Share board with specific users.
+        Uses Miro's collaborators endpoint with PUT request.
+        
         :param board_id: Miro board ID
         :param user_emails: List of emails
         :param role: 'viewer', 'commenter', or 'editor'
         """
+        url = f"{self.BASE_URL}/boards/{board_id}/collaborators"
         payload = {
-            "emails": user_emails,
-            "role": role
+            "collaborators": [{"email": email, "role": role.lower()} for email in user_emails]
         }
+        
         try:
-            response = requests.post(f"{self.BASE_URL}/boards/{board_id}/shares", headers=self.headers, json=payload, timeout=10)
+            response = requests.put(url, headers=self.headers, json=payload, timeout=10)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:

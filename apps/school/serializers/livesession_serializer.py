@@ -1,31 +1,43 @@
+import uuid
 from rest_framework import serializers
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.school.models import LiveSession, SessionBooking
 from apps.transactions.models import Transaction, Wallet
 from apps.core.utils.dailyco import DailyCoAPI
-import uuid
 
+
+DEFAULT_WHITEBOARD_LINK = "https://miro.com/app/board/uXjVJs6oD7Q=/"
 
 class LiveSessionSerializer(serializers.ModelSerializer):
     session_booking_id = serializers.UUIDField(write_only=True)
     teacher_meeting_link = serializers.CharField(read_only=True)
     student_meeting_link = serializers.CharField(read_only=True)
+    whiteboard_link = serializers.URLField(read_only=True)
 
     class Meta:
         model = LiveSession
         fields = [
             "id",
             "session_booking_id",
-            "meeting_link",          
-            "teacher_meeting_link",    
+            "meeting_link",
+            "teacher_meeting_link",
             "student_meeting_link",
+            "whiteboard_link",
             "started_at",
             "ended_at",
             "title",
-            "description"
+            "description",
         ]
-        read_only_fields = ["id", "meeting_link", "teacher_meeting_link", "student_meeting_link", "started_at", "ended_at"]
+        read_only_fields = [
+            "id",
+            "meeting_link",
+            "teacher_meeting_link",
+            "student_meeting_link",
+            "whiteboard_link",
+            "started_at",
+            "ended_at",
+        ]
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -42,10 +54,10 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         if LiveSession.objects.filter(session=booking).exists():
             raise ValidationError("A live session for this booking already exists.")
 
-        # Initialize DailyCo API
+        # ------------------- Daily.co Room ------------------- #
         daily_api = DailyCoAPI()
-
-        room_name = f"session_{booking.id.hex[:8]}"
+        random_suffix = uuid.uuid4().hex[:6]
+        room_name = f"session_{booking.id.hex[:8]}_{random_suffix}"
         room = daily_api.create_room(
             name=room_name,
             end_time=booking.scheduled_end,
@@ -62,7 +74,6 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             }
         )
 
-        # Generate tokens
         teacher_token = daily_api.create_owner_token(
             room_name=room_name,
             user_id=str(booking.teacher.id),
@@ -77,12 +88,14 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         live_session = LiveSession.objects.create(
             session=booking,
             teacher=booking.teacher,
-            meeting_link=teacher_token["room_url"],  
+            meeting_link=teacher_token["room_url"],
+            whiteboard_link=DEFAULT_WHITEBOARD_LINK, 
             started_at=timezone.now(),
             ended_at=booking.scheduled_end
         )
-        booking.status = "accepted"  
-        booking.teacher = booking.teacher 
+
+        booking.status = "accepted"
+        booking.teacher = booking.teacher
         booking.save(update_fields=["status", "teacher"])
 
         live_session.teacher_meeting_link = teacher_token["room_url"]
@@ -97,22 +110,20 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         booking = instance.session
 
         if getattr(instance, "attended", False):
-            return instance  # Already marked as attended
+            return instance  
 
-        attended = validated_data.get("attended", True)  # default to True if not provided
+        attended = validated_data.get("attended", True)
 
         if attended:
             instance.attended = True
             instance.ended_at = timezone.now()
             instance.save(update_fields=["attended", "ended_at"])
 
-            # Credit teacher
             teacher_wallet = Wallet.objects.get(user=booking.teacher.user)
             amount = booking.cost
             teacher_wallet.balance += amount
             teacher_wallet.save(update_fields=["balance"])
 
-            # Log transaction
             Transaction.objects.create(
                 wallet=teacher_wallet,
                 transaction_identifier=str(uuid.uuid4()),
@@ -125,4 +136,3 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             )
 
         return instance
-        
