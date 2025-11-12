@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from moneyed import Money
 
-from apps.users.permissions import IsStudent
+from apps.core.permissions import IsStudent, IsVerified
 from apps.school.models import LiveSession, SessionBooking
 from apps.transactions.models import Wallet, Transaction
 from apps.school.serializers.livesession_serializer import LiveSessionSerializer
@@ -12,7 +12,7 @@ import uuid
 
 
 class StudentJoinLiveSessionView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsStudent]
+    permission_classes = [permissions.IsAuthenticated, IsStudent,IsVerified]
 
     def post(self, request, pk):
         user = request.user

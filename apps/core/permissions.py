@@ -2,6 +2,22 @@ from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 from apps.users.models import ParentProfile,ParentChild,StudentProfile
 
+class IsVerified(permissions.BasePermission):
+    """
+    Allows access only to verified users,
+    except for admins or superusers.
+    """
+
+    message = "Your account is not verified yet. Please verify your email before proceeding."
+
+    def has_permission(self, request, view):
+        user = request.user
+
+        if user and (user.is_staff or user.is_superuser):
+            return True
+
+        return bool(user and user.is_authenticated and getattr(user, "account_confirmed", False))
+
 class CanEditParentProfile(permissions.BasePermission):
     """
     Permission for editing parent profiles.
@@ -41,7 +57,6 @@ class CanEditStudentProfile(permissions.BasePermission):
 
         return False
     
-
 
 class IsStudent(permissions.BasePermission):
     """Custom permission — only allow logged-in students."""

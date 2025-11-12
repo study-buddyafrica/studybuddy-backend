@@ -8,6 +8,7 @@ from moneyed import Money
 import uuid
 
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
+from apps.core.permissions import IsVerified
 from apps.school.models import SessionBooking
 from apps.users.models import TeacherProfile
 from apps.school.serializers.session_booking_serializer import SessionBookingSerializer
@@ -22,7 +23,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
     - Marking attendance (teacher payout)
     """
     serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,IsVerified]
 
     def get_queryset(self):
         return SessionBooking.objects.select_related("student__user", "teacher__user")
@@ -281,7 +282,7 @@ class SessionBookingListView(generics.ListAPIView):
       - Students: sees sessions they booked
     """
     serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,IsVerified]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):

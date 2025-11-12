@@ -5,14 +5,18 @@ from apps.users.serializers.update_user_profile_serializer import(
     TeacherProfileUpdateSerializer,StudentProfileUpdateSerializer,
     ParentProfileUpdateSerializer
 )
-from apps.users.permissions import CanEditStudentProfile,CanEditParentProfile
+from apps.core.permissions import (
+    CanEditStudentProfile,
+    CanEditParentProfile, 
+    IsVerified
+)
 
 class TeacherProfileUpdateView(generics.RetrieveUpdateAPIView):
     """
     Allows logged-in teacher to view or update their own profile.
     """
     serializer_class = TeacherProfileUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,IsVerified]
 
     def get_object(self):
         try:
@@ -30,7 +34,7 @@ class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     queryset = StudentProfile.objects.select_related("user", "grade", "school").prefetch_related("subjects")
     serializer_class = StudentProfileUpdateSerializer
     permission_classes = [permissions.IsAuthenticated, CanEditStudentProfile]
-    lookup_field = "id"  # or "pk"
+    lookup_field = "id"  
 
     def get_queryset(self):
         user = self.request.user

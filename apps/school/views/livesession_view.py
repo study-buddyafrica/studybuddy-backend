@@ -7,7 +7,7 @@ from rest_framework import generics, permissions
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.school.models import LiveSession
 from apps.school.serializers.livesession_serializer import LiveSessionSerializer
-from apps.users.permissions import IsStudent,IsTeacherOrAdmin
+from apps.core.permissions import IsVerified,IsTeacherOrAdmin
 
 class LiveSessionCreateView(generics.GenericAPIView):
     """
@@ -15,7 +15,7 @@ class LiveSessionCreateView(generics.GenericAPIView):
     Automatically generates a Google Meet link.
     """
     serializer_class = LiveSessionSerializer
-    permission_classes = [IsAuthenticated,IsTeacherOrAdmin]
+    permission_classes = [IsAuthenticated,IsTeacherOrAdmin,IsVerified]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={"request": request})
@@ -34,7 +34,7 @@ class LiveSessionUpdateView(generics.UpdateAPIView):
     """
     queryset = LiveSession.objects.all()
     serializer_class = LiveSessionSerializer
-    permission_classes = [IsAuthenticated, IsTeacherOrAdmin]
+    permission_classes = [IsAuthenticated,IsTeacherOrAdmin,IsVerified]
 
     def patch(self, request, *args, **kwargs):
         try:
@@ -68,7 +68,7 @@ class LiveSessionListView(generics.ListAPIView):
       - Students: sees sessions they booked
     """
     serializer_class = LiveSessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,IsVerified]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
