@@ -8,12 +8,29 @@ from apps.transactions.views.wallet_view import WalletViewSet
 from apps.transactions.views.transactions_view import TransactionViewSet
 
 transaction_router = DefaultRouter()
-transaction_router.register(r'transactions',TransactionViewSet)
-transaction_router.register(r'wallet',WalletViewSet)
-
+transaction_router.register(
+    r'transactions',
+    TransactionViewSet
+)
+transaction_router.register(
+    r'wallet',
+    WalletViewSet
+)
 
 urlpatterns = [
-    path("wallet/deposit/", DepositAPIView.as_view(), name="wallet-deposit"),
-    path('webhooks/intasend/', IntaSendWebhookView.as_view(), name='intasend-webhook'),
-    path('deposit/success/', deposit_success_view, name='deposit-success'),
+    path(
+        "wallet/deposit/", 
+        DepositAPIView.as_view(), 
+        name="wallet-deposit"
+    ),
+    path(
+        'webhooks/intasend/', 
+        IntaSendWebhookView.as_view(), 
+        name='intasend-webhook'
+        ),
+    path(
+        'deposit/success/', 
+        deposit_success_view, 
+        name='deposit-success'
+        ),
 ]+transaction_router.urls
