@@ -8,7 +8,12 @@ class IsVerified(permissions.BasePermission):
     except for admins or superusers.
     """
 
-    message = "Your account is not verified yet. Please verify your email before proceeding."
+    message = (
+    "Your account "
+    "is not verified yet. "
+    "Please verify your email "
+    "before proceeding."
+    )
 
     def has_permission(self, request, view):
         user = request.user
@@ -16,7 +21,11 @@ class IsVerified(permissions.BasePermission):
         if user and (user.is_staff or user.is_superuser):
             return True
 
-        return bool(user and user.is_authenticated and getattr(user, "account_confirmed", False))
+        return bool(
+            user and user.is_authenticated 
+            and getattr(user, "account_confirmed", 
+            False)
+            )
 
 class CanEditParentProfile(permissions.BasePermission):
     """
