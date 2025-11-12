@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from decimal import Decimal
 from datetime import timedelta
-from django.db import transaction as db_transaction
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from djmoney.money import Money
@@ -10,7 +10,6 @@ import uuid
 from apps.school.models import SessionBooking
 from apps.users.models import TeacherProfile, StudentProfile
 from apps.transactions.models import Wallet, Transaction
-
 
 class SessionBookingSerializer(serializers.ModelSerializer):
     teacher_id = serializers.UUIDField(write_only=True)
@@ -27,102 +26,95 @@ class SessionBookingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end"]
 
-    def _log_transaction(self, wallet, amount, tx_type, description, related_tx=None):
-        """Helper to create a transaction log."""
-        return Transaction.objects.create(
-            wallet=wallet,
-            transaction_identifier=str(uuid.uuid4()),
-            amount=amount.amount if isinstance(amount, Money) else amount,
-            transaction_type=tx_type,
-            payment_method="wallet",
-            status="success",
-            description=description,
-            related_transaction=related_tx,
-            metadata_info={
-                "timestamp": str(timezone.now()),
-                "initiated_by": wallet.user.email if wallet.user else "system",
-            },
-        )
-
     def create(self, validated_data):
-        request = self.context["request"]
+        request = self.context.get("request")
         user = request.user
 
-        # Only enforce student profile for normal users
+        student_profile = None
         if not user.is_superuser:
             try:
                 student_profile = StudentProfile.objects.get(user=user)
             except StudentProfile.DoesNotExist:
-                raise ValidationError("Only students can create session bookings.")
-        else:
-            student_profile = None
+                raise serializers.ValidationError("Only students can create session bookings.")
 
         teacher_id = validated_data.pop("teacher_id")
         duration_hours = validated_data.pop("duration_hours")
+        scheduled_start = validated_data.pop("scheduled_start")
 
-        # Ensure teacher exists
         try:
             teacher = TeacherProfile.objects.get(id=teacher_id)
         except TeacherProfile.DoesNotExist:
-            raise ValidationError("Invalid teacher selected.")
+            raise serializers.ValidationError("Invalid teacher selected.")
 
         if not teacher.hourly_rate:
-            raise ValidationError("Teacher hourly rate not set.")
-
-        # Student wallet
-        student_wallet = getattr(user, "wallet", None)
-        if not student_wallet:
-            raise ValidationError("Student wallet not found.")
-
+            raise serializers.ValidationError("Teacher hourly rate not set.")
+        
         teacher_rate = float(teacher.hourly_rate)
-        balance = float(student_wallet.balance.amount)
-        max_affordable_hours = balance / teacher_rate
-        if max_affordable_hours < 1:
-            raise ValidationError("Wallet balance cannot afford even 1 hour of session time.")
-
-        if duration_hours <= 0:
-            raise ValidationError("Duration must be greater than 0 hours.")
-
-        if duration_hours > max_affordable_hours:
-            raise ValidationError(
-                f"Insufficient balance. You can book up to {max_affordable_hours:.2f} hours."
-            )
-
         total_cost = Decimal(duration_hours * teacher_rate)
-        scheduled_start = validated_data.pop("scheduled_start")
         scheduled_end = scheduled_start + timedelta(hours=duration_hours)
         amount = Money(total_cost, "KES")
 
-        # Deduct student wallet
-        if not student_wallet.can_make_transaction(amount):
-            raise ValidationError("Insufficient balance to complete booking.")
-        student_wallet.withdraw(amount)
-        student_tx = self._log_transaction(
-            student_wallet, amount, "debit", f"Payment for session booking with teacher {teacher.user.username}"
-        )
+        if not user.is_superuser:
+            try:
+                student_wallet = user.wallet
+            except Wallet.DoesNotExist:
+                raise serializers.ValidationError("Student wallet not found.")
 
-        # Deposit into system wallet (assumes system wallet exists)
-        try:
-            system_wallet = Wallet.objects.get(account_type="system")
-        except Wallet.DoesNotExist:
-            raise ValidationError("System wallet not found. Please create it in admin.")
+            if student_wallet.balance < amount:
+                raise serializers.ValidationError("Insufficient balance to book this session.")
 
-        system_wallet.deposit(amount)
-        self._log_transaction(
-            system_wallet, amount, "credit", f"System holds payment for student booking with teacher {teacher.user.username}",
-            related_tx=student_tx
-        )
+            system_wallet = Wallet.objects.filter(account_type="system").first()
+            if not system_wallet:
+                raise serializers.ValidationError("System wallet not found. Contact admin.")
 
-        # Create session booking
-        booking = SessionBooking.objects.create(
-            student=student_profile,
-            teacher=teacher,
-            scheduled_start=scheduled_start,
-            scheduled_end=scheduled_end,
-            cost=total_cost,
-            is_allowed=True,
-            **validated_data,
-        )
+            with transaction.atomic():
+                student_wallet.balance -= amount
+                student_wallet.save()
+
+                system_wallet.balance += amount
+                system_wallet.save()
+
+                Transaction.objects.create(
+                    wallet=student_wallet,
+                    transaction_identifier=str(uuid.uuid4()),
+                    amount=-amount.amount,
+                    transaction_type="debit",
+                    payment_method="wallet",
+                    status="success",
+                    description=f"Booking payment for teacher {teacher.user.get_full_name()}",
+                    metadata_info={"session_booking": str(teacher.id)},
+                )
+
+                Transaction.objects.create(
+                    wallet=system_wallet,
+                    transaction_identifier=str(uuid.uuid4()),
+                    amount=amount.amount,
+                    transaction_type="credit",
+                    payment_method="wallet",
+                    status="success",
+                    description=f"System hold for booking with student {user.username}",
+                    metadata_info={"session_booking": str(teacher.id)},
+                )
+
+                booking = SessionBooking.objects.create(
+                    student=student_profile,
+                    teacher=teacher,
+                    scheduled_start=scheduled_start,
+                    scheduled_end=scheduled_end,
+                    cost=total_cost,
+                    is_allowed=True,
+                    **validated_data,
+                )
+        else:
+            booking = SessionBooking.objects.create(
+                student=student_profile,
+                teacher=teacher,
+                scheduled_start=scheduled_start,
+                scheduled_end=scheduled_end,
+                cost=total_cost,
+                is_allowed=True,
+                **validated_data,
+            )
 
         return booking
 

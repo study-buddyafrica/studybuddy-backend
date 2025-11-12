@@ -22,14 +22,18 @@ class Wallet(Core):
         default=uuid.uuid4, 
         editable=False
     )
+    code = models.UUIDField( 
+        default=uuid.uuid4, 
+        null=True,
+        blank=True
+    )
 
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name="wallet",
-        null=True,
-        blank=True
     )
+
 
     balance = MoneyField(
         max_digits=14,
@@ -57,21 +61,6 @@ class Wallet(Core):
         owner = self.user.email if self.user else "SYSTEM"
         return f"{owner} - {self.account_type} ({self.balance})"
 
-    def clean(self):
-        """Validation logic to enforce wallet rules"""
-        if self.account_type == "system":
-            existing = Wallet.objects.filter(account_type="system").exclude(id=self.id).exists()
-            if existing:
-                raise ValidationError("Only one system wallet is allowed.")
-            if self.user is not None:
-                raise ValidationError("System wallet cannot be linked to a user.")
-        else:
-            if self.user is None:
-                raise ValidationError(f"{self.account_type.capitalize()} wallet must be linked to a user.")
-
-    def save(self, *args, **kwargs):
-        self.clean()  
-        super().save(*args, **kwargs)
 
     def can_make_transaction(self, amount):
         if isinstance(amount, Money):
@@ -127,8 +116,10 @@ class Transaction(Core):
 
     wallet = models.ForeignKey(
         Wallet,
-        on_delete=models.CASCADE,
-        related_name="transactions"
+        on_delete=models.SET_NULL,
+        related_name="transactions",
+        null=True,
+        blank=True,
     )
 
     transaction_identifier = models.CharField(

@@ -4,10 +4,12 @@ from django.utils import timezone
 from django.db import transaction
 from datetime import timedelta,datetime
 from decimal import Decimal
+from moneyed import Money
 import uuid
 
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.school.models import SessionBooking
+from apps.users.models import TeacherProfile
 from apps.school.serializers.session_booking_serializer import SessionBookingSerializer
 from apps.transactions.models import Transaction,Wallet
 
@@ -38,56 +40,95 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             related_transaction=related_tx,
             metadata_info={
                 "timestamp": str(timezone.now()),
-                "initiated_by": wallet.user.email if hasattr(wallet.user, "email") else str(wallet.id),
+                "initiated_by": wallet.user.email if wallet.user else "system",
             },
         )
 
     def post(self, request, *args, **kwargs):
-        """Create new booking: deduct student's wallet → system wallet."""
+        """
+        Create a new booking:
+        - Deduct student's wallet → system wallet
+        """
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        booking = serializer.save()
 
         user = request.user
-        if not user.is_superuser:
-            student_wallet = booking.student.user.wallet
-            amount = booking.cost
 
-            # Get or create system wallet
-            system_wallet, _ = Wallet.objects.get_or_create(
-                account_type="system",
-                defaults={"balance": 0},
-                user=user  # optional, can point to a system admin user
+        system_wallet = Wallet.objects.filter(account_type="system").first()
+        if not system_wallet:
+            return Response(
+                {"detail": "System wallet not found. Contact admin."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-            with transaction.atomic():
-                if student_wallet.balance < amount:
-                    return Response(
-                        {"detail": "Insufficient balance."},
-                        status=status.HTTP_402_PAYMENT_REQUIRED,
-                    )
+        if not user.is_superuser:
+            try:
+                student_wallet = user.wallet
+            except Wallet.DoesNotExist:
+                return Response(
+                    {"detail": "Student wallet not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
+            teacher_id = serializer.validated_data.get("teacher_id")
+            duration_hours = serializer.validated_data.get("duration_hours")
+            scheduled_start = serializer.validated_data.get("scheduled_start")
+
+            teacher = TeacherProfile.objects.get(id=teacher_id)
+            teacher_rate = float(teacher.hourly_rate)
+            total_cost = Decimal(duration_hours * teacher_rate)
+            amount = Money(total_cost, "KES")
+
+            if student_wallet.balance < amount:
+                return Response(
+                    {"detail": "Insufficient balance."},
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
+
+            scheduled_end = scheduled_start + timedelta(hours=duration_hours)
+
+            with transaction.atomic():
                 student_wallet.balance -= amount
                 student_wallet.save()
-
                 system_wallet.balance += amount
                 system_wallet.save()
 
-                self._log_transaction(
-                    student_wallet,
-                    -amount.amount,
-                    "debit",
-                    f"Booking payment for {booking.teacher.user.get_full_name()}",
+                Transaction.objects.create(
+                    wallet=student_wallet,
+                    transaction_identifier=str(uuid.uuid4()),
+                    amount=-amount.amount,
+                    transaction_type="debit",
+                    payment_method="wallet",
+                    status="success",
+                    description=f"Booking payment for teacher {teacher.user.username}",
+                    metadata_info={"session_booking": str(teacher.id)},
                 )
 
-                self._log_transaction(
-                    system_wallet,
-                    amount.amount,
-                    "credit",
-                    f"System hold for booking {booking.id}",
+                Transaction.objects.create(
+                    wallet=system_wallet,
+                    transaction_identifier=str(uuid.uuid4()),
+                    amount=amount.amount,
+                    transaction_type="credit",
+                    payment_method="wallet",
+                    status="success",
+                    description=f"System hold for booking with student {user.username}",
+                    metadata_info={"session_booking": str(teacher.id)},
                 )
+
+                booking = SessionBooking.objects.create(
+                    student=user.student_profile if hasattr(user, "student_profile") else None,
+                    teacher=teacher,
+                    scheduled_start=scheduled_start,
+                    scheduled_end=scheduled_end,
+                    cost=total_cost,
+                    is_allowed=True,
+                )
+
+        else:
+            booking = serializer.save()
 
         return Response(self.get_serializer(booking).data, status=status.HTTP_201_CREATED)
+
 
     def patch(self, request, pk=None, *args, **kwargs):
         """
@@ -103,47 +144,55 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         user = request.user
         attended_flag = request.data.get("attended", None)
 
-        # --- Mark attendance ---
         if attended_flag is True and not booking.attended:
             if user.is_staff or hasattr(user, "teacher_profile"):
+                system_wallet = Wallet.objects.filter(account_type="system").first()
+                if not system_wallet:
+                    return Response(
+                        {"detail": "System wallet not found."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+                teacher_wallet = booking.teacher.user.wallet
+                amount = booking.cost
+
                 with transaction.atomic():
+                    if system_wallet.balance < amount:
+                        return Response(
+                            {"detail": "System wallet has insufficient funds."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        )
+
+                    system_wallet.balance -= amount
+                    teacher_wallet.balance += amount
+
+                    system_wallet.save()
+                    teacher_wallet.save()
+
+                    teacher_tx = self._log_transaction(
+                        teacher_wallet,
+                        amount.amount,
+                        "credit",
+                        f"Payment for attended session with student {booking.student.user.username}",
+                    )
+                    self._log_transaction(
+                        system_wallet,
+                        -amount.amount,
+                        "debit",
+                        f"System payout to {booking.teacher.user.username}",
+                        related_tx=teacher_tx,
+                    )
+
                     booking.attended = True
                     booking.status = "completed"
                     booking.save()
 
-                    teacher_wallet = booking.teacher.user.wallet
-                    system_wallet = Wallet.objects.filter(account_type="system").first()
-                    amount = booking.cost
-
-                    if system_wallet and system_wallet.balance >= amount:
-                        system_wallet.balance -= amount
-                        teacher_wallet.balance += amount
-
-                        system_wallet.save()
-                        teacher_wallet.save()
-
-                        teacher_tx = self._log_transaction(
-                            teacher_wallet,
-                            amount.amount,
-                            "credit",
-                            f"Payment for attended session with {booking.student.user.get_full_name()}",
-                        )
-
-                        self._log_transaction(
-                            system_wallet,
-                            -amount.amount,
-                            "debit",
-                            f"System payout to {booking.teacher.user.get_full_name()}",
-                            related_tx=teacher_tx,
-                        )
-
-                    return Response(
-                        {"detail": "Session marked as attended and teacher credited."},
-                        status=status.HTTP_200_OK,
-                    )
+                return Response(
+                    {"detail": "Session marked as attended and teacher credited."},
+                    status=status.HTTP_200_OK,
+                )
             return Response({"detail": "Only teacher or admin can mark attendance."}, status=status.HTTP_403_FORBIDDEN)
 
-        # --- Reschedule ---
         if hasattr(user, "student_profile"):
             if booking.scheduled_start <= timezone.now():
                 return Response(
@@ -161,29 +210,34 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             if not new_start:
                 return Response({"detail": "New start time required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            teacher = booking.teacher
             student_wallet = booking.student.user.wallet
             system_wallet = Wallet.objects.filter(account_type="system").first()
+            teacher = booking.teacher
             teacher_rate = float(teacher.hourly_rate.amount)
 
             with transaction.atomic():
-                # refund from system → student
+                if system_wallet.balance < booking.cost:
+                    return Response(
+                        {"detail": "System wallet has insufficient funds for refund."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
                 system_wallet.balance -= booking.cost
                 student_wallet.balance += booking.cost
                 system_wallet.save()
                 student_wallet.save()
 
-                refund_tx = self._log_transaction(
+                self._log_transaction(
                     student_wallet,
                     booking.cost.amount,
                     "refund",
-                    f"Refund for rescheduled session with {teacher.user.get_full_name()}",
+                    f"Refund for rescheduled session with {teacher.user.username}",
                 )
 
-                # compute new cost
                 new_start_dt = datetime.fromisoformat(new_start)
-                new_end = new_start_dt + timedelta(hours=float(booking.duration_hours))
-                total_cost = Decimal(booking.duration_hours * teacher_rate)
+                duration_hours = float(booking.duration_hours)
+                new_end = new_start_dt + timedelta(hours=duration_hours)
+                total_cost = Decimal(duration_hours * teacher_rate)
 
                 if student_wallet.balance < total_cost:
                     transaction.set_rollback(True)
@@ -197,20 +251,17 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                 student_wallet.save()
                 system_wallet.save()
 
-                payment_tx = self._log_transaction(
+                self._log_transaction(
                     student_wallet,
                     -total_cost,
                     "payment",
-                    f"Payment for rescheduled session with {teacher.user.get_full_name()}",
-                    related_tx=refund_tx,
+                    f"Payment for rescheduled session with {teacher.user.username}",
                 )
-
                 self._log_transaction(
                     system_wallet,
                     total_cost,
                     "hold",
                     f"System hold for rescheduled session {booking.id}",
-                    related_tx=payment_tx,
                 )
 
                 booking.scheduled_start = new_start_dt
