@@ -12,14 +12,14 @@ import uuid
 
 
 class StudentJoinLiveSessionView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsStudent,IsVerified]
+    permission_classes = [permissions.IsAuthenticated, IsStudent]
 
-    def post(self, request, pk):
+    def post(self, request, session_booking_id):
         user = request.user
 
         try:
             booking = SessionBooking.objects.select_related("student", "teacher").get(
-                id=pk, student__user=user
+                id=session_booking_id, student__user=user
             )
         except SessionBooking.DoesNotExist:
             return Response(

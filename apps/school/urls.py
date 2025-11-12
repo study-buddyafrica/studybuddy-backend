@@ -18,7 +18,7 @@ urlpatterns = [
         name="school-list-create"
         ),
     path(
-        "student/live-session/<uuid:pk>/join/", 
+        "student/live-session/<uuid:session_booking_id>/join/", 
         StudentJoinLiveSessionView.as_view(), 
         name='join-livesession'
         ),
