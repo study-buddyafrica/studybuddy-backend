@@ -39,14 +39,14 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        user = self.context["request"].user
+        request = self.context["request"]
+        user = request.user
         session_booking_id = validated_data.pop("session_booking_id")
+        title = validated_data.get("title")
         description = validated_data.get("description")
-        title =validated_data.get("title")
-
 
         try:
-            booking = SessionBooking.objects.select_related("teacher", "student").get(id=session_booking_id)
+            booking = SessionBooking.objects.select_related("teacher__user", "student__user").get(id=session_booking_id)
         except SessionBooking.DoesNotExist:
             raise ValidationError("Invalid session booking.")
 
@@ -60,6 +60,8 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         daily_api = DailyCoAPI()
         random_suffix = uuid.uuid4().hex[:6]
         room_name = f"session_{booking.id.hex[:8]}_{random_suffix}"
+
+        # Set end_time to scheduled_end
         room = daily_api.create_room(
             name=room_name,
             end_time=booking.scheduled_end,
@@ -76,6 +78,7 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             }
         )
 
+        # Generate tokens
         teacher_token = daily_api.create_owner_token(
             room_name=room_name,
             user_id=str(booking.teacher.id),
@@ -87,26 +90,25 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             user_name=f"{booking.student.user.first_name} {booking.student.user.last_name}"
         )
 
+        # Create live session record
         live_session = LiveSession.objects.create(
             session=booking,
             teacher=booking.teacher,
             meeting_link=teacher_token["room_url"],
-            whiteboard_link=DEFAULT_WHITEBOARD_LINK, 
+            whiteboard_link=DEFAULT_WHITEBOARD_LINK,
             started_at=timezone.now(),
             ended_at=booking.scheduled_end,
             title=title,
             description=description
         )
-
-        booking.status = "accepted"
-        booking.teacher = booking.teacher
-        booking.save(update_fields=["status", "teacher"])
-
         live_session.teacher_meeting_link = teacher_token["room_url"]
         live_session.student_meeting_link = student_token["room_url"]
+        
+        booking.status = "accepted"
+        booking.save(update_fields=["status"])
 
         return live_session
-
+    
     def update(self, instance, validated_data):
         instance.ended_at = timezone.now()
         instance.save(update_fields=["ended_at"])
