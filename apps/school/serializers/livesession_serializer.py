@@ -1,12 +1,17 @@
 import uuid
+import os
 from rest_framework import serializers
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from dotenv import load_dotenv
+
 from apps.school.models import LiveSession, SessionBooking
 from apps.core.utils.dailyco import DailyCoAPI
 
+load_dotenv()
 
-DEFAULT_WHITEBOARD_LINK = "https://miro.com/app/board/uXjVJs6oD7Q=/"
+
+DEFAULT_WHITEBOARD_LINK = os.getenv('DEFAULT_WHITEBOARD_LINK')
 
 class LiveSessionSerializer(serializers.ModelSerializer):
     session_booking_id = serializers.UUIDField(write_only=True)
@@ -56,12 +61,10 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         if LiveSession.objects.filter(session=booking).exists():
             raise ValidationError("A live session for this booking already exists.")
 
-        # ------------------- Daily.co Room ------------------- #
         daily_api = DailyCoAPI()
         random_suffix = uuid.uuid4().hex[:6]
         room_name = f"session_{booking.id.hex[:8]}_{random_suffix}"
 
-        # Set end_time to scheduled_end
         room = daily_api.create_room(
             name=room_name,
             end_time=booking.scheduled_end,
@@ -78,7 +81,6 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             }
         )
 
-        # Generate tokens
         teacher_token = daily_api.create_owner_token(
             room_name=room_name,
             user_id=str(booking.teacher.id),
@@ -90,7 +92,6 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             user_name=f"{booking.student.user.first_name} {booking.student.user.last_name}"
         )
 
-        # Create live session record
         live_session = LiveSession.objects.create(
             session=booking,
             teacher=booking.teacher,
@@ -103,7 +104,7 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         )
         live_session.teacher_meeting_link = teacher_token["room_url"]
         live_session.student_meeting_link = student_token["room_url"]
-        
+
         booking.status = "accepted"
         booking.save(update_fields=["status"])
 
