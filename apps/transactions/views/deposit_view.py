@@ -1,16 +1,19 @@
+import uuid
 from decimal import Decimal
+from django.urls import reverse
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from intasend import APIService
+
 from apps.transactions.models import Wallet, Transaction
-from django.urls import reverse
-import uuid
+from apps.core.permissions import IsVerified
+
 
 class DepositAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsVerified]
 
     def _calculate_checkout_amount(self, amount):
         """Calculate total checkout amount including IntaSend fees."""
