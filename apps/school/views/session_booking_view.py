@@ -2,27 +2,22 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
-from datetime import timedelta
+from datetime import timedelta,datetime
+from decimal import Decimal
 import uuid
 
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.school.models import SessionBooking
 from apps.school.serializers.session_booking_serializer import SessionBookingSerializer
-from apps.transactions.models import Transaction
-
-class SessionBookingCreateView(generics.CreateAPIView):
-    serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return SessionBooking.objects.filter(student__user=self.request.user)
+from apps.transactions.models import Transaction,Wallet
 
 
 class SessionBookingCreateUpdateView(generics.GenericAPIView):
     """
     Handles:
-    - Student creates or reschedules session (with wallet deduction and transaction logging)
-    - Auto-credit teacher when `attended=True`
+    - Creating a booking (with immediate wallet deduction to system)
+    - Rescheduling (refund + re-deduct)
+    - Marking attendance (teacher payout)
     """
     serializer_class = SessionBookingSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -48,27 +43,57 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         )
 
     def post(self, request, *args, **kwargs):
-        """Create new session booking with wallet deduction and transaction log."""
+        """Create new booking: deduct student's wallet → system wallet."""
         serializer = self.get_serializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         booking = serializer.save()
 
-        wallet = booking.student.user.wallet
-        amount = booking.cost
+        user = request.user
+        if not user.is_superuser:
+            student_wallet = booking.student.user.wallet
+            amount = booking.cost
 
-        self._log_transaction(
-            wallet,
-            amount,
-            "payment",
-            f"Payment for session booking with teacher {booking.teacher.user.get_full_name()}",
-        )
+            # Get or create system wallet
+            system_wallet, _ = Wallet.objects.get_or_create(
+                account_type="system",
+                defaults={"balance": 0},
+                user=user  # optional, can point to a system admin user
+            )
+
+            with transaction.atomic():
+                if student_wallet.balance < amount:
+                    return Response(
+                        {"detail": "Insufficient balance."},
+                        status=status.HTTP_402_PAYMENT_REQUIRED,
+                    )
+
+                student_wallet.balance -= amount
+                student_wallet.save()
+
+                system_wallet.balance += amount
+                system_wallet.save()
+
+                self._log_transaction(
+                    student_wallet,
+                    -amount.amount,
+                    "debit",
+                    f"Booking payment for {booking.teacher.user.get_full_name()}",
+                )
+
+                self._log_transaction(
+                    system_wallet,
+                    amount.amount,
+                    "credit",
+                    f"System hold for booking {booking.id}",
+                )
+
         return Response(self.get_serializer(booking).data, status=status.HTTP_201_CREATED)
 
     def patch(self, request, pk=None, *args, **kwargs):
         """
-        Handles:
-        - Rescheduling by student (refund + re-deduct)
-        - Marking as attended (teacher payout)
+        PATCH:
+        - Mark attended (credit teacher)
+        - Reschedule if >30min before start
         """
         try:
             booking = self.get_queryset().get(pk=pk)
@@ -78,6 +103,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         user = request.user
         attended_flag = request.data.get("attended", None)
 
+        # --- Mark attendance ---
         if attended_flag is True and not booking.attended:
             if user.is_staff or hasattr(user, "teacher_profile"):
                 with transaction.atomic():
@@ -86,30 +112,38 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     booking.save()
 
                     teacher_wallet = booking.teacher.user.wallet
-                    teacher_wallet.balance.amount += booking.cost
-                    teacher_wallet.save()
+                    system_wallet = Wallet.objects.filter(account_type="system").first()
+                    amount = booking.cost
 
-                    teacher_tx = self._log_transaction(
-                        teacher_wallet,
-                        booking.cost,
-                        "deposit",
-                        f"Earnings for attended session with student {booking.student.user.get_full_name()}",
+                    if system_wallet and system_wallet.balance >= amount:
+                        system_wallet.balance -= amount
+                        teacher_wallet.balance += amount
+
+                        system_wallet.save()
+                        teacher_wallet.save()
+
+                        teacher_tx = self._log_transaction(
+                            teacher_wallet,
+                            amount.amount,
+                            "credit",
+                            f"Payment for attended session with {booking.student.user.get_full_name()}",
+                        )
+
+                        self._log_transaction(
+                            system_wallet,
+                            -amount.amount,
+                            "debit",
+                            f"System payout to {booking.teacher.user.get_full_name()}",
+                            related_tx=teacher_tx,
+                        )
+
+                    return Response(
+                        {"detail": "Session marked as attended and teacher credited."},
+                        status=status.HTTP_200_OK,
                     )
-
-                    self._log_transaction(
-                        booking.student.user.wallet,
-                        booking.cost,
-                        "transfer",
-                        f"Transfer to {booking.teacher.user.get_full_name()} for completed session",
-                        related_tx=teacher_tx,
-                    )
-
-                return Response(
-                    {"detail": "Session marked as attended and teacher credited."},
-                    status=status.HTTP_200_OK,
-                )
             return Response({"detail": "Only teacher or admin can mark attendance."}, status=status.HTTP_403_FORBIDDEN)
 
+        # --- Reschedule ---
         if hasattr(user, "student_profile"):
             if booking.scheduled_start <= timezone.now():
                 return Response(
@@ -117,9 +151,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if booking.scheduled_start - timezone.now() <= timedelta(hours=1):
+            if booking.scheduled_start - timezone.now() <= timedelta(minutes=30):
                 return Response(
-                    {"detail": "Rescheduling allowed only at least 1 hour before start."},
+                    {"detail": "Rescheduling allowed only 30 minutes before start."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -129,46 +163,57 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
 
             teacher = booking.teacher
             student_wallet = booking.student.user.wallet
-            teacher_rate = teacher.hourly_rate.amount
+            system_wallet = Wallet.objects.filter(account_type="system").first()
+            teacher_rate = float(teacher.hourly_rate.amount)
 
             with transaction.atomic():
-            
-                student_wallet.balance.amount += booking.cost
+                # refund from system → student
+                system_wallet.balance -= booking.cost
+                student_wallet.balance += booking.cost
+                system_wallet.save()
                 student_wallet.save()
 
                 refund_tx = self._log_transaction(
                     student_wallet,
-                    booking.cost,
+                    booking.cost.amount,
                     "refund",
-                    f"Refund for rescheduling session with {teacher.user.get_full_name()}",
+                    f"Refund for rescheduled session with {teacher.user.get_full_name()}",
                 )
 
-                from datetime import datetime
+                # compute new cost
                 new_start_dt = datetime.fromisoformat(new_start)
-                affordable_hours = int(student_wallet.balance.amount // teacher_rate)
-                if affordable_hours < 1:
+                new_end = new_start_dt + timedelta(hours=float(booking.duration_hours))
+                total_cost = Decimal(booking.duration_hours * teacher_rate)
+
+                if student_wallet.balance < total_cost:
                     transaction.set_rollback(True)
                     return Response(
                         {"detail": "Insufficient wallet balance to reschedule."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                new_end = new_start_dt + timedelta(hours=affordable_hours)
-                total_cost = teacher_rate * affordable_hours
-
-    
-                student_wallet.balance.amount -= total_cost
+                student_wallet.balance -= total_cost
+                system_wallet.balance += total_cost
                 student_wallet.save()
+                system_wallet.save()
 
                 payment_tx = self._log_transaction(
                     student_wallet,
-                    total_cost,
+                    -total_cost,
                     "payment",
                     f"Payment for rescheduled session with {teacher.user.get_full_name()}",
                     related_tx=refund_tx,
                 )
 
-                booking.scheduled_start = new_start
+                self._log_transaction(
+                    system_wallet,
+                    total_cost,
+                    "hold",
+                    f"System hold for rescheduled session {booking.id}",
+                    related_tx=payment_tx,
+                )
+
+                booking.scheduled_start = new_start_dt
                 booking.scheduled_end = new_end
                 booking.cost = total_cost
                 booking.save()
@@ -176,7 +221,6 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             return Response(self.get_serializer(booking).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Action not permitted."}, status=status.HTTP_403_FORBIDDEN)
-    
 
 class SessionBookingListView(generics.ListAPIView):
     """

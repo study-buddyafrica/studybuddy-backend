@@ -1,8 +1,12 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from djmoney.models.fields import MoneyField
 from djmoney.money import Money
-from apps.core.models import Core, User
 import uuid
+
+from apps.core.models import Core, User
+
+
 
 
 class Wallet(Core):
@@ -10,19 +14,25 @@ class Wallet(Core):
     ACCOUNT_TYPE_CHOICES = [
         ("student", "Student"),
         ("teacher", "Teacher"),
-        ("admin", "Admin"),
+        ("system", "System"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
 
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name="wallet"
+        related_name="wallet",
+        null=True,
+        blank=True
     )
 
     balance = MoneyField(
-        max_digits=14,  
+        max_digits=14,
         decimal_places=2,
         default_currency='KES',
         default=0.00
@@ -30,66 +40,61 @@ class Wallet(Core):
 
     account_type = models.CharField(
         max_length=20,
-        choices=ACCOUNT_TYPE_CHOICES,
-        default="personal",
+        choices=ACCOUNT_TYPE_CHOICES
     )
 
     is_active = models.BooleanField(default=True)
 
     class Meta:
         db_table = "wallets"
-        ordering = ["-created_at"]
+        ordering = ["-id"]
         indexes = [
             models.Index(fields=["account_type"]),
             models.Index(fields=["is_active"]),
         ]
 
     def __str__(self):
-        return f"{self.user.email} - {self.account_type} ({self.balance})"
+        owner = self.user.email if self.user else "SYSTEM"
+        return f"{owner} - {self.account_type} ({self.balance})"
+
+    def clean(self):
+        """Validation logic to enforce wallet rules"""
+        if self.account_type == "system":
+            existing = Wallet.objects.filter(account_type="system").exclude(id=self.id).exists()
+            if existing:
+                raise ValidationError("Only one system wallet is allowed.")
+            if self.user is not None:
+                raise ValidationError("System wallet cannot be linked to a user.")
+        else:
+            if self.user is None:
+                raise ValidationError(f"{self.account_type.capitalize()} wallet must be linked to a user.")
+
+    def save(self, *args, **kwargs):
+        self.clean()  
+        super().save(*args, **kwargs)
 
     def can_make_transaction(self, amount):
-        """Check if wallet has sufficient balance for transaction"""
         if isinstance(amount, Money):
             return self.balance >= amount
-        else:
-    
-            return self.balance >= Money(amount, self.balance.currency)
-
-    def get_available_balance(self):
-        """Get available balance"""
-        return self.balance
+        return self.balance >= Money(amount, self.balance.currency)
 
     def deposit(self, amount, currency='KES'):
-        """Deposit money into wallet"""
-        if isinstance(amount, Money):
-            deposit_amount = amount
-        else:
-            deposit_amount = Money(amount, currency)
-        
+        deposit_amount = amount if isinstance(amount, Money) else Money(amount, currency)
         if deposit_amount.currency != self.balance.currency:
-            raise ValueError(f"Cannot deposit {deposit_amount.currency} into {self.balance.currency} wallet")
-        
+            raise ValueError("Currency mismatch in deposit.")
         self.balance += deposit_amount
-        self.save()
+        self.save(update_fields=["balance"])
         return self.balance
 
     def withdraw(self, amount, currency='KES'):
-        """Withdraw money from wallet"""
-        if isinstance(amount, Money):
-            withdraw_amount = amount
-        else:
-            withdraw_amount = Money(amount, currency)
-        
+        withdraw_amount = amount if isinstance(amount, Money) else Money(amount, currency)
         if withdraw_amount.currency != self.balance.currency:
-            raise ValueError(f"Cannot withdraw {withdraw_amount.currency} from {self.balance.currency} wallet")
-        
+            raise ValueError("Currency mismatch in withdrawal.")
         if not self.can_make_transaction(withdraw_amount):
             raise ValueError("Insufficient balance")
-        
         self.balance -= withdraw_amount
-        self.save()
+        self.save(update_fields=["balance"])
         return self.balance
-    
 
 class Transaction(Core):
     """Represents a financial transaction tied to a user's wallet."""

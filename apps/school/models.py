@@ -235,7 +235,6 @@ class LiveSession(Core):
         return f"{self.title} ({self.started_at:%Y-%m-%d})"
 
 
-
 class RevisionMaterial(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)

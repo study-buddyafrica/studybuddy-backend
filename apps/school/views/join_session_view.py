@@ -10,6 +10,7 @@ from apps.transactions.models import Wallet, Transaction
 from apps.school.serializers.livesession_serializer import LiveSessionSerializer
 import uuid
 
+
 class StudentJoinLiveSessionView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated, IsStudent]
 
@@ -18,15 +19,14 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
 
         try:
             booking = SessionBooking.objects.select_related("student", "teacher").get(
-                id=pk,
-                student__user=user
+                id=pk, student__user=user
             )
         except SessionBooking.DoesNotExist:
             return Response(
                 {"detail": "No session found for this student."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         try:
             live_session = LiveSession.objects.get(session=booking)
         except LiveSession.DoesNotExist:
@@ -40,34 +40,34 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
                 {"detail": "Session already marked as attended."},
                 status=status.HTTP_200_OK
             )
-
+        
         with transaction.atomic():
-            student_wallet, _ = Wallet.objects.select_for_update().get_or_create(
-                user=booking.student.user,
-                defaults={"balance": Money(0, "KES")}
+
+            system_wallet, _ = Wallet.objects.select_for_update().get_or_create(
+                account_type="system",
+                defaults={"balance": Money(0, "KES"), "is_active": True},
             )
             teacher_wallet, _ = Wallet.objects.select_for_update().get_or_create(
                 user=booking.teacher.user,
-                defaults={"balance": Money(0, "KES")}
+                defaults={"balance": Money(0, "KES"), "account_type": "teacher"},
             )
 
             amount = booking.cost
             if not isinstance(amount, Money):
                 amount = Money(amount, "KES")
 
-            if student_wallet.balance < amount:
+            if system_wallet.balance < amount:
                 return Response(
-                    {"detail": f"Insufficient balance in your wallet. Required: {amount.amount} KES."},
-                    status=status.HTTP_402_PAYMENT_REQUIRED
+                    {"detail": "System wallet has insufficient funds for payout."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            
-            student_wallet.balance -= amount
+
+            system_wallet.balance -= amount
             teacher_wallet.balance += amount
 
-            student_wallet.save(update_fields=["balance"])
+            system_wallet.save(update_fields=["balance"])
             teacher_wallet.save(update_fields=["balance"])
 
-            # Update booking and live session
             booking.attended = True
             booking.status = "completed"
             booking.save(update_fields=["attended", "status"])
@@ -76,13 +76,13 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
             live_session.save(update_fields=["ended_at"])
 
             Transaction.objects.create(
-                wallet=student_wallet,
+                wallet=system_wallet,
                 transaction_identifier=str(uuid.uuid4()),
                 amount=-amount.amount,
-                transaction_type="debit",
-                payment_method="wallet",
+                transaction_type="transfer",
+                payment_method="internal",
                 status="success",
-                description=f"Payment for session with {booking.teacher.user.username}",
+                description=f"Transferred funds to {booking.teacher.user.username} for session {booking.id}",
                 metadata_info={"session_booking_id": str(booking.id)},
             )
 
@@ -93,12 +93,15 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
                 transaction_type="credit",
                 payment_method="wallet",
                 status="success",
-                description=f"Credit for attended session with {booking.student.user.username}",
+                description=f"Credit for session with {booking.student.user.username}",
                 metadata_info={"session_booking_id": str(booking.id)},
             )
 
         serializer = LiveSessionSerializer(live_session, context={"request": request})
-        return Response({
-            "detail": "Session attended, payment processed, and teacher credited.",
-            "session": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "detail": "Teacher credited and session marked as attended.",
+                "session": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
