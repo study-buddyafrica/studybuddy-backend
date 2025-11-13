@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from django.core.exceptions import ValidationError
 
-from apps.transactions.models import Transaction, Wallet
+from apps.transactions.models import Wallet
 
 
 class WalletSerializer(serializers.ModelSerializer):
@@ -20,7 +19,3 @@ class WalletSerializer(serializers.ModelSerializer):
 
         return attrs
   
-class TransactionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Transaction
-        fields = '__all__'

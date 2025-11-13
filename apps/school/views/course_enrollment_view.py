@@ -9,7 +9,6 @@ from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.core.permissions import IsVerified
 
 
-
 class CourseEnrollmentView(generics.ListCreateAPIView):
     """
     - Students: Enroll in courses and view their enrollments.

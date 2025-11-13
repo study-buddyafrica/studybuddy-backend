@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.core.permissions import IsVerified
 from apps.transactions .models import Transaction
-from apps.transactions.serializers import TransactionSerializer
+from apps.transactions.serializers.transaction_serializer import TransactionSerializer
 
 
 class TransactionViewSet(viewsets.ModelViewSet):

@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from apps.transactions  .models import Wallet
-from apps.transactions.serializers import WalletSerializer
+from apps.transactions.serializers.wallet_serializer import WalletSerializer
 
 
 class WalletViewSet(viewsets.ModelViewSet):
