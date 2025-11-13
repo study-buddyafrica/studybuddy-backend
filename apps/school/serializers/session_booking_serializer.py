@@ -21,7 +21,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SessionBooking
         fields = [
-            "id", "teacher_id", "scheduled_start", "duration_hours","course"
+            "id", "teacher_id", "scheduled_start", "duration_hours","course",
             "scheduled_end", "status", "is_allowed", "attended", "cost"
         ]
         read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end"]

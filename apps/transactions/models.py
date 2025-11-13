@@ -7,8 +7,6 @@ import uuid
 from apps.core.models import Core, User
 
 
-
-
 class Wallet(Core):
     """Represents a user's wallet with balance and account type."""
     ACCOUNT_TYPE_CHOICES = [
@@ -60,7 +58,21 @@ class Wallet(Core):
     def __str__(self):
         owner = self.user.email if self.user else "SYSTEM"
         return f"{owner} - {self.account_type} ({self.balance})"
+    
+    def clean(self):
+        """Enforce only one system wallet, must belong to superuser, and cannot be recreated."""
+        if self.account_type == "system":
+            if self.user is None or not self.user.is_superuser:
+                raise ValidationError("System wallet must be linked to a superuser.")
+            if Wallet.objects.filter(account_type="system").exclude(id=self.id).exists():
+                raise ValidationError("Only one system wallet is allowed.")
+        else:
+            if not self.user:
+                raise ValidationError(f"{self.account_type.capitalize()} wallet must be linked to a user.")
 
+    def save(self, *args, **kwargs):
+        self.full_clean()  
+        super().save(*args, **kwargs)
 
     def can_make_transaction(self, amount):
         if isinstance(amount, Money):

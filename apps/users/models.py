@@ -85,6 +85,10 @@ class TeacherProfile(models.Model):
     google_token_expiry = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
     id_number = models.CharField(max_length=15, null=True, blank=True)
+    subjects = models.ManyToManyField(
+        "school.Subject",
+        related_name="teacher_profiles" 
+    )
 
     class Meta:
         db_table = "teacher_profiles"
@@ -132,6 +136,7 @@ class StudentProfile(Core):
         through=ParentChild,
         related_name="student_profiles",
     )
+    
 
     class Meta:
         db_table = "student_profiles"

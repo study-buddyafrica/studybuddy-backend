@@ -43,21 +43,10 @@ class StudentProfileUpdateSerializer(serializers.ModelSerializer):
             "guardian_contact",
             "grade",
             "school",
-            "subjects",
         ]
         read_only_fields = ["id", "user", "enrollment_date"]
 
-    def update(self, instance, validated_data):
-        subjects = validated_data.pop("subjects", None)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        if subjects is not None:
-            instance.subjects.set(subjects)
-
-        instance.save()
-        return instance
+    
 
 
 class ParentProfileUpdateSerializer(serializers.ModelSerializer):

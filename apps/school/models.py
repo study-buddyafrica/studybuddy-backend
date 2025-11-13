@@ -29,7 +29,22 @@ class School(Core):
     def __str__(self):
         return self.name
 
-
+class Subject(Core):
+    """Represents a subject taught in a specific class (e.g., Mathematics, Biology).""" 
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
+    code = models.CharField(max_length=30, unique=True, null=True, blank=True) 
+    name = models.CharField(max_length=150, db_index=True) 
+    description = models.TextField(blank=True, null=True) 
+    teachers = models.ManyToManyField( 'users.TeacherProfile', related_name="school_subjects") 
+    
+    
+    def __str__(self): return f"{self.name} ({self.code or 'N/A'})" 
+    
+    class Meta: 
+        db_table = "subjects" 
+        ordering = ["name"] 
+        indexes = [ models.Index(fields=["name"]), 
+                   models.Index(fields=["code"]), ]
 
 class Grade(Core):
     """
@@ -84,10 +99,10 @@ class Course(Core):
     A course created by a teacher (e.g., Mathematics - Grade 9, Life Skills)
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    teacher = models.ForeignKey(
-        'users.TeacherProfile',
+    subject = models.ForeignKey(
+        'school.Subject',
         on_delete=models.CASCADE,
-        related_name="courses_created"
+        related_name="subject_course"
     )
     grade = models.ForeignKey(
         Grade, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses"
@@ -98,6 +113,13 @@ class Course(Core):
     is_active = models.BooleanField(default=True)
     code = models.CharField(max_length=30, unique=True, null=True, blank=True)
     cover_image = models.URLField(blank=True, null=True)
+    teacher = models.ForeignKey(
+        'users.TeacherProfile',
+        on_delete=models.CASCADE,
+        related_name="teacher_courses",
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return f"{self.title} \
