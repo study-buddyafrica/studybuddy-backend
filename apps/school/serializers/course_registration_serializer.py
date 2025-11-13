@@ -58,7 +58,7 @@ class CourseSerializer(serializers.ModelSerializer):
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ["id", "course", "title", "description", "order"]
+        fields = ["id", "course", "title", "description","content_file", "order"]
 
     def validate_course(self, value):
         user = self.context["request"].user
@@ -67,18 +67,47 @@ class TopicSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("You cannot add topics to a course you don't own.")
         return value
     
+    def get_content_file_url(self, obj):
+        if obj.content_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.content_file.url)
+            return obj.content_file.url
+        return None
+    
 class SubtopicSerializer(serializers.ModelSerializer):
+    content_file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Subtopic
-        fields = ["id", "topic", "title", "content", "order"]
+        fields = ["id", "topic", "title", "content", "content_file_url", "order"]
 
-    def validate_topic(self, value):
+    def validate(self, attrs):
         user = self.context["request"].user
+        topic = attrs.get("topic")
+
+        if not attrs.get("content") and not attrs.get("content_file"):
+            raise serializers.ValidationError(
+                "You must provide either text content or upload a file."
+            )
+
         if hasattr(user, "teacher_profile") and not user.is_staff:
-            if value.course.teacher != user.teacher_profile:
-                raise serializers.ValidationError("You cannot add subtopics to a topic you don't own.")
-        return value
-    
+            if topic.course.teacher != user.teacher_profile:
+                raise serializers.ValidationError(
+                    "You cannot add subtopics to a topic you don't own."
+                )
+
+        return attrs
+
+    def get_content_file_url(self, obj):
+        if obj.content_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.content_file.url)
+            return obj.content_file.url
+        return None
+
+
 class CourseNestedSerializer(serializers.ModelSerializer):
     topics = serializers.SerializerMethodField()
 
@@ -102,11 +131,26 @@ class CourseNestedSerializer(serializers.ModelSerializer):
                 "id": t.id,
                 "title": t.title,
                 "description": t.description,
+                "content_file_url":self.get_file_url(t),
                 "order": t.order,
                 "subtopics": [
-                    {"id": st.id, "title": st.title, "content": st.content, "order": st.order}
+                    {
+                        "id": st.id,
+                        "title": st.title,
+                        "content": st.content,
+                        "content_file_url": self.get_file_url(st),
+                        "order": st.order,
+                    }
                     for st in t.subtopics.all()
                 ],
             }
             for t in topics
         ]
+
+    def get_file_url(self, subtopic):
+        if subtopic.content_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(subtopic.content_file.url)
+            return subtopic.content_file.url
+        return None

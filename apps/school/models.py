@@ -110,7 +110,7 @@ class Course(Core):
     price = MoneyField(max_digits=10, decimal_places=2, default_currency="KES", default=0)
     is_active = models.BooleanField(default=True)
     code = models.CharField(max_length=30, unique=True, null=True, blank=True)
-    cover_image = models.URLField(blank=True, null=True)
+    cover_image = models.ImageField(blank=True, null=True)
     teacher = models.ForeignKey(
         'users.TeacherProfile',
         on_delete=models.CASCADE,
@@ -165,6 +165,12 @@ class Topic(Core):
         on_delete=models.CASCADE,
         related_name="topics",
     )
+    content_file = models.FileField(
+        upload_to="topics/%Y/%m/%d/",
+        blank=True,
+        null=True,
+        help_text="Upload PDF, video, or other resources."
+    )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
@@ -190,6 +196,12 @@ class Subtopic(Core):
     )
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True, null=True)
+    content_file = models.FileField(
+        upload_to="subtopics/%Y/%m/%d/",
+        blank=True,
+        null=True,
+        help_text="Upload PDF, video, or other resources."
+    )
     order = models.PositiveIntegerField(default=0)
     
 
@@ -202,6 +214,11 @@ class Subtopic(Core):
 
     def __str__(self):
         return f"{self.topic.title} → {self.title}"
+    
+    @property
+    def has_content(self):
+        """Check if the subtopic has either text or file content."""
+        return bool(self.content) or bool(self.content_file)
 
 
 class SessionBooking(Core):
