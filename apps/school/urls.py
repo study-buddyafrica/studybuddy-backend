@@ -14,6 +14,10 @@ from apps.school.views.livesession_view import (
     LiveSessionCreateView,LiveSessionUpdateView,
     LiveSessionListView
 )
+from apps.school.views.assessments_views import (
+    AssessmentCreateListView,
+    RevisionMaterialCreateListView
+)
 
 urlpatterns = [
     path(
@@ -70,5 +74,15 @@ urlpatterns = [
         "subtopics/", 
         SubtopicCreateListView.as_view(), 
         name="subtopic-list-create"
+        ),
+    path(
+        "revision-materials/", 
+        RevisionMaterialCreateListView.as_view(), 
+        name="revision-materials"
+        ),
+    path(
+        "assessments/", 
+        AssessmentCreateListView.as_view(), 
+        name="assessments"
         ),
 ]

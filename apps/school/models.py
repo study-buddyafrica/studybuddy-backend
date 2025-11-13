@@ -258,7 +258,9 @@ class SessionBooking(Core):
     is_allowed = models.BooleanField(default=False)
     attended = models.BooleanField(default=False)
     teacher = models.ForeignKey(
-        'users.TeacherProfile', on_delete=models.CASCADE, related_name="teacher_session_bookings" 
+        'users.TeacherProfile', 
+        on_delete=models.CASCADE, 
+        related_name="teacher_session_bookings" 
     )
     course = models.ForeignKey(
     Course, 
