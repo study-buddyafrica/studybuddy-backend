@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.school.views.school_view import SchoolListCreateView
+from apps.school.views.course_enrollment_view import CourseEnrollmentView
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.course_registration_view import (
     CourseCreateListView,TopicCreateListView,
@@ -95,5 +96,10 @@ urlpatterns = [
         "assessments/<uuid:id>/", 
         AssessmentRetrieveUpdateView.as_view(), 
         name="assessments-detail-update"
+    ),
+    path(
+        "courses/enrollments/", 
+        CourseEnrollmentView.as_view(), 
+        name="course-enrollments"
     ),
 ]

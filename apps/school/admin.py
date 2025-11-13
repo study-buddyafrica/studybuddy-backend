@@ -1,7 +1,7 @@
 from django.contrib import admin
 from apps.school.models import (
     SessionBooking, Subject,Choice,
-    Grade,Course, Subtopic,
+    Grade,Course, Subtopic,CourseEnrollment,
     LiveSession,Topic, RevisionMaterial,
     Assessment,AssessmentSubmission,
 )
@@ -17,3 +17,4 @@ admin.site.register(Subject)
 admin.site.register(Topic)
 admin.site.register(Subtopic)
 admin.site.register(LiveSession)
+admin.site.register(CourseEnrollment)

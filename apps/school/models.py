@@ -159,7 +159,6 @@ class CourseEnrollment(Core):
         "users.StudentProfile", on_delete=models.CASCADE, related_name="enrollments"
     )
     purchased_at = models.DateTimeField(default=timezone.now)
-    expires_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     transaction = models.ForeignKey(
         "transactions.Transaction", on_delete=models.SET_NULL, null=True, blank=True
