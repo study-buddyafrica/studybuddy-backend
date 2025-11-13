@@ -6,7 +6,6 @@ import uuid
 
 from apps.core.models import Core, User
 
-
 class Wallet(Core):
     """Represents a user's wallet with balance and account type."""
     ACCOUNT_TYPE_CHOICES = [
