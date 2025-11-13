@@ -16,7 +16,8 @@ from apps.school.views.livesession_view import (
 )
 from apps.school.views.assessments_views import (
     AssessmentCreateListView,
-    RevisionMaterialCreateListView
+    RevisionMaterialCreateListView,
+    AssessmentRetrieveUpdateView
 )
 
 urlpatterns = [
@@ -54,35 +55,45 @@ urlpatterns = [
         "teacher/live-session/", 
         LiveSessionCreateView.as_view(), 
         name="live-session-create"
-        ),
+    ),
     path(
         "teacher/live-session/update/<uuid:pk>/", 
         LiveSessionUpdateView.as_view(), 
         name="live-session-update"
-        ),
+    ),
     path(
         "courses/", 
         CourseCreateListView.as_view(), 
         name="course-list-create"
-        ),
+    ),
     path(
         "topics/", 
         TopicCreateListView.as_view(), 
         name="topic-list-create"
-        ),
+    ),
     path(
         "subtopics/", 
         SubtopicCreateListView.as_view(), 
         name="subtopic-list-create"
-        ),
+    ),
     path(
         "revision-materials/", 
         RevisionMaterialCreateListView.as_view(), 
         name="revision-materials"
-        ),
+    ),
     path(
         "assessments/", 
         AssessmentCreateListView.as_view(), 
         name="assessments"
-        ),
+    ),
+    path(
+        "assessments/", 
+        AssessmentCreateListView.as_view(), 
+        name="assessments-list-create"
+    ),
+    path(
+        "assessments/<uuid:id>/", 
+        AssessmentRetrieveUpdateView.as_view(), 
+        name="assessments-detail-update"
+    ),
 ]
