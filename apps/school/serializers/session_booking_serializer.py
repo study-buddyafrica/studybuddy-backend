@@ -21,7 +21,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SessionBooking
         fields = [
-            "id", "teacher_id", "scheduled_start", "duration_hours",
+            "id", "teacher_id", "scheduled_start", "duration_hours","course"
             "scheduled_end", "status", "is_allowed", "attended", "cost"
         ]
         read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end"]
@@ -40,6 +40,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
         teacher_id = validated_data.pop("teacher_id")
         duration_hours = validated_data.pop("duration_hours")
         scheduled_start = validated_data.pop("scheduled_start")
+        course = validated_data.pop("course")
 
         try:
             teacher = TeacherProfile.objects.get(id=teacher_id)
@@ -103,6 +104,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                     scheduled_end=scheduled_end,
                     cost=total_cost,
                     is_allowed=True,
+                    course=course,
                     **validated_data,
                 )
         else:

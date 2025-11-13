@@ -75,7 +75,6 @@ class TeacherProfile(models.Model):
     bio = models.TextField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    subjects = models.ManyToManyField("school.Subject", related_name="teacher_profiles", blank=True)
     is_verified= models.BooleanField(default=False)
     grade =models.ManyToManyField('school.Grade', related_name='teacher_grades', blank=True, null=True)
     experience = models.PositiveSmallIntegerField(default=0)
@@ -128,12 +127,6 @@ class StudentProfile(Core):
     enrollment_date = models.DateTimeField(auto_now_add=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
     id_number = models.CharField(max_length=15, null=True, blank=True)
-    subjects = models.ManyToManyField(
-        'school.Subject',
-        through="school.StudentSubject",  
-        related_name="student_profiles",
-    )
-
     parents = models.ManyToManyField(
         'ParentProfile',
         through=ParentChild,

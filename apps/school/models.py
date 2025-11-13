@@ -1,7 +1,10 @@
-from django.db import models
-from apps.core.models import Core
 import uuid
 from django.utils import timezone
+from django.db import models
+from djmoney.models.fields import MoneyField
+
+from apps.core.models import Core
+
 
 class School(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -26,18 +29,48 @@ class School(Core):
     def __str__(self):
         return self.name
 
+
+
 class Grade(Core):
+    """
+    Represents academic or professional levels.
+    Can be used for primary, secondary, college, university, or other skill-based courses.
+    """
+
+    class GradeLevel(models.TextChoices):
+        GRADE_1 = "Grade 1", "Grade 1"
+        GRADE_2 = "Grade 2", "Grade 2"
+        GRADE_3 = "Grade 3", "Grade 3"
+        GRADE_4 = "Grade 4", "Grade 4"
+        GRADE_5 = "Grade 5", "Grade 5"
+        GRADE_6 = "Grade 6", "Grade 6"
+        GRADE_7 = "Grade 7", "Grade 7"
+        GRADE_8 = "Grade 8", "Grade 8"
+        GRADE_9 = "Grade 9", "Grade 9"
+        GRADE_10 = "Grade 10", "Grade 10"
+        GRADE_11 = "Grade 11", "Grade 11"
+        GRADE_12 = "Grade 12", "Grade 12"
+        COLLEGE = "College", "College"
+        UNIVERSITY = "University", "University"
+        PROFESSIONAL = "Professional", "Professional"
+        GENERAL = "General", "General"  
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100)
-    level = models.CharField(max_length=100, null=True, blank=True)
-    
+    level = models.CharField(
+        max_length=50,
+        choices=GradeLevel.choices,
+        default=GradeLevel.GENERAL,
+        db_index=True
+    )
+    description = models.TextField(blank=True, null=True)
+
     class Meta:
         db_table = "grades"
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.name}"
-
+        return f"{self.level}"
+    
 
 class BookingStatus(models.TextChoices):
     PENDING = "pending", "Pending"
@@ -46,95 +79,69 @@ class BookingStatus(models.TextChoices):
     CANCELLED = "cancelled", "Cancelled"
     COMPLETED = "completed", "Completed"
 
-class Subject(Core):
-    """Represents a subject taught in a specific class (e.g., Mathematics, Biology)."""
+class Course(Core):
+    """
+    A course created by a teacher (e.g., Mathematics - Grade 9, Life Skills)
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.CharField(max_length=30, unique=True, null=True, blank=True)
-    name = models.CharField(max_length=150, db_index=True)
-    description = models.TextField(blank=True, null=True)
-    grade = models.ForeignKey(
-        Grade, on_delete=models.CASCADE, related_name="subjects"
-    )
-
-   
-    teachers = models.ManyToManyField(
-        'users.TeacherProfile',
-        through="TeacherSubject",
-        related_name="school_subjects",
-    )
-    students = models.ManyToManyField(
-        'users.StudentProfile',
-        through="StudentSubject",  
-        related_name="school_subjects",
-    )
-
-    def __str__(self):
-        return f"{self.name} ({self.code or 'N/A'})"
-
-    class Meta:
-        db_table = "subjects"
-        ordering = ["name"]
-        indexes = [
-            models.Index(fields=["name"]),
-            models.Index(fields=["code"]),
-        ]
-
-class TeacherSubject(models.Model):
-    """Intermediate table for many-to-many between Teacher and Subject."""
-    id = models.BigAutoField(primary_key=True)
     teacher = models.ForeignKey(
-        'users.TeacherProfile',  
+        'users.TeacherProfile',
         on_delete=models.CASCADE,
-        related_name="teacher_subject_links",
+        related_name="courses_created"
     )
-    subject = models.ForeignKey(
-        "Subject",
-        on_delete=models.CASCADE,
-        related_name="teacher_subject_links",
+    grade = models.ForeignKey(
+        Grade, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses"
     )
-
-    class Meta:
-        db_table = "teacher_subjects"
-        unique_together = ("teacher", "subject")
-        indexes = [
-            models.Index(fields=["teacher"]),
-            models.Index(fields=["subject"]),
-        ]
+    title = models.CharField(max_length=150, db_index=True)
+    description = models.TextField(blank=True, null=True)
+    price = MoneyField(max_digits=10, decimal_places=2, default_currency="KES", default=0)
+    is_active = models.BooleanField(default=True)
+    code = models.CharField(max_length=30, unique=True, null=True, blank=True)
+    cover_image = models.URLField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.teacher.user.first_name} - {self.subject.name}"
+        return f"{self.title} \
+            ({self.grade or \
+            'General'}) by teacher \
+            {self.teacher.user.username}"
 
-class StudentSubject(models.Model):
-    """Intermediate table for many-to-many between Student and Subject."""
-    id = models.BigAutoField(primary_key=True)
+    class Meta:
+        db_table = "courses"
+        ordering = ["title"]
+
+
+class CourseEnrollment(Core):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course = models.ForeignKey(
+        "Course", on_delete=models.CASCADE, related_name="enrollments"
+    )
     student = models.ForeignKey(
-        'users.StudentProfile',
-        on_delete=models.CASCADE,
-        related_name="student_subject_links",
+        "users.StudentProfile", on_delete=models.CASCADE, related_name="enrollments"
     )
-    subject = models.ForeignKey(
-        "Subject",
-        on_delete=models.CASCADE,
-        related_name="student_subject_links",
+    purchased_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    transaction = models.ForeignKey(
+        "transactions.Transaction", on_delete=models.SET_NULL, null=True, blank=True
     )
 
     class Meta:
-        db_table = "student_subjects"
-        unique_together = ("student", "subject")
-        indexes = [
-            models.Index(fields=["student"]),
-            models.Index(fields=["subject"]),
-        ]
+        db_table = "course_enrollments"
+        unique_together = ("course", "student")
+    
+    @property
+    def is_valid(self):
+        return self.is_active and (not self.expires_at or self.expires_at > timezone.now())
 
     def __str__(self):
-        return f"{self.student.user.first_name} - {self.subject.name}"
+        return f"{self.student.user.first_name} - {self.course.title}"
 
 
 class Topic(Core):
-    """High-level topic under a specific subject."""
+    """High-level topic under a specific course."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    subject = models.ForeignKey(
-        Subject,
+    course = models.ForeignKey(
+        Course,
         on_delete=models.CASCADE,
         related_name="topics",
     )
@@ -144,13 +151,13 @@ class Topic(Core):
 
     class Meta:
         db_table = "topics"
-        ordering = ["subject", "order"]
+        ordering = ["course", "order"]
         indexes = [
-            models.Index(fields=["subject"]),
+            models.Index(fields=["course"]),
         ]
 
     def __str__(self):
-        return f"{self.subject.name}: {self.title}"
+        return f"{self.course.title}: {self.title}"
 
 
 class Subtopic(Core):
@@ -196,6 +203,14 @@ class SessionBooking(Core):
     teacher = models.ForeignKey(
         'users.TeacherProfile', on_delete=models.CASCADE, related_name="teacher_session_bookings" 
     )
+    course = models.ForeignKey(
+    Course, 
+    on_delete=models.SET_NULL, 
+    null=True, 
+    blank=True, 
+    related_name="session_bookings"   
+    )
+
 
     class Meta:
         db_table = "session_bookings"
@@ -223,9 +238,6 @@ class LiveSession(Core):
         on_delete=models.CASCADE,
         related_name="live_session"
     )
-    subject = models.ForeignKey(
-        Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name="live_sessions"
-    )
     teacher = models.ForeignKey(
         'users.TeacherProfile', on_delete=models.CASCADE, related_name="live_sessions"  
     )
@@ -241,7 +253,7 @@ class RevisionMaterial(Core):
     description = models.TextField(blank=True, null=True)
     file_url = models.URLField(max_length=1000)
     uploaded_by = models.ForeignKey('users.TeacherProfile', on_delete=models.SET_NULL, null=True, related_name="materials") 
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, related_name="revision_materials")
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, related_name="revision_materials")
     
     class Meta:
         db_table = "revision_materials"
@@ -260,7 +272,7 @@ class Assessment(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, related_name="assessments")
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, related_name="assessments")
     teacher = models.ForeignKey('users.TeacherProfile', on_delete=models.CASCADE, related_name="assessments") 
     assessment_type = models.CharField(max_length=10, choices=AssessmentType.choices, default=AssessmentType.MCQ)
     due_date = models.DateTimeField(null=True, blank=True)
@@ -307,7 +319,7 @@ class AssessmentAssignment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="assignments")
     class_assigned = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True, related_name="assessments")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
     assigned_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -337,3 +349,10 @@ class AssessmentSubmission(models.Model):
 
     def __str__(self):
         return f"{self.assessment.title} - {self.student}"
+    
+    @property
+    def is_late(self):
+        return (
+            self.assessment.due_date
+            and self.submitted_at > self.assessment.due_date
+        )
