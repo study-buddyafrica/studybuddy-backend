@@ -2,6 +2,10 @@ from django.urls import path
 
 from apps.school.views.school_view import SchoolListCreateView
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
+from apps.school.views.course_registration_view import (
+    CourseCreateListView,TopicCreateListView,
+    SubtopicCreateListView
+)
 from apps.school.views.session_booking_view import (
     SessionBookingCreateUpdateView,
     SessionBookingListView,
@@ -52,5 +56,19 @@ urlpatterns = [
         LiveSessionUpdateView.as_view(), 
         name="live-session-update"
         ),
-
+    path(
+        "courses/", 
+        CourseCreateListView.as_view(), 
+        name="course-list-create"
+        ),
+    path(
+        "topics/", 
+        TopicCreateListView.as_view(), 
+        name="topic-list-create"
+        ),
+    path(
+        "subtopics/", 
+        SubtopicCreateListView.as_view(), 
+        name="subtopic-list-create"
+        ),
 ]
