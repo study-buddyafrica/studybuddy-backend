@@ -7,13 +7,17 @@ from apps.core.models import Core
 
 
 class School(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
     country = models.CharField(max_length=50)
     contact = models.CharField(max_length=50)
     is_approved = models.BooleanField(default=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+        )
     created_by = models.ForeignKey(
         "core.User",
         on_delete=models.SET_NULL,
@@ -30,11 +34,23 @@ class School(Core):
         return self.name
 
 class Subject(Core):
-    """Represents a subject taught in a specific class (e.g., Mathematics, Biology).""" 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
-    code = models.CharField(max_length=30, unique=True, null=True, blank=True) 
+    """
+    Represents a subject taught in a 
+    specific class (e.g., Mathematics, Biology).
+    """ 
     name = models.CharField(max_length=150, db_index=True) 
     description = models.TextField(blank=True, null=True) 
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    ) 
+    code = models.CharField(
+        max_length=30, 
+        unique=True, 
+        null=True, 
+        blank=True
+    ) 
     
     def __str__(self): return f"{self.name} ({self.code or 'N/A'})" 
     
@@ -68,7 +84,11 @@ class Grade(Core):
         PROFESSIONAL = "Professional", "Professional"
         GENERAL = "General", "General"  
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     level = models.CharField(
         max_length=50,
         choices=GradeLevel.choices,
@@ -288,7 +308,7 @@ class RevisionMaterial(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
-    file_url = models.URLField(max_length=1000)
+    file= models.FileField(blank=True, null=True)
     uploaded_by = models.ForeignKey('users.TeacherProfile', on_delete=models.SET_NULL, null=True, related_name="materials") 
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, related_name="revision_materials")
     
@@ -350,18 +370,6 @@ class Choice(models.Model):
 
     def __str__(self):
         return f"{self.text[:30]} ({'✔' if self.is_correct else '✖'})"
-
-
-class AssessmentAssignment(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="assignments")
-    class_assigned = models.ForeignKey(Grade, on_delete=models.CASCADE, null=True, blank=True, related_name="assessments")
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
-    assigned_at = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        db_table = "assessment_assignments"
-        ordering = ["-assigned_at"]
 
 
 class AssessmentSubmission(models.Model):
