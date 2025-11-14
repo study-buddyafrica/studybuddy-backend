@@ -49,7 +49,7 @@ class Wallet(Core):
 
     class Meta:
         db_table = "wallets"
-        ordering = ["-id"]
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["account_type"]),
             models.Index(fields=["is_active"]),
