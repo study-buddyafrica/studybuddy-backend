@@ -45,6 +45,7 @@ class Wallet(Core):
     )
 
     is_active = models.BooleanField(default=True)
+    failed_withdraw_attempts = models.IntegerField(default=0)
 
     class Meta:
         db_table = "wallets"

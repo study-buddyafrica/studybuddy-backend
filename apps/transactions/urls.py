@@ -7,6 +7,7 @@ from apps.transactions.views.deposit_view import DepositAPIView
 from apps.transactions.views.wallet_view import WalletViewSet
 from apps.transactions.views.transactions_view import TransactionViewSet
 
+
 transaction_router = DefaultRouter()
 transaction_router.register(
     r'transactions',
@@ -33,4 +34,5 @@ urlpatterns = [
         deposit_success_view, 
         name='deposit-success'
         ),
+ 
 ]+transaction_router.urls
