@@ -1,7 +1,7 @@
 from intasend import APIService
 
 # Replace with your actual IntaSend API key
-token = "ISSecretKey_test_a90b6e34-a50b-40ef-a9a1-122188a454d3"
+token = ""
 
 # Initialize IntaSend service
 service = APIService(token=token, test=True)  # use test=False for production
