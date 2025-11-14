@@ -30,5 +30,6 @@ def create_user_wallet(sender, instance, created, **kwargs):
     Wallet.objects.create(
         user=instance,
         account_type=account_type,
+        failed_withdraw_attempts=0,
         balance=Money(0, "KES"),
     )
