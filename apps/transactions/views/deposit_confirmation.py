@@ -9,7 +9,7 @@ from djmoney.money import Money
 from decimal import Decimal
 
 @method_decorator(csrf_exempt, name='dispatch')
-class IntaSendWebhookView(APIView):
+class IntaSendDepositWebhookView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         state = data.get("state")

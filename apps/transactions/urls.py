@@ -1,7 +1,7 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path
 
-from apps.transactions.views.payment_confirmation import IntaSendWebhookView
+from apps.transactions.views.deposit_confirmation import IntaSendDepositWebhookView
 from apps.transactions.views.payment_success_view import deposit_success_view
 from apps.transactions.views.deposit_view import DepositAPIView
 from apps.transactions.views.wallet_view import WalletViewSet
@@ -26,8 +26,8 @@ urlpatterns = [
         name="wallet-deposit"
     ),
     path(
-        'webhooks/intasend/', 
-        IntaSendWebhookView.as_view(), 
+        'deposit/webhooks', 
+        IntaSendDepositWebhookView.as_view(), 
         name='intasend-webhook'
         ),
     path(
