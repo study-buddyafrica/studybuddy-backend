@@ -84,7 +84,12 @@ class TeacherProfile(models.Model):
     google_refresh_token = models.TextField(null=True, blank=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
-    id_number = models.CharField(max_length=15, null=True, blank=True)
+    id_number = models.CharField(
+        max_length=15, 
+        null=True, 
+        blank=True,
+        help_text="National Identity Number",
+        )
     subjects = models.ManyToManyField(
         "school.Subject",
         related_name="teacher_profiles" 

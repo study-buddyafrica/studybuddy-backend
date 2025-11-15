@@ -12,11 +12,16 @@ class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
             "grade",
             "experience",
             "profile_picture",
+            "tsc_number",
+            "tsc_number_certificate",
+            "academic_certificate",
+            "birth_date",
+            "gender",
+            "id_number"
         ]
-        read_only_fields = ["id", "user", "is_verified", "tsc_number"]
+        read_only_fields = ["id", "user", "is_verified"]
 
     def update(self, instance, validated_data):
-        # Clean handling of many-to-many updates
         subjects = validated_data.pop("subjects", None)
         grades = validated_data.pop("grade", None)
 
