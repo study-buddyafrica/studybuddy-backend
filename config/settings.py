@@ -111,9 +111,13 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'StudyBuddy API documentation',
     'VERSION': '3.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    
-}
 
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'filter': True,   
+        'displayRequestDuration': True,
+    },
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
