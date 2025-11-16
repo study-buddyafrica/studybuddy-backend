@@ -67,7 +67,9 @@ class EmailVerificationCode(Core):
         related_name="email_verifications",
         null=True, blank=True
     )
-    code = models.CharField(max_length=6, db_index=True)
+    code = models.CharField(max_length=6, db_index=True
+    )
+    email = models.EmailField(null=True, blank=True)
     
 
     def is_expired(self):

@@ -1,8 +1,10 @@
 from django.db import transaction
 from rest_framework import serializers
-from apps.core.models import User
-from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
+from django.core.cache import cache
 
+from apps.core.models import User
+from apps.core.auth.serializers.email_verification_serializer import EmailVerificationCode
+from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
@@ -35,16 +37,19 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        """
-        Create a user and their associated profile automatically.
-        Rate limit requests using Redis.
-        """
-
         validated_data.pop("confirm_password", None)
+        email = validated_data["email"]
 
-        # Create user
         user = User.objects.create_user(**validated_data)
-        # Create related profile based on role
+        user.account_confirmed = True
+        user.save(update_fields=["account_confirmed"])
+
+        # Attach existing verification codes to this new user
+        EmailVerificationCode.objects.filter(email=email, user__isnull=True).update(user=user)
+
+        cache.delete(f"verified_email:{email}")
+
+        # Create role profile
         role = user.role
         if role == "teacher":
             TeacherProfile.objects.create(user=user)
@@ -52,7 +57,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             StudentProfile.objects.create(user=user)
         elif role == "parent":
             ParentProfile.objects.create(user=user)
-
 
         return user
 
