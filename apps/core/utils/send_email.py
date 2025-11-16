@@ -49,3 +49,4 @@ def send_email(to_email, subject, text_body=None, html_body=None, context=None, 
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}", exc_info=True)
         raise e
+ 

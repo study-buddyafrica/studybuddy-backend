@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 from datetime import timedelta
+import random
 import uuid
 
 class Core(models.Model):
@@ -69,8 +70,25 @@ class EmailVerificationCode(Core):
     )
     code = models.CharField(max_length=6, db_index=True
     )
-    email = models.EmailField(null=True, blank=True)
+    email = models.EmailField(null=True, blank=True,db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["email"]),
+        ]
+
+    @classmethod
+    def create_for_email(cls, email: str, user: User | None = None) -> "EmailVerificationCode":
+        """Create and return a new code record for given email (user optional)."""
+        code = cls.generate_code()
+        # delete existing unused codes for that email (cleanup)
+        cls.objects.filter(email=email, user__isnull=True).delete()
+        return cls.objects.create(email=email, code=code, user=user)
     
+    @staticmethod
+    def generate_code():
+        """Generate a random 6-digit numeric code."""
+        return f"{random.randint(100000, 999999)}"
 
     def is_expired(self):
         return timezone.now() > self.created_at + timedelta(minutes=2)  

@@ -1,6 +1,5 @@
 from django.db import transaction
 from rest_framework import serializers
-from django.core.cache import cache
 
 from apps.core.models import User
 from apps.core.auth.serializers.email_verification_serializer import EmailVerificationCode
@@ -20,10 +19,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_email(self, value):
-        """Ensure email is unique."""
-        if User.objects.filter(email=value).exists():
+        email = value.lower().strip()
+        if User.objects.filter(email=email).exists():
             raise serializers.ValidationError("A user with this email already exists.")
-        return value
+
+        # Check email has been verified in DB
+        verified = EmailVerificationCode.objects.filter(email=email, user__isnull=True).filter(verified_at__isnull=False).exists()
+        if not verified:
+            raise serializers.ValidationError("Please verify your email before completing registration.")
 
     def validate(self, data):
         """General validation for user registration."""
@@ -38,18 +41,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         validated_data.pop("confirm_password", None)
-        email = validated_data["email"]
+        email = validated_data["email"].lower().strip()
 
+        # Create user
         user = User.objects.create_user(**validated_data)
         user.account_confirmed = True
         user.save(update_fields=["account_confirmed"])
 
-        # Attach existing verification codes to this new user
+        # Attach verification records to the user
         EmailVerificationCode.objects.filter(email=email, user__isnull=True).update(user=user)
 
-        cache.delete(f"verified_email:{email}")
-
-        # Create role profile
+        # Create profile for role
         role = user.role
         if role == "teacher":
             TeacherProfile.objects.create(user=user)

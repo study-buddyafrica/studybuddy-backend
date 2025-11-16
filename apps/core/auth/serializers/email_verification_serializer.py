@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from django.utils import timezone
-from django.core.cache import cache
 
-from apps.core.utils.email_verification import send_verification_email
+from apps.core.utils.email_verification import send_verification_email_to_address   
 from apps.core.models import EmailVerificationCode, User
+
 
 class PreRegisterEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -14,37 +14,45 @@ class PreRegisterEmailSerializer(serializers.Serializer):
         return value
 
     def save(self):
-        email = self.validated_data["email"]
+        email = self.validated_data["email"].lower().strip()
 
+        # Delete old pending codes for this email
         EmailVerificationCode.objects.filter(email=email, user__isnull=True).delete()
 
-        code = EmailVerificationCode.generate_code()
+        # Create new verification code
+        record = EmailVerificationCode.create_for_email(email=email, user=None)
 
-        EmailVerificationCode.objects.create(email=email, code=code)
-
-        send_verification_email(email, code)
+        # Send email
+        send_verification_email_to_address(email, record.code)
 
         return {"message": "Verification code sent."}
 
 
-class PreRegistrationVerifySerializer(serializers.Serializer):
+class VerifyPreRegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
 
     def validate(self, attrs):
-        email = attrs["email"]
-        code = attrs["code"]
+        email = attrs["email"].lower().strip()
+        code = attrs["code"].strip()
 
         try:
-            record = EmailVerificationCode.objects.filter(
-                email=email, code=code, user__isnull=True
-            ).latest("created_at")
+            record = (
+                EmailVerificationCode.objects
+                .filter(email=email, user__isnull=True)
+                .latest("created_at")
+            )
         except EmailVerificationCode.DoesNotExist:
-            raise serializers.ValidationError("Invalid or expired code.")
+            raise serializers.ValidationError("Invalid or expired verification code.")
 
+        # expired?
         if record.is_expired():
             record.delete()
-            raise serializers.ValidationError("Code expired.")
+            raise serializers.ValidationError("Verification code has expired.")
+
+        # wrong code?
+        if record.code != code:
+            raise serializers.ValidationError("Invalid verification code.")
 
         attrs["record"] = record
         return attrs
@@ -52,6 +60,8 @@ class PreRegistrationVerifySerializer(serializers.Serializer):
     def save(self):
         record = self.validated_data["record"]
 
-        cache.set(f"verified_email:{record.email}", True, timeout=600)
+        # Mark record as "verified" by attaching a timestamp
+        record.verified_at = timezone.now()
+        record.save(update_fields=["verified_at"])
 
         return {"message": "Email verified successfully."}
