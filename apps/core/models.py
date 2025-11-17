@@ -95,6 +95,10 @@ class EmailVerificationCode(Core):
         blank=True,
         db_index=True
     )
+    verified_at = models.DateTimeField(
+        null=True, 
+        blank=True
+    )
 
     class Meta:
         indexes = [

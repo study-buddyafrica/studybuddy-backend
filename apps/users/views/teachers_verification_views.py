@@ -73,8 +73,7 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # ✅ Approve if all required info is complete
+        
         teacher.is_verified = True
         teacher.user.is_verified = True
         teacher.user.save()

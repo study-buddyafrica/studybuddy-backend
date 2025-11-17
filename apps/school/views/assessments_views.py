@@ -15,7 +15,11 @@ class RevisionMaterialCreateListView(generics.ListCreateAPIView):
     """
     serializer_class = RevisionMaterialSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsTeacherOrAdmin]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsVerified, 
+        IsTeacherOrAdmin
+    ]
 
     def get_queryset(self):
         user = self.request.user
@@ -40,7 +44,11 @@ class AssessmentCreateListView(generics.ListCreateAPIView):
     """
     serializer_class = AssessmentSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsVerified, IsTeacherOrAdmin]
+    permission_classes = [
+        permissions.IsAuthenticated, 
+        IsVerified,
+        IsTeacherOrAdmin
+    ]
 
     def get_queryset(self):
         user = self.request.user
@@ -65,7 +73,11 @@ class AssessmentRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     Supports nested update of questions and choices.
     """
     serializer_class = AssessmentSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVerified, IsTeacherOrAdmin]
+    permission_classes = [
+        permissions.IsAuthenticated, 
+        IsVerified, 
+        IsTeacherOrAdmin
+    ]
     lookup_field = "id"
 
     def get_queryset(self):

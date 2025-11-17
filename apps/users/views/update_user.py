@@ -10,7 +10,7 @@ from apps.core.models import User
 class UserUpdateView(generics.UpdateAPIView):
     """Update user details — superuser can update any, user can only update self"""
     serializer_class = UserUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,IsVerified]
     lookup_field = "pk"
 
     def get_object(self):
