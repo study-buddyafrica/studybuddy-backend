@@ -13,7 +13,8 @@ class Wallet(Core):
         ("teacher", "Teacher"),
         ("system", "System"),
     ]
-
+    is_active = models.BooleanField(default=True)
+    failed_withdraw_attempts = models.IntegerField(default=0)
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -44,9 +45,6 @@ class Wallet(Core):
         choices=ACCOUNT_TYPE_CHOICES
     )
 
-    is_active = models.BooleanField(default=True)
-    failed_withdraw_attempts = models.IntegerField(default=0)
-
     class Meta:
         db_table = "wallets"
         ordering = ["-created_at"]
@@ -60,15 +58,25 @@ class Wallet(Core):
         return f"{owner} - {self.account_type} ({self.balance})"
     
     def clean(self):
-        """Enforce only one system wallet, must belong to superuser, and cannot be recreated."""
+        """Enforce only one system wallet, 
+        must belong to superuser, 
+        and cannot be recreated.
+        
+        """
         if self.account_type == "system":
             if self.user is None or not self.user.is_superuser:
-                raise ValidationError("System wallet must be linked to a superuser.")
+                raise ValidationError(
+                    "System wallet must be " \
+                    "linked to a superuser."
+                )
             if Wallet.objects.filter(account_type="system").exclude(id=self.id).exists():
                 raise ValidationError("Only one system wallet is allowed.")
         else:
             if not self.user:
-                raise ValidationError(f"{self.account_type.capitalize()} wallet must be linked to a user.")
+                raise ValidationError(
+                    f"{self.account_type.capitalize()} \
+                    wallet must be linked to a user."
+                )
 
     def save(self, *args, **kwargs):
         self.full_clean()  
@@ -244,28 +252,22 @@ class PaymentWebhookLog(Core):
     )
 
     payload = models.JSONField()
-
     received_at = models.DateTimeField(auto_now_add=True)
-
     processed = models.BooleanField(default=False)
-
     status_code = models.IntegerField(
         null=True,
         blank=True,
     )
-
     event_type = models.CharField(
         max_length=100,
         null=True,
         blank=True,
     )
-
     remarks = models.CharField(
         max_length=255,
         null=True,
         blank=True,
     )
-
     response_data = models.JSONField(
         null=True,
         blank=True,

@@ -22,27 +22,19 @@ class WithdrawAPIView(APIView):
             return Response({
                 "success": True,
                 "message": "Withdrawal initiated successfully",
-
-                # Core TX IDs
                 "transaction_id": str(tx.id),
                 "withdrawal_id": tx.transaction_identifier,
                 "status": tx.status,
-
-                # User values
                 "requested_amount": float(data.get("initial_amount", 0)),
                 "system_cut": float(data.get("system_cut", 0)),
                 "intasend_fee": float(data.get("intasend_fee", 0)),
                 "payout_amount": float(data.get("payout_amount", 0)),
-
-                # For internal accounting / optional for UI
                 "total_system_wallet_credit": float(
                     data.get("system_cut", 0) + data.get("intasend_fee", 0)
                 ),
                 "intasend_total_deduction": float(
                     data.get("payout_amount", 0) + data.get("intasend_fee", 0)
                 ),
-
-                # Raw IntaSend response (optional)
                 "payout_response": data.get("payout_response", {}),
             }, status=status.HTTP_200_OK)
 
@@ -54,18 +46,3 @@ class WithdrawAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TestB2CPayoutView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        """Test B2C payout with current user"""
-        result = WithdrawalService.test_b2c_payout(request.user)
-        return Response(result)
-
-class CheckIntaSendBalanceView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        """Check IntaSend account balance"""
-        result = WithdrawalService.check_intasend_balance()
-        return Response(result)

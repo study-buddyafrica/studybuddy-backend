@@ -12,7 +12,11 @@ import uuid
 
 
 class StudentJoinLiveSessionView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsStudent]
+    permission_classes = [
+        permissions.IsAuthenticated, 
+        IsStudent,
+        IsVerified,
+        ]
 
     def post(self, request, session_booking_id):
         user = request.user

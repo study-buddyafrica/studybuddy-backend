@@ -3,7 +3,6 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url 
-from intasend import APIService
 
 load_dotenv()
 
@@ -209,7 +208,6 @@ USE_I18N = True
 USE_TZ = True
 
 
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = '/media/'
@@ -219,15 +217,11 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
-if os.getenv('RAILWAY_ENVIRONMENT'):
-    MEDIA_ROOT = '/app/media'
-
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL ='core.User'
-
 
 # Email configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

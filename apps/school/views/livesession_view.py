@@ -68,7 +68,7 @@ class LiveSessionListView(generics.ListAPIView):
       - Students: sees sessions they booked
     """
     serializer_class = LiveSessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated,IsVerified]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):

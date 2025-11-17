@@ -23,10 +23,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError("A user with this email already exists.")
 
-        # Check email has been verified in DB
-        verified = EmailVerificationCode.objects.filter(email=email, user__isnull=True).filter(verified_at__isnull=False).exists()
+        verified = EmailVerificationCode.objects.filter(
+            email=email, 
+            user__isnull=True
+        ).filter(verified_at__isnull=False).exists()
         if not verified:
-            raise serializers.ValidationError("Please verify your email before completing registration.")
+            raise serializers.ValidationError(
+                "Please verify your email before " \
+                "completing registration."
+            )
+        
+        return email
 
     def validate(self, data):
         """General validation for user registration."""
@@ -42,16 +49,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("confirm_password", None)
         email = validated_data["email"].lower().strip()
-
-        # Create user
         user = User.objects.create_user(**validated_data)
         user.account_confirmed = True
         user.save(update_fields=["account_confirmed"])
+        EmailVerificationCode.objects.filter(
+            email=email, 
+            user__isnull=True
+        ).update(user=user)
 
-        # Attach verification records to the user
-        EmailVerificationCode.objects.filter(email=email, user__isnull=True).update(user=user)
-
-        # Create profile for role
         role = user.role
         if role == "teacher":
             TeacherProfile.objects.create(user=user)
