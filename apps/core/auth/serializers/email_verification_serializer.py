@@ -15,16 +15,9 @@ class PreRegisterEmailSerializer(serializers.Serializer):
 
     def save(self):
         email = self.validated_data["email"].lower().strip()
-
-        # Delete old pending codes for this email
         EmailVerificationCode.objects.filter(email=email, user__isnull=True).delete()
-
-        # Create new verification code
         record = EmailVerificationCode.create_for_email(email=email, user=None)
-
-        # Send email
         send_verification_email_to_address(email, record.code)
-
         return {"message": "Verification code sent."}
 
 
@@ -45,12 +38,10 @@ class VerifyPreRegistrationSerializer(serializers.Serializer):
         except EmailVerificationCode.DoesNotExist:
             raise serializers.ValidationError("Invalid or expired verification code.")
 
-        # expired?
         if record.is_expired():
             record.delete()
             raise serializers.ValidationError("Verification code has expired.")
 
-        # wrong code?
         if record.code != code:
             raise serializers.ValidationError("Invalid verification code.")
 
@@ -59,8 +50,6 @@ class VerifyPreRegistrationSerializer(serializers.Serializer):
 
     def save(self):
         record = self.validated_data["record"]
-
-        # Mark record as "verified" by attaching a timestamp
         record.verified_at = timezone.now()
         record.save(update_fields=["verified_at"])
 
