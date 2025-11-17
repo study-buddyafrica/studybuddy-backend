@@ -22,7 +22,7 @@ class CourseCreateListView(generics.ListCreateAPIView):
     """
 
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsVerified, IsTeacherOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsTeacherOrAdmin]
 
     def get_queryset(self):
         user = self.request.user
@@ -50,7 +50,7 @@ class TopicCreateListView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
     permission_classes = [
         permissions.IsAuthenticated,
-        IsVerified,IsTeacherOrAdmin
+        IsTeacherOrAdmin
     ]
 
     def get_queryset(self):
@@ -67,7 +67,7 @@ class SubtopicCreateListView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
     permission_classes = [
         permissions.IsAuthenticated,
-        IsVerified,IsTeacherOrAdmin
+        IsTeacherOrAdmin
     ]
 
     def get_queryset(self):

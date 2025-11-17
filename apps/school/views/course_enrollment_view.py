@@ -16,7 +16,7 @@ class CourseEnrollmentView(generics.ListCreateAPIView):
     """
     serializer_class = CourseEnrollmentSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsVerified]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user

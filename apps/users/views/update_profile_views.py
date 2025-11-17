@@ -16,7 +16,7 @@ class TeacherProfileUpdateView(generics.RetrieveUpdateAPIView):
     Allows logged-in teacher to view or update their own profile.
     """
     serializer_class = TeacherProfileUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated,IsVerified]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
         try:
@@ -33,7 +33,7 @@ class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     """
     queryset = StudentProfile.objects.select_related("user", "grade", "school").prefetch_related("subjects")
     serializer_class = StudentProfileUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated, CanEditStudentProfile, IsVerified]
+    permission_classes = [permissions.IsAuthenticated, CanEditStudentProfile]
     lookup_field = "id"  
 
     def get_queryset(self):
@@ -54,7 +54,7 @@ class ParentProfileUpdateView(generics.RetrieveUpdateAPIView):
     """
     queryset = ParentProfile.objects.select_related("user").prefetch_related("children")
     serializer_class = ParentProfileUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated, CanEditParentProfile, IsVerified]
+    permission_classes = [permissions.IsAuthenticated, CanEditParentProfile]
     lookup_field = "id"
 
     def get_queryset(self):

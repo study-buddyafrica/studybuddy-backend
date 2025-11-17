@@ -23,7 +23,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
     - Marking attendance (teacher payout)
     """
     serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated,IsVerified]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return SessionBooking.objects.select_related("student__user", "teacher__user")
@@ -282,7 +282,7 @@ class SessionBookingListView(generics.ListAPIView):
       - Students: sees sessions they booked
     """
     serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated,IsVerified]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):

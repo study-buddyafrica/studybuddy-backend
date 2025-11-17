@@ -15,7 +15,7 @@ class RevisionMaterialCreateListView(generics.ListCreateAPIView):
     """
     serializer_class = RevisionMaterialSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated, IsVerified, IsTeacherOrAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsTeacherOrAdmin]
 
     def get_queryset(self):
         user = self.request.user
