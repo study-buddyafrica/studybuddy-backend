@@ -55,7 +55,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         EmailVerificationCode.objects.filter(
             email=email, 
             user__isnull=True
-        ).update(user=user)
+        ).delete(user=user)
 
         role = user.role
         if role == "teacher":
