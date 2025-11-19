@@ -1,9 +1,15 @@
-from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from django.utils import timezone
-from datetime import timedelta
 import random
 import uuid
+from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+from apps.core.utils.countries import AfricanCountry
+from django.contrib.auth.models import (
+    AbstractBaseUser, 
+    PermissionsMixin, 
+    BaseUserManager
+)
+
 
 class Core(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -59,6 +65,11 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
         choices=ROLE_CHOICES, 
         null=True, 
         blank=True
+    )
+    country = models.CharField(
+        max_length=50,
+        choices=AfricanCountry.choices,
+        default=AfricanCountry.KENYA
     )
    
     objects = UserManager()
