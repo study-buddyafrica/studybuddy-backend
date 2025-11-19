@@ -81,8 +81,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.studybuddy.africa',
 ]
 
-
-"""# swagger settings"""
+""" swagger settings"""
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {

@@ -5,7 +5,6 @@ from djmoney.models.fields import MoneyField
 
 from apps.core.models import Core
 
-
 class School(Core):
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=50)
