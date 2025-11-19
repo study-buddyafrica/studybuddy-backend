@@ -69,7 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
     country = models.CharField(
         max_length=50,
         choices=AfricanCountry.choices,
-        # default=AfricanCountry.KENYA
+        # default=AfricanCountry.KENYA  we will use it later
         null=True,
         blank=True
     )
