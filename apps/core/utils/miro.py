@@ -109,7 +109,7 @@ class MiroAPI:
             raise RuntimeError(f"Failed to share Miro board: {error_text}") from e
 
 
-# ---------------------- Example Usage ---------------------- #
+
 if __name__ == "__main__":
     miro = MiroAPI()  
 
