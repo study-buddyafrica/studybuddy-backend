@@ -139,4 +139,4 @@ class EmailVerificationCode(Core):
         return timezone.now() > self.created_at + timedelta(minutes=2)  
 
     def __str__(self):
-        return f"{self.user.email} - {self.code}"
+        return f"{self.email} - {self.code}"
