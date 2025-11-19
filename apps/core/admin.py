@@ -8,7 +8,8 @@ class CustomUserAdmin(UserAdmin):
     list_display = (
         'account_confirmed',
         'email', 'first_name', 
-        'last_name', 'role', 
+        'last_name', 'role',
+        'country', 
         'is_staff', 'is_active', 
         'created_at'
     )
