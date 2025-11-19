@@ -16,7 +16,7 @@ class CustomUserAdmin(UserAdmin):
     list_filter = (
         'role', 'is_staff', 
         'is_active', 'created_at',
-        'account_confirmed'
+        'account_confirmed',
         'country'
     )
     
