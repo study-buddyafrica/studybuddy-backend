@@ -15,7 +15,8 @@ class TeacherProfileListSerializer(serializers.ModelSerializer):
             "bio",
             "hourly_rate",
             "subjects",
-            "is_verified",
+            "is_verified", 'profile_picture'
+            'grade', 'experience'
         ]
 
     def get_full_name(self, obj):
