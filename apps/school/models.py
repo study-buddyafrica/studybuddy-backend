@@ -4,6 +4,7 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 
 from apps.core.models import Core
+from apps.core.utils.countries import AfricanCountry
 
 class School(Core):
     name = models.CharField(max_length=100)
@@ -130,6 +131,12 @@ class Course(Core):
     is_active = models.BooleanField(default=True)
     code = models.CharField(max_length=30, unique=True, null=True, blank=True)
     cover_image = models.ImageField(blank=True, null=True)
+    is_universal = models.BooleanField(default=False)
+    country = models.CharField(
+        max_length=50,
+        choices=AfricanCountry.choices,
+        default=AfricanCountry.KENYA,
+    )
     teacher = models.ForeignKey(
         'users.TeacherProfile',
         on_delete=models.CASCADE,
