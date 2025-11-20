@@ -10,12 +10,10 @@ class TeacherProfileListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfile
         fields = [
-            "id",
-            "full_name",
-            "bio",
-            "hourly_rate",
-            "subjects",
-            "is_verified", 'profile_picture'
+            "id","full_name",
+            "bio","hourly_rate",
+            "subjects","is_verified", 
+            'profile_picture',
             'grade', 'experience'
         ]
 
