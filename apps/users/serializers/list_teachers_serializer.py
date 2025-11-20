@@ -6,6 +6,7 @@ class TeacherProfileListSerializer(serializers.ModelSerializer):
     """Optimized serializer for listing teachers"""
     full_name = serializers.SerializerMethodField()
     subjects = serializers.StringRelatedField(many=True)
+    grade = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherProfile
@@ -20,3 +21,7 @@ class TeacherProfileListSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj):
         user = getattr(obj, "user", None)
         return f"{user.first_name} {user.last_name}".strip() if user else None
+    
+    def get_grade(self, obj):
+        grades = obj.grade.all() 
+        return [g.level for g in grades] if grades.exists() else None
