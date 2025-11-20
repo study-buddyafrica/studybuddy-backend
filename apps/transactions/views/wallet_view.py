@@ -3,8 +3,15 @@ from rest_framework.permissions import IsAuthenticated
 from apps.transactions  .models import Wallet
 from apps.transactions.serializers.wallet_serializer import WalletSerializer
 
-
 class WalletViewSet(viewsets.ModelViewSet):
     permission_classes =[IsAuthenticated]
     serializer_class = WalletSerializer
     queryset = Wallet.objects.all()
+
+    def get_queryset(self):
+        return (
+            Wallet.objects.all() 
+            if self.request.user.is_superuser 
+            else 
+            Wallet.objects.filter(user=self.request.user)
+        )

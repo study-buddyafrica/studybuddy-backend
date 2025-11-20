@@ -5,15 +5,8 @@ from djmoney.money import Money
 from apps.users.models import User
 from apps.transactions.models import Wallet 
 
-
 @receiver(post_save, sender=User)
 def create_user_wallet(sender, instance, created, **kwargs):
-    """
-    Automatically create a wallet when a new user is registered.
-    - Superusers → system wallet
-    - Teachers → teacher wallet
-    - Others → student wallet
-    """
     if not created:
         return
 
@@ -22,8 +15,10 @@ def create_user_wallet(sender, instance, created, **kwargs):
 
     if instance.is_superuser:
         account_type = "system"
-    elif hasattr(instance, "teacher_profile"):
+    elif instance.role == "teacher":
         account_type = "teacher"
+    elif instance.role == "parent":
+        account_type = "parent"
     else:
         account_type = "student"
 
