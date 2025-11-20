@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 
-from apps.core.utils.email_verification import send_verification_email_to_address   
+from apps.core.utils.send_email_verification_code import send_verification_email_to_address   
 from apps.core.models import EmailVerificationCode, User
 
 

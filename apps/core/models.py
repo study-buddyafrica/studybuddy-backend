@@ -139,3 +139,19 @@ class EmailVerificationCode(Core):
 
     def __str__(self):
         return f"{self.email} - {self.code}"
+    
+
+class ResetPasswordCode(Core):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    verified = models.BooleanField(default=False)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["email"]),
+            models.Index(fields=["code"]),
+        ]
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timezone.timedelta(minutes=5)

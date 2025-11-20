@@ -5,7 +5,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def send_email(to_email, subject, text_body=None, html_body=None, context=None, template_name=None):
+def send_email(
+        to_email, subject, 
+        text_body=None, 
+        html_body=None, 
+        context=None, 
+        template_name=None
+    ):
     """
     Send email using Django's EmailMultiAlternatives.
     Supports plain text, HTML, and template-based rendering.
