@@ -6,7 +6,12 @@ from apps.transactions.models import Wallet
 class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
-        fields = '__all__'
+        fields = [
+            'is_active', 
+            'balance_currency', 
+            'account_type',
+            'balance'
+        ]
 
     def validate(self, attrs):
         account_type = attrs.get("account_type")
