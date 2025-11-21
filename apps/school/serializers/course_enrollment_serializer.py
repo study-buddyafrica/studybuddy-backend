@@ -14,20 +14,14 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseEnrollment
         fields = [
-            "id",
-            "course",
-            "course_title",
-            "student",
-            "purchased_at",
-            "is_active",
-            "transaction",
+            "id","course","course_title",
+            "student","purchased_at",
+            "is_active","transaction",
             "amount_paid",
         ]
         read_only_fields = [
-            "purchased_at",
-            "transaction",
-            "is_active",
-            "amount_paid",
+            "purchased_at","transaction",
+            "is_active","amount_paid",
             "student",
         ]
 
@@ -37,8 +31,9 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
         course = attrs.get("course")
 
         if not student:
-            raise serializers.ValidationError("Only students can enroll in courses.")
-
+            raise serializers.ValidationError(
+                "Only students can enroll in courses."
+            )
 
         if CourseEnrollment.objects.filter(course=course, student=student).exists():
             raise serializers.ValidationError("You are already enrolled in this course.")

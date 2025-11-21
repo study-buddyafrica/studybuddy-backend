@@ -18,13 +18,15 @@ class CourseCreateListView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == "POST":
             return [
-                permissions.IsAuthenticated(), 
-                IsTeacherOrAdmin(),IsVerified()
+                permissions.IsAuthenticated(),
+                IsTeacherOrAdmin(),
+                IsVerified(),
             ]
         return [permissions.AllowAny()]
 
     def get_queryset(self):
         user = self.request.user
+
         qs = Course.objects.select_related(
             "subject", "grade", "teacher__user"
         ).prefetch_related("topics__subtopics")
@@ -36,7 +38,16 @@ class CourseCreateListView(generics.ListCreateAPIView):
             return qs.order_by("title")
 
         if hasattr(user, "teacher_profile"):
-            return qs.filter(teacher=user.teacher_profile).order_by("title")
+            return qs.filter(
+                teacher=user.teacher_profile
+            ).order_by("title")
+        
+        if hasattr(user, "student_profile"):
+            student_country = user.country
+            return qs.filter(
+                Q(is_universal=True) |
+                Q(country=student_country)
+            ).order_by("title")
 
         return qs.order_by("title")
 
@@ -45,7 +56,7 @@ class CourseCreateListView(generics.ListCreateAPIView):
 
         if self.request.method == "POST":
             return CourseSerializer
-        
+
         if not user.is_authenticated:
             return CoursePublicSerializer
 
@@ -59,6 +70,7 @@ class CourseCreateListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
+
         if hasattr(user, "teacher_profile") and not user.is_staff:
             serializer.save(teacher=user.teacher_profile)
         else:
