@@ -7,36 +7,20 @@ from apps.school.models import (
     Course, Topic,Subtopic
 )      
 from apps.school.serializers.course_registration_serializer import (
-    CourseSerializer, TopicSerializer,
+    CourseSerializer, TopicSerializer,CoursePublicSerializer,
     SubtopicSerializer, CourseNestedSerializer
 )
 
 class CourseCreateListView(generics.ListCreateAPIView):
-    """
-    Visibility Rules:
-    - Public (unauthenticated): List all courses
-    - Students: List all courses
-    - Teachers: List only their own courses
-    - Admin: List all courses
-
-    Create Rules:
-    - Only Teachers & Admins can create courses
-    """
-
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.AllowAny]
 
     def get_permissions(self):
-        """
-        - LIST: allowed to everyone (even unauthenticated)
-        - CREATE: must be authenticated + IsTeacherOrAdmin
-        """
         if self.request.method == "POST":
             return [
                 permissions.IsAuthenticated(), 
-                IsTeacherOrAdmin(),
-                IsVerified(),
-                ]
+                IsTeacherOrAdmin(),IsVerified()
+            ]
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -57,17 +41,27 @@ class CourseCreateListView(generics.ListCreateAPIView):
         return qs.order_by("title")
 
     def get_serializer_class(self):
+        user = self.request.user
+
         if self.request.method == "POST":
             return CourseSerializer
-        return CourseNestedSerializer
+        
+        if not user.is_authenticated:
+            return CoursePublicSerializer
+
+        if user.is_staff:
+            return CourseNestedSerializer
+
+        if hasattr(user, "teacher_profile"):
+            return CourseNestedSerializer
+
+        return CoursePublicSerializer
 
     def perform_create(self, serializer):
         user = self.request.user
-
         if hasattr(user, "teacher_profile") and not user.is_staff:
             serializer.save(teacher=user.teacher_profile)
         else:
-    
             serializer.save()
 
 
