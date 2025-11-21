@@ -6,36 +6,39 @@ from apps.school.models import (
     Topic, Subtopic
     )
 
-
 class CourseSerializer(serializers.ModelSerializer):
-    """Serializer for creating and viewing teacher/admin courses."""
-
-    subject_name = serializers.CharField(source="subject.name", read_only=True)
-    grade_name = serializers.CharField(source="grade.name", read_only=True)
-    teacher_name = serializers.CharField(source="teacher.user.get_full_name", read_only=True)
-
-    price = MoneyField(max_digits=10, decimal_places=2, default_currency="KES")
+    subject_name = serializers.CharField(
+        source="subject.name", 
+        read_only=True
+    )
+    grade_name = serializers.CharField(
+        source="grade.name", 
+        read_only=True
+    )
+    teacher_name = serializers.CharField(
+        source="teacher.user.get_full_name", 
+        read_only=True
+    )
+    price = MoneyField(
+        max_digits=10, 
+        decimal_places=2,
+        default_currency="KES"
+    )
 
     class Meta:
         model = Course
         fields = [
-            "id",
-            "title",
-            "description",
-            "subject",
-            "subject_name",
-            "grade",
-            "grade_name",
-            "price",
-            "is_active",
-            "code",
-            "cover_image",
-            "teacher",
-            "teacher_name",
-            "created_at",
-            "updated_at",
+            "id","title","description",
+            "subject","subject_name",
+            "grade","grade_name","price",
+            "is_active","code","cover_image",
+            "teacher","teacher_name","created_at",
+            "updated_at",'country', 'is_universal',
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "teacher_name"]
+        read_only_fields = [
+            "id", "created_at", 
+            "updated_at", "teacher_name"
+        ]
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -43,14 +46,38 @@ class CourseSerializer(serializers.ModelSerializer):
 
         if hasattr(user, "teacher_profile") and not user.is_staff:
             if "teacher" in attrs and attrs["teacher"] != user.teacher_profile:
-                raise serializers.ValidationError("You can only create courses under your own profile.")
+                raise serializers.ValidationError(
+                    "You can only create courses" \
+                    " under your own profile."
+                )
             attrs["teacher"] = user.teacher_profile
 
         if user.is_staff and not attrs.get("teacher"):
-            raise serializers.ValidationError("Admin must assign a teacher when creating a course.")
+            raise serializers.ValidationError(
+                "Admin must assign a teacher" \
+                " when creating a course."
+            )
 
         if not attrs.get("subject"):
             raise serializers.ValidationError("Subject is required.")
+
+        is_universal = attrs.get("is_universal", False)
+        country = attrs.get("country")
+
+        if is_universal:
+            if country:
+                raise serializers.ValidationError({
+                    "country": "Universal courses "
+                    "must not include a country."
+                })
+            attrs["country"] = None
+
+        else:
+            if not country:
+                raise serializers.ValidationError({
+                    "country": "Country is required "
+                    "for non-universal courses."
+                })
 
         return attrs
 
@@ -58,13 +85,20 @@ class CourseSerializer(serializers.ModelSerializer):
 class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
-        fields = ["id", "course", "title", "description","content_file", "order"]
+        fields = [
+            "id", "course", ""
+            "title", "description",
+            "content_file", "order"
+        ]
 
     def validate_course(self, value):
         user = self.context["request"].user
         if hasattr(user, "teacher_profile") and not user.is_staff:
             if value.teacher != user.teacher_profile:
-                raise serializers.ValidationError("You cannot add topics to a course you don't own.")
+                raise serializers.ValidationError(
+                    "You cannot add topics " \
+                    "to a course you don't own."
+                )
         return value
     
     def get_content_file_url(self, obj):

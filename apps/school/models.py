@@ -145,6 +145,18 @@ class Course(Core):
         blank=True,
     )
 
+    def save(self, *args, **kwargs):
+        if self.is_universal:
+            self.country = None
+        else:
+            if not self.country:
+                raise ValueError(
+                    "Country is required for " \
+                    "non-universal courses."
+                )
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.title} \
             ({self.grade or \
