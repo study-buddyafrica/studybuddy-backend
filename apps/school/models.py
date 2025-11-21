@@ -135,7 +135,7 @@ class Course(Core):
     country = models.CharField(
         max_length=50,
         choices=AfricanCountry.choices,
-        default=AfricanCountry.KENYA,
+        null=True,blank=True
     )
     teacher = models.ForeignKey(
         'users.TeacherProfile',
