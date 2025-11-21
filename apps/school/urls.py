@@ -1,7 +1,6 @@
 from django.urls import path
 
 from apps.school.views.school_view import SchoolListCreateView
-from apps.school.views.course_enrollment_view import CourseEnrollmentView
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.course_registration_view import (
     CourseCreateListView,TopicCreateListView,
@@ -19,6 +18,9 @@ from apps.school.views.assessments_views import (
     AssessmentCreateListView,
     RevisionMaterialCreateListView,
     AssessmentRetrieveUpdateView
+)
+from apps.school.views.course_enrollment_view import (
+    CourseEnrollmentView, ListEnrolledCourseView
 )
 
 urlpatterns = [
@@ -101,5 +103,10 @@ urlpatterns = [
         "courses/enrollments/", 
         CourseEnrollmentView.as_view(), 
         name="course-enrollments"
+    ),
+    path(
+        "student/enrolled/courses/",
+        ListEnrolledCourseView.as_view(),
+        name='enrolled-courses'
     ),
 ]

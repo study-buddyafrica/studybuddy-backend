@@ -8,7 +8,11 @@ from .models import (
 class ParentProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'get_email')
     list_filter = ('user__is_active',)
-    search_fields = ('user__email', 'user__first_name', 'user__last_name')
+    search_fields = (
+        'user__email', 
+        'user__first_name', 
+        'user__last_name'
+    )
     readonly_fields = ('get_children',)
     
     def get_email(self, obj):
@@ -26,16 +30,35 @@ class ParentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(TeacherProfile)
 class TeacherProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'get_email', 'tsc_number', 'hourly_rate', "is_verified",'tsc_number_certificate','experience')
     list_filter = ('user__is_active',)
-    search_fields = ('user__email', 'user__first_name', 'user__last_name', 'tsc_number')
     readonly_fields = ('get_email', 'get_subjects')
+    list_display = (
+        'user', 'get_email', 
+        'teacher_license_number', 
+        'hourly_rate', "is_verified",
+        'experience'
+    )
+    search_fields = (
+        'user__email', 'user__first_name', 
+        'user__last_name', 'teacher_license_number'
+    )
     fieldsets = (
         ('User Information', {
-            'fields': ('user', 'get_email','id_number','gender','birth_date','profile_picture')
+            'fields': (
+                'user', 'get_email',
+                'id_number','gender',
+                'birth_date','profile_picture'
+            )
         }),
         ('Professional Information', {
-            'fields': ('tsc_number', 'academic_certificate', 'bio', 'phone', 'hourly_rate',"is_verified",'tsc_number_certificate','experience','grade', 'subjects')
+            'fields': (
+                'teacher_license_number', 
+                'academic_certificate', 
+                'bio', 'phone', 'hourly_rate',
+                "is_verified",'grade','subjects',
+                'teacher_license_number_certificate',
+                'experience', 
+            )
         }),
     
     )

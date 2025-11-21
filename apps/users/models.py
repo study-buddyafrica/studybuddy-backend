@@ -10,6 +10,7 @@ def certificate_upload_path(instance, filename):
     new_filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join("certificates", new_filename)
 
+
 def validate_pdf(value):
     if not value.name.lower().endswith('.pdf'):
         raise ValidationError("Only PDF files are allowed.")
@@ -50,7 +51,17 @@ class ParentProfile(models.Model):
     profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
-    id_number = models.CharField(max_length=15, null=True, blank=True)
+    national_identity_number = models.CharField(
+        max_length=15, 
+        null=True, 
+        blank=True,
+        help_text="National Identity Number",
+    )
+    national_identity_card = models.FileField(
+        upload_to="identity_cards/",
+        null=True, blank=True,
+        help_text = "National Identity card "
+    )
 
     def __str__(self):
         return f"Parent: {self.user.first_name}"
@@ -63,14 +74,14 @@ class TeacherProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="teacher_profile",
     )
-    tsc_number = models.CharField(
+    teacher_license_number = models.CharField(
         max_length=50, 
         unique=True,
         null=True, 
         blank=True, 
         db_index=True,
     )
-    tsc_number_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
+    teacher_license_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
     academic_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     phone = models.CharField(max_length=50, null=True, blank=True)
@@ -84,12 +95,16 @@ class TeacherProfile(models.Model):
     google_refresh_token = models.TextField(null=True, blank=True)
     google_token_expiry = models.DateTimeField(null=True, blank=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
-    id_number = models.CharField(
+    national_identity_number = models.CharField(
         max_length=15, 
         null=True, 
         blank=True,
         help_text="National Identity Number",
-        )
+    )
+    national_identity_card = models.FileField(
+        upload_to="identity_cards/",
+        null=True, blank=True
+    )
     subjects = models.ManyToManyField(
         "school.Subject",
         related_name="teacher_profiles" 

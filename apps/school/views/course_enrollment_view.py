@@ -40,3 +40,25 @@ class CourseEnrollmentView(generics.ListCreateAPIView):
 
         serializer.context["request"] = self.request
         serializer.save(student=user.student_profile)
+
+class ListEnrolledCourseView(generics.ListAPIView):
+    serializer_class = CourseEnrollmentSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        qs = CourseEnrollment.objects.select_related(
+            "student__user",
+            "course__subject",
+            "course__grade",
+            "course__teacher__user",
+        ).prefetch_related(
+            "course__topics__subtopics"
+        ).distinct()
+
+        if user.is_staff:
+            return qs.order_by("course__title")
+
+        return qs.filter(student=user.student_profile).order_by("course__title")

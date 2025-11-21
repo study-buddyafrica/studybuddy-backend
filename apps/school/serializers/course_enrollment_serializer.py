@@ -1,23 +1,39 @@
+import uuid
 from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
-import uuid
 
-from apps.school.models import CourseEnrollment, Course
+from apps.school.models import CourseEnrollment
 from apps.transactions.models import Transaction,Wallet
+from apps.school.serializers.course_registration_serializer import(
+    CourseNestedSerializer
+)
 
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
-    course_title = serializers.CharField(source="course.title", read_only=True)
     student = serializers.StringRelatedField(read_only=True)
-    amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-
+    course = CourseNestedSerializer(read_only=True)
+    course_title = serializers.CharField(
+        source="course.title", 
+        read_only=True
+    )
+    amount_paid = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        read_only=True
+    )
+    description =serializers.CharField(
+        source='course.description',
+        read_only=True
+    )
+    
+    
     class Meta:
         model = CourseEnrollment
         fields = [
-            "id","course","course_title",
+            "id","course_title",'course',
             "student","purchased_at",
-            "is_active","transaction",
-            "amount_paid",
+            "description","is_active",
+            "transaction","amount_paid",
         ]
         read_only_fields = [
             "purchased_at","transaction",
@@ -51,7 +67,8 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
         attrs["student_wallet"] = student_wallet
         attrs["course_price"] = course_price
         return attrs
-
+    
+    
     def create(self, validated_data):
         student = validated_data["student"]
         course = validated_data["course"]

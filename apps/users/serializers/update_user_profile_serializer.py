@@ -1,23 +1,18 @@
 from rest_framework import serializers
-from apps.users.models import TeacherProfile, StudentProfile,ParentChild,ParentProfile
+from apps.users.models import TeacherProfile, StudentProfile,ParentProfile
 
 class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfile
         fields = [
-            "bio",
-            "phone",
-            "hourly_rate",
-            "subjects",
-            "grade",
-            "experience",
-            "profile_picture",
-            "tsc_number",
-            "tsc_number_certificate",
+            "bio","phone","hourly_rate",
+            "subjects","grade","experience",
+            "profile_picture","teacher_license_number",
+            "teacher_license_certificate",
             "academic_certificate",
-            "birth_date",
-            "gender",
-            "id_number"
+            "birth_date","gender",
+            "national_identity_number",
+            "national_identity_card",
         ]
         read_only_fields = ["id", "user", "is_verified"]
 
@@ -52,7 +47,6 @@ class StudentProfileUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "user", "enrollment_date"]
 
     
-
 
 class ParentProfileUpdateSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(read_only=True)
