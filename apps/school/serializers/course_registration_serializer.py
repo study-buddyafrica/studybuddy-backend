@@ -141,6 +141,15 @@ class SubtopicSerializer(serializers.ModelSerializer):
             return obj.content_file.url
         return None
 
+class CoursePublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = [
+            "id", "title", "description", 
+            "price", "grade","subject", 
+            "teacher", "is_universal", 
+            "country"
+        ]
 
 class CourseNestedSerializer(serializers.ModelSerializer):
     topics = serializers.SerializerMethodField()
@@ -148,14 +157,10 @@ class CourseNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            "id",
-            "title",
-            "description",
-            "price",
-            "grade",
-            "subject",
-            "teacher",
-            "topics",
+            "id","title","description",
+            "price","grade","subject",
+            "teacher","is_universal",
+            "country","topics"
         ]
 
     def get_topics(self, obj):
