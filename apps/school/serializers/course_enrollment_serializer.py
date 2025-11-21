@@ -1,9 +1,9 @@
+import uuid
 from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
-import uuid
 
-from apps.school.models import CourseEnrollment, Course
+from apps.school.models import CourseEnrollment
 from apps.transactions.models import Transaction,Wallet
 
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
@@ -26,7 +26,7 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseEnrollment
         fields = [
-            "id","course_title",
+            "id","course_title",'course',
             "student","purchased_at",
             "description","is_active",
             "transaction","amount_paid",
