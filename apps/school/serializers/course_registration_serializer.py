@@ -142,26 +142,82 @@ class SubtopicSerializer(serializers.ModelSerializer):
         return None
 
 class CoursePublicSerializer(serializers.ModelSerializer):
+    teacher = serializers.SerializerMethodField()
+    grade = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
+
     class Meta:
         model = Course
         fields = [
-            "id", "title", "description", 
-            "price", "grade","subject", 
-            "teacher", "is_universal", 
-            "country"
+            "id", "title", "description",
+            "price", "country","is_universal",
+            "teacher", "grade", "subject", 
         ]
+
+    def get_teacher(self, obj):
+        teacher = obj.teacher
+        if not teacher:
+            return None
+        return {
+            "first_name": teacher.user.first_name,
+            "last_name": teacher.user.last_name,
+            "country": teacher.user.country,
+            "experience_in_years": teacher.experience,
+        }
+
+    def get_grade(self, obj):
+        if obj.grade:
+            return {
+                "level": obj.grade.level
+            }
+        return None
+
+    def get_subject(self, obj):
+        if obj.subject:
+            return {
+                "name": obj.subject.name
+            }
+        return None
 
 class CourseNestedSerializer(serializers.ModelSerializer):
     topics = serializers.SerializerMethodField()
+    teacher = serializers.SerializerMethodField()
+    grade = serializers.SerializerMethodField()
+    subject = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = [
-            "id","title","description",
-            "price","grade","subject",
-            "teacher","is_universal",
-            "country","topics"
+            "id", "title", "description",
+            "price", "grade", "subject",
+            "teacher", "is_universal",
+            "country", "topics",
         ]
+
+    def get_teacher(self, obj):
+        teacher = obj.teacher
+        if not teacher:
+            return None
+        return {
+            "first_name": teacher.user.first_name,
+            "last_name": teacher.user.last_name,
+            "country": teacher.user.country,
+            "experience": teacher.experience,
+        }
+
+    def get_grade(self, obj):
+        if obj.grade:
+            return {
+                "level": obj.grade.level
+            }
+        return None
+
+    def get_subject(self, obj):
+        if obj.subject:
+            return {
+                "name": obj.subject.name
+            }
+        return None
 
     def get_topics(self, obj):
         topics = obj.topics.prefetch_related("subtopics").all()
@@ -170,7 +226,7 @@ class CourseNestedSerializer(serializers.ModelSerializer):
                 "id": t.id,
                 "title": t.title,
                 "description": t.description,
-                "content_file_url":self.get_file_url(t),
+                "content_file_url": self.get_file_url(t),
                 "order": t.order,
                 "subtopics": [
                     {
@@ -186,10 +242,10 @@ class CourseNestedSerializer(serializers.ModelSerializer):
             for t in topics
         ]
 
-    def get_file_url(self, subtopic):
-        if subtopic.content_file:
+    def get_file_url(self, item):
+        if item.content_file:
             request = self.context.get("request")
             if request:
-                return request.build_absolute_uri(subtopic.content_file.url)
-            return subtopic.content_file.url
+                return request.build_absolute_uri(item.content_file.url)
+            return item.content_file.url
         return None
