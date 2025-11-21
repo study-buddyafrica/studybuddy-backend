@@ -15,12 +15,13 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
-            "tsc_number",
-            "tsc_number_certificate",
+            "teacher_license_number",
+            "teacher_license_certificate",
             "academic_certificate",
             "experience",
             "subjects",
-            "id_number",
+            "national_identity_number",
+            "national_identity_card",
             "hourly_rate",
             "bio",
             "phone",
@@ -34,12 +35,13 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         required_fields = [
-            "tsc_number",
-            "tsc_number_certificate",
+            "teacher_license_number",
+            "teacher_license_certificate",
             "academic_certificate",
             "experience",
             "subjects",
-            "id_number",
+            "national_identity_number",
+            "national_identity_card",
             "hourly_rate",
         ]
         missing = [field for field in required_fields if not attrs.get(field)]

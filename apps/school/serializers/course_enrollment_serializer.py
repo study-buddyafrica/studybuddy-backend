@@ -5,9 +5,13 @@ from django.utils import timezone
 
 from apps.school.models import CourseEnrollment
 from apps.transactions.models import Transaction,Wallet
+from apps.school.serializers.course_registration_serializer import(
+    CourseNestedSerializer
+)
 
 class CourseEnrollmentSerializer(serializers.ModelSerializer):
     student = serializers.StringRelatedField(read_only=True)
+    course = CourseNestedSerializer(read_only=True)
     course_title = serializers.CharField(
         source="course.title", 
         read_only=True
