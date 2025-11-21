@@ -7,7 +7,7 @@ class AfricanCountry(models.TextChoices):
     BOTSWANA = "Botswana"
     BURKINA_FASO = "Burkina Faso"
     BURUNDI = "Burundi"
-    CABO_VERDE = "Cabo Verde"
+    CAPE_VERDE = "Cape Verde"
     CAMEROON = "Cameroon"
     CENTRAL_AFRICAN_REPUBLIC = "Central African Republic"
     CHAD = "Chad"
