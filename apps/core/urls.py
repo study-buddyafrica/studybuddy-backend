@@ -12,8 +12,6 @@ from apps.core.auth.views.reset_password_view import (
     ConfirmPasswordResetView
 )
 
-
-
 urlpatterns = [
     path(
         "token/request/", 
