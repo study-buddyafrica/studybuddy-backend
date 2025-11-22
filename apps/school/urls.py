@@ -65,11 +65,6 @@ urlpatterns = [
         name="live-session-update"
     ),
     path(
-        "courses/", 
-        CourseCreateListView.as_view(), 
-        name="course-list-create"
-    ),
-    path(
         "topics/", 
         TopicCreateListView.as_view(), 
         name="topic-list-create"
@@ -98,6 +93,11 @@ urlpatterns = [
         "assessments/<uuid:id>/", 
         AssessmentRetrieveUpdateView.as_view(), 
         name="assessments-detail-update"
+    ),
+    path(
+        "courses/", 
+        CourseCreateListView.as_view(), 
+        name="course-list-create"
     ),
     path(
         "courses/enrollments/", 
