@@ -2,12 +2,10 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from apps.users.models import TeacherProfile
-from apps.users.serializers.teachers_verification_serializer import TeacherProfileSerializer
-
-class IsAdminOrStaff(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and (request.user.is_staff or request.user.is_superuser)
-
+from apps.core.permissions import IsAdminOrStaff
+from apps.users.serializers.teachers_verification_serializer import (
+    TeacherProfileSerializer
+)
 
 class TeacherProfileViewSet(viewsets.ModelViewSet):
     queryset = TeacherProfile.objects.select_related("user").all()
@@ -71,7 +69,7 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
                     "detail": "Cannot verify. Missing or incomplete fields.",
                     "missing_fields": missing,
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST,# TODO: send email
             )
         
         teacher.is_verified = True
@@ -84,7 +82,7 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
                 "detail": f"Teacher {teacher.user.first_name} has been verified successfully.",
                 "is_verified": teacher.is_verified,
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_200_OK, #TODO: send email
         )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrStaff])
@@ -98,7 +96,7 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
             teacher.save()
             return Response(
                 {"detail": f"Teacher {teacher.user.first_name} unverified."},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_200_OK,# rejected
             )
         except TeacherProfile.DoesNotExist:
             return Response({"detail": "Teacher not found."}, status=404)
