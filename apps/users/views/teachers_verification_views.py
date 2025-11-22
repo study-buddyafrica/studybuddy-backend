@@ -1,13 +1,12 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from apps.users.models import TeacherProfile
-from apps.users.serializers.teachers_verification_serializer import TeacherProfileSerializer
-
-class IsAdminOrStaff(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and (request.user.is_staff or request.user.is_superuser)
-
+from apps.core.permissions import IsAdminOrStaff
+from apps.users.serializers.teachers_verification_serializer import (
+    TeacherProfileSerializer
+)
 
 class TeacherProfileViewSet(viewsets.ModelViewSet):
     queryset = TeacherProfile.objects.select_related("user").all()
@@ -39,11 +38,12 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Teacher not found."}, status=404)
         
         required_fields = [
-            teacher.tsc_number,
-            teacher.tsc_number_certificate,
+            teacher.teacher_license_number,
+            teacher.teacher_license_certificate,
             teacher.academic_certificate,
             teacher.experience,
-            teacher.id_number,
+            teacher.national_identity_card,
+            teacher.national_identity_number,
             teacher.hourly_rate,
         ]
 
@@ -51,16 +51,18 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
 
         if not all(required_fields) or not has_subjects:
             missing = []
-            if not teacher.tsc_number:
-                missing.append("tsc_number")
-            if not teacher.tsc_number_certificate:
-                missing.append("tsc_number_certificate")
+            if not teacher.teacher_license_number:
+                missing.append("teacher_license_number")
+            if not teacher.teacher_license_certificate:
+                missing.append("teacher_license_certificate")
             if not teacher.academic_certificate:
                 missing.append("academic_certificate")
             if not teacher.experience:
                 missing.append("experience")
-            if not teacher.id_number:
-                missing.append("id_number")
+            if not teacher.national_identity_card:
+                missing.append("national_identity_card")
+            if not teacher.national_identity_number:
+                missing.append("national_identity_number")
             if not teacher.hourly_rate:
                 missing.append("hourly_rate")
             if not has_subjects:
@@ -71,11 +73,11 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
                     "detail": "Cannot verify. Missing or incomplete fields.",
                     "missing_fields": missing,
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST,# TODO: send email
             )
         
         teacher.is_verified = True
-        teacher.user.is_verified = True
+        teacher.verification_status= 'approved'
         teacher.user.save()
         teacher.save()
 
@@ -84,7 +86,7 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
                 "detail": f"Teacher {teacher.user.first_name} has been verified successfully.",
                 "is_verified": teacher.is_verified,
             },
-            status=status.HTTP_200_OK,
+            status=status.HTTP_200_OK, #TODO: send email
         )
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrStaff])
@@ -93,12 +95,12 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
         try:
             teacher = TeacherProfile.objects.get(pk=pk)
             teacher.is_verified = False
-            teacher.user.is_verified = False
+            teacher.verification_status= 'rejected'
             teacher.user.save()
             teacher.save()
             return Response(
                 {"detail": f"Teacher {teacher.user.first_name} unverified."},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_200_OK,# rejected
             )
         except TeacherProfile.DoesNotExist:
             return Response({"detail": "Teacher not found."}, status=404)

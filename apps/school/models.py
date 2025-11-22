@@ -420,3 +420,33 @@ class AssessmentSubmission(models.Model):
             self.assessment.due_date
             and self.submitted_at > self.assessment.due_date
         )
+
+
+# class SubtopicProgress(models.Model):
+#     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
+#     subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)
+#     is_complete = models.BooleanField(default=False)
+#     completed_at = models.DateTimeField(null=True, blank=True)
+
+#     class Meta:
+#         unique_together = ("student", "subtopic")
+
+    
+# class TopicProgress(models.Model):
+#     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
+#     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+#     is_complete = models.BooleanField(default=False)
+#     completed_at = models.DateTimeField(null=True, blank=True)
+
+#     class Meta:
+#         unique_together = ("student", "topic")
+
+
+# class CourseProgress(models.Model):
+#     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
+#     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+#     is_complete = models.BooleanField(default=False)
+#     completed_at = models.DateTimeField(null=True, blank=True)
+
+#     class Meta:
+#         unique_together = ("student", "course")

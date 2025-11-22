@@ -68,7 +68,18 @@ class ParentProfile(models.Model):
 
 
 class TeacherProfile(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    VERIFICATION_STATUS_CHOICES = [
+        ("ongoing", "Ongoing"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+    is_verified= models.BooleanField(default=False)
+    experience = models.PositiveSmallIntegerField(default=0)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -81,20 +92,58 @@ class TeacherProfile(models.Model):
         blank=True, 
         db_index=True,
     )
-    teacher_license_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
-    academic_certificate = models.FileField(upload_to=certificate_upload_path,validators=[validate_pdf], null=True, blank=True)
-    bio = models.TextField(null=True, blank=True)
-    phone = models.CharField(max_length=50, null=True, blank=True)
-    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    is_verified= models.BooleanField(default=False)
-    grade =models.ManyToManyField('school.Grade', related_name='teacher_grades', blank=True, null=True)
-    experience = models.PositiveSmallIntegerField(default=0)
-    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    google_access_token = models.TextField(null=True, blank=True)
-    google_refresh_token = models.TextField(null=True, blank=True)
-    google_token_expiry = models.DateTimeField(null=True, blank=True)
-    gender = models.CharField(max_length=50, null=True, blank=True)
+    teacher_license_certificate = models.FileField(
+        upload_to=certificate_upload_path,
+        validators=[validate_pdf], 
+        null=True, blank=True
+    )
+    academic_certificate = models.FileField(
+        upload_to=certificate_upload_path,
+        validators=[validate_pdf], 
+        null=True, blank=True
+    )
+    bio = models.TextField(
+        null=True, blank=True
+    )
+    phone = models.CharField(
+        max_length=50, 
+        null=True, blank=True
+    )
+    hourly_rate = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True
+    )
+    grade =models.ManyToManyField(
+        'school.Grade', 
+        related_name='teacher_grades', 
+        blank=True, null=True
+    )
+    profile_picture = models.ImageField(
+        upload_to="profiles/", 
+        null=True, blank=True
+    )
+    birth_date = models.DateField(
+        null=True, blank=True
+    )
+    google_access_token = models.TextField(
+        null=True, 
+        blank=True
+    )
+    google_refresh_token = models.TextField(
+        null=True, 
+        blank=True
+    )
+    google_token_expiry = models.DateTimeField(
+        null=True, 
+        blank=True
+    )
+    gender = models.CharField(
+        max_length=50, 
+        null=True, 
+        blank=True
+    )
     national_identity_number = models.CharField(
         max_length=15, 
         null=True, 
@@ -108,6 +157,11 @@ class TeacherProfile(models.Model):
     subjects = models.ManyToManyField(
         "school.Subject",
         related_name="teacher_profiles" 
+    )
+    verification_status = models.CharField(
+        max_length=20, 
+        choices=VERIFICATION_STATUS_CHOICES, 
+        default='ongoing',
     )
 
     class Meta:
