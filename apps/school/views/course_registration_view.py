@@ -35,21 +35,19 @@ class CourseCreateListView(generics.ListCreateAPIView):
             "subject", "grade", "teacher__user"
         ).prefetch_related("topics__subtopics")
 
-        # Public visitor
+    
         if not user.is_authenticated:
             return qs.order_by("title")
 
-        # Admin
+    
         if user.is_staff:
             return qs.order_by("title")
 
-        # Teacher
         if hasattr(user, "teacher_profile"):
             return qs.filter(
                 teacher=user.teacher_profile
             ).order_by("title")
-
-        # Student
+        
         if hasattr(user, "student_profile"):
             student_country = user.student_profile.country
             return qs.filter(
@@ -63,7 +61,6 @@ class CourseCreateListView(generics.ListCreateAPIView):
         """Apply intelligent caching only for GET requests."""
         user = request.user
 
-        # Build dynamic cache keys
         if not user.is_authenticated:
             cache_key = "courses_public"
         elif user.is_staff:
@@ -77,7 +74,6 @@ class CourseCreateListView(generics.ListCreateAPIView):
         else:
             cache_key = "courses_default"
 
-        # Retrieve cached paginated results
         def fetch_data():
             queryset = self.get_queryset()
             page = self.paginate_queryset(queryset)

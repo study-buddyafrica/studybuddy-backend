@@ -45,8 +45,8 @@ class TeacherProfileAdmin(admin.ModelAdmin):
     fieldsets = (
         ('User Information', {
             'fields': (
-                'user', 'get_email',
-                'id_number','gender',
+                'user', 'get_email','national_identity_card',
+                'national_identity_number','gender',
                 'birth_date','profile_picture'
             )
         }),
@@ -56,7 +56,7 @@ class TeacherProfileAdmin(admin.ModelAdmin):
                 'academic_certificate', 
                 'bio', 'phone', 'hourly_rate',
                 "is_verified",'grade','subjects',
-                'teacher_license_number_certificate',
+                'teacher_license_certificate',
                 'experience', 
             )
         }),
