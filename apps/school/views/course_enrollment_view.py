@@ -1,9 +1,8 @@
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Prefetch
-from django.utils import timezone
 
-from apps.school.models import CourseEnrollment, Course
+from apps.school.models import CourseEnrollment
 from apps.school.serializers.course_enrollment_serializer import CourseEnrollmentSerializer
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.core.permissions import IsVerified
