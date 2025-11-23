@@ -116,22 +116,42 @@ class Course(Core):
     """
     A course created by a teacher (e.g., Mathematics - Grade 9, Life Skills)
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    is_active = models.BooleanField(default=True)
+    is_universal = models.BooleanField(default=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     subject = models.ForeignKey(
         'school.Subject',
         on_delete=models.CASCADE,
         related_name="subject_course"
     )
     grade = models.ForeignKey(
-        Grade, on_delete=models.SET_NULL, null=True, blank=True, related_name="courses"
+        Grade, on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name="courses"
     )
-    title = models.CharField(max_length=150, db_index=True)
-    description = models.TextField(blank=True, null=True)
-    price = MoneyField(max_digits=10, decimal_places=2, default_currency="KES", default=0)
-    is_active = models.BooleanField(default=True)
-    code = models.CharField(max_length=30, unique=True, null=True, blank=True)
-    cover_image = models.ImageField(blank=True, null=True)
-    is_universal = models.BooleanField(default=False)
+    title = models.CharField(
+        max_length=150, 
+        db_index=True
+    )
+    description = models.TextField(
+        blank=True, 
+        null=True
+    )
+    price = MoneyField(
+        max_digits=10, 
+        decimal_places=2, 
+        default_currency="KES", 
+        default=0
+    )
+    cover_image = models.ImageField(
+        upload_to="course-contents/",
+        blank=True, 
+        null=True
+    )
     country = models.CharField(
         max_length=50,
         choices=AfricanCountry.choices,
@@ -196,7 +216,14 @@ class CourseEnrollment(Core):
 
 class Topic(Core):
     """High-level topic under a specific course."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200)
+    is_locked = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
@@ -208,9 +235,10 @@ class Topic(Core):
         null=True,
         help_text="Upload PDF, video, or other resources."
     )
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True, null=True)
-    order = models.PositiveIntegerField(default=0)
+    description = models.TextField(
+        blank=True, null=True
+    )
+
 
     class Meta:
         db_table = "topics"
@@ -225,21 +253,26 @@ class Topic(Core):
 
 class Subtopic(Core):
     """Subtopic or lesson content under a topic."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200)
+    is_locked = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    content = models.TextField(blank=True, null=True)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     topic = models.ForeignKey(
         Topic,
         on_delete=models.CASCADE,
         related_name="subtopics",
     )
-    title = models.CharField(max_length=200)
-    content = models.TextField(blank=True, null=True)
     content_file = models.FileField(
         upload_to="subtopics/%Y/%m/%d/",
         blank=True,
         null=True,
         help_text="Upload PDF, video, or other resources."
     )
-    order = models.PositiveIntegerField(default=0)
     
 
     class Meta:
@@ -324,12 +357,25 @@ class LiveSession(Core):
 
 
 class RevisionMaterial(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
     file= models.FileField(blank=True, null=True)
-    uploaded_by = models.ForeignKey('users.TeacherProfile', on_delete=models.SET_NULL, null=True, related_name="materials") 
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, related_name="revision_materials")
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
+    uploaded_by = models.ForeignKey(
+        'users.TeacherProfile', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="materials"
+    ) 
+    course = models.ForeignKey(
+        Course, on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="revision_materials"
+    )
     
     class Meta:
         db_table = "revision_materials"
@@ -345,16 +391,33 @@ class AssessmentType(models.TextChoices):
 
 
 class Assessment(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, related_name="assessments")
-    teacher = models.ForeignKey('users.TeacherProfile', on_delete=models.CASCADE, related_name="assessments") 
-    assessment_type = models.CharField(max_length=10, choices=AssessmentType.choices, default=AssessmentType.MCQ)
     due_date = models.DateTimeField(null=True, blank=True)
+    duration =models.TimeField(null=True, blank=True)
     max_score = models.PositiveIntegerField(default=100)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
+    course = models.ForeignKey(
+        Course, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name="assessments"
+    )
+    teacher = models.ForeignKey(
+        'users.TeacherProfile', 
+        on_delete=models.CASCADE, 
+        related_name="assessments"
+    ) 
+    assessment_type = models.CharField(
+        max_length=10, 
+        choices=AssessmentType.choices, 
+        default=AssessmentType.MCQ
+    )
     
-
     class Meta:
         db_table = "assessments"
         ordering = ["-created_at"]
@@ -364,11 +427,20 @@ class Assessment(Core):
 
 
 class Question(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="questions")
     text = models.TextField()
     order = models.PositiveIntegerField(default=0)
     points = models.PositiveIntegerField(default=1)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
+    assessment = models.ForeignKey(
+        Assessment, 
+        on_delete=models.CASCADE, 
+        related_name="questions"
+    )
+    
 
     class Meta:
         db_table = "questions"
@@ -422,31 +494,31 @@ class AssessmentSubmission(models.Model):
         )
 
 
-# class SubtopicProgress(models.Model):
-#     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
-#     subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)
-#     is_complete = models.BooleanField(default=False)
-#     completed_at = models.DateTimeField(null=True, blank=True)
+class SubtopicProgress(models.Model):
+    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
+    subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)
+    is_complete = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
-#     class Meta:
-#         unique_together = ("student", "subtopic")
+    class Meta:
+        unique_together = ("student", "subtopic")
 
     
-# class TopicProgress(models.Model):
-#     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
-#     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
-#     is_complete = models.BooleanField(default=False)
-#     completed_at = models.DateTimeField(null=True, blank=True)
+class TopicProgress(models.Model):
+    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    is_complete = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
-#     class Meta:
-#         unique_together = ("student", "topic")
+    class Meta:
+        unique_together = ("student", "topic")
 
 
-# class CourseProgress(models.Model):
-#     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
-#     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-#     is_complete = models.BooleanField(default=False)
-#     completed_at = models.DateTimeField(null=True, blank=True)
+class CourseProgress(models.Model):
+    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    is_complete = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
 
-#     class Meta:
-#         unique_together = ("student", "course")
+    class Meta:
+        unique_together = ("student", "course")
