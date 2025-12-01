@@ -154,6 +154,10 @@ class TeacherProfile(models.Model):
         upload_to="identity_cards/",
         null=True, blank=True
     )
+    cv = models.FileField(
+        upload_to="cvs/", 
+        null=True, blank=True
+    )
     subjects = models.ManyToManyField(
         "school.Subject",
         related_name="teacher_profiles" 
