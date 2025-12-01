@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from apps.school.views.school_view import SchoolListCreateView
 from apps.school.views.subject_view import SubjectViewSet
+from apps.school.views.grade_view import GradeViewSet
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.course_registration_view import (
     CourseCreateListView,TopicCreateListView,
@@ -27,6 +28,7 @@ from apps.school.views.course_enrollment_view import (
 
 school_router = DefaultRouter()
 school_router.register(r'subjects', SubjectViewSet)
+school_router.register(r'grades', GradeViewSet)
 
 urlpatterns = [
     path(
