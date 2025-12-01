@@ -1,17 +1,16 @@
 from rest_framework import viewsets
 from rest_framework import permissions
 
-from apps.school.models import Subject
-from apps.school.serializers.subjects_serializer import SubjectSerializer
-
+from apps.school.serializers.grade_serializer import GradeSerializer
+from apps.school.models import Grade
 from apps.core.permissions import IsTeacherOrAdmin, IsVerified
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 
 
-class SubjectViewSet(viewsets.ModelViewSet):
-    serializer_class = SubjectSerializer
+class GradeViewSet(viewsets.ModelViewSet):
+    serializer_class = GradeSerializer
     pagination_class = StandardResultsSetPagination
-    queryset = Subject.objects.all().order_by("name")
+    queryset = Grade.objects.all().order_by("level")
 
     def get_permissions(self):
         """
@@ -29,14 +28,14 @@ class SubjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Teachers: list subjects they are linked with.
-        Admin/Students/Anonymous: list all subjects.
+        Teachers: list Grade they are linked with.
+        Admin/Students/Anonymous: list all Grade.
         """
         user = self.request.user
 
         if not user.is_authenticated or not hasattr(user, "teacher_profile"):
-            return Subject.objects.all().order_by("name")
+            return Grade.objects.all().order_by("level")
 
-        return Subject.objects.filter(teacher_profiles=user.teacher_profile).order_by(
-            "name"
+        return Grade.objects.filter(teacher_profiles=user.teacher_profile).order_by(
+            "level"
         )

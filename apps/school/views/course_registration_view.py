@@ -109,7 +109,6 @@ class CourseCreateListView(generics.ListCreateAPIView):
             serializer.save()
 
 
-
 class TopicCreateListView(generics.ListCreateAPIView):
     serializer_class = TopicSerializer
     pagination_class = StandardResultsSetPagination
