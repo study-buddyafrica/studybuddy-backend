@@ -10,16 +10,28 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfile
         fields = [
-            "id","user","email","first_name",
-            "last_name","teacher_license_number",
+            "id",
+            "user",
+            "email",
+            "first_name",
+            "last_name",
+            "teacher_license_number",
             "teacher_license_certificate",
-            "academic_certificate","experience",
-            "subjects","national_identity_number",
-            "national_identity_card","hourly_rate",
-            "bio","phone","is_verified","grade",
-            "profile_picture","birth_date",
-            "gender","verification_status"
-            
+            "academic_certificate",
+            "experience",
+            "subjects",
+            "national_identity_number",
+            "national_identity_card",
+            "hourly_rate",
+            "bio",
+            "phone",
+            "is_verified",
+            "grade",
+            "profile_picture",
+            "birth_date",
+            "gender",
+            "verification_status",
+            "cv",
         ]
         read_only_fields = [
             "is_verified", "user",
@@ -32,7 +44,7 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
             "teacher_license_certificate",
             "academic_certificate",
             "experience",
-            "subjects",
+            "cv", "subjects",
             "national_identity_number",
             "national_identity_card",
             "hourly_rate",

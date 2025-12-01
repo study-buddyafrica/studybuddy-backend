@@ -5,12 +5,18 @@ class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherProfile
         fields = [
-            "bio","phone","hourly_rate",
-            "subjects","grade","experience",
-            "profile_picture","teacher_license_number",
+            "bio",
+            "phone",
+            "hourly_rate",
+            "subjects",
+            "grade",
+            "experience",
+            "profile_picture",
+            "teacher_license_number",
             "teacher_license_certificate",
             "academic_certificate",
-            "birth_date","gender",
+            "cv","birth_date",
+            "gender",
             "national_identity_number",
             "national_identity_card",
         ]
@@ -31,7 +37,7 @@ class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-    
+
 
 class StudentProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,7 +52,6 @@ class StudentProfileUpdateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "user", "enrollment_date"]
 
-    
 
 class ParentProfileUpdateSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(read_only=True)
@@ -62,5 +67,3 @@ class ParentProfileUpdateSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
-
-
