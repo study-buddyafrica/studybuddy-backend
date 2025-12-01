@@ -45,20 +45,14 @@ class Subject(Core):
         default=uuid.uuid4, 
         editable=False
     ) 
-    code = models.CharField(
-        max_length=30, 
-        unique=True, 
-        null=True, 
-        blank=True
-    ) 
+     
     
-    def __str__(self): return f"{self.name} ({self.code or 'N/A'})" 
+    def __str__(self): return f"{self.name}" 
     
     class Meta: 
         db_table = "subjects" 
         ordering = ["name"] 
-        indexes = [ models.Index(fields=["name"]), 
-                   models.Index(fields=["code"]), ]
+        indexes = [ models.Index(fields=["name"]),]
 
 class Grade(Core):
     """

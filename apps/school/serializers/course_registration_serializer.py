@@ -31,7 +31,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "id","title","description",
             "subject","subject_name",
             "grade","grade_name","price",
-            "is_active","code","cover_image",
+            "is_active","cover_image",
             "teacher","teacher_name","created_at",
             "updated_at",'country', 'is_universal',
         ]
