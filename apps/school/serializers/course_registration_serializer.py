@@ -31,7 +31,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "id","title","description",
             "subject","subject_name",
             "grade","grade_name","price",
-            "is_active","code","cover_image",
+            "is_active","cover_image",
             "teacher","teacher_name","created_at",
             "updated_at",'country', 'is_universal',
         ]
@@ -80,66 +80,8 @@ class CourseSerializer(serializers.ModelSerializer):
                 })
 
         return attrs
-
-
-class TopicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Topic
-        fields = [
-            "id", "course", ""
-            "title", "description",
-            "content_file", "order"
-        ]
-
-    def validate_course(self, value):
-        user = self.context["request"].user
-        if hasattr(user, "teacher_profile") and not user.is_staff:
-            if value.teacher != user.teacher_profile:
-                raise serializers.ValidationError(
-                    "You cannot add topics " \
-                    "to a course you don't own."
-                )
-        return value
     
-    def get_content_file_url(self, obj):
-        if obj.content_file:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.content_file.url)
-            return obj.content_file.url
-        return None
-    
-class SubtopicSerializer(serializers.ModelSerializer):
-    content_file_url = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Subtopic
-        fields = ["id", "topic", "title", "content", "content_file_url", "order"]
-
-    def validate(self, attrs):
-        user = self.context["request"].user
-        topic = attrs.get("topic")
-
-        if not attrs.get("content") and not attrs.get("content_file"):
-            raise serializers.ValidationError(
-                "You must provide either text content or upload a file."
-            )
-
-        if hasattr(user, "teacher_profile") and not user.is_staff:
-            if topic.course.teacher != user.teacher_profile:
-                raise serializers.ValidationError(
-                    "You cannot add subtopics to a topic you don't own."
-                )
-
-        return attrs
-
-    def get_content_file_url(self, obj):
-        if obj.content_file:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.content_file.url)
-            return obj.content_file.url
-        return None
 
 class CoursePublicSerializer(serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
@@ -249,3 +191,69 @@ class CourseNestedSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(item.content_file.url)
             return item.content_file.url
         return None
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = [
+            "id", "course", ""
+            "title", "description",
+            "content_file", "order",
+            'is_locked'
+        ]
+
+    def validate_course(self, value):
+        user = self.context["request"].user
+        if hasattr(user, "teacher_profile") and not user.is_staff:
+            if value.teacher != user.teacher_profile:
+                raise serializers.ValidationError(
+                    "You cannot add topics " \
+                    "to a course you don't own."
+                )
+        return value
+    
+    def get_content_file_url(self, obj):
+        if obj.content_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.content_file.url)
+            return obj.content_file.url
+        return None
+    
+class SubtopicSerializer(serializers.ModelSerializer):
+    content_file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Subtopic
+        fields = [
+            "id", "topic", "title", 
+            "content", "content_file_url", 
+            "order","is_locked",
+        ]
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        topic = attrs.get("topic")
+
+        if not attrs.get("content") and not attrs.get("content_file"):
+            raise serializers.ValidationError(
+                "You must provide either text content or upload a file."
+            )
+
+        if hasattr(user, "teacher_profile") and not user.is_staff:
+            if topic.course.teacher != user.teacher_profile:
+                raise serializers.ValidationError(
+                    "You cannot add subtopics to a topic you don't own."
+                )
+
+        return attrs
+
+    def get_content_file_url(self, obj):
+        if obj.content_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.content_file.url)
+            return obj.content_file.url
+        return None
+

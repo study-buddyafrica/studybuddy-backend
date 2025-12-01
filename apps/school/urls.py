@@ -1,6 +1,8 @@
 from django.urls import path
+from rest_framework.routers import DefaultRouter
 
 from apps.school.views.school_view import SchoolListCreateView
+from apps.school.views.subject_view import SubjectViewSet
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.course_registration_view import (
     CourseCreateListView,TopicCreateListView,
@@ -22,6 +24,9 @@ from apps.school.views.assessments_views import (
 from apps.school.views.course_enrollment_view import (
     CourseEnrollmentView, ListEnrolledCourseView
 )
+
+school_router = DefaultRouter()
+school_router.register(r'subjects', SubjectViewSet)
 
 urlpatterns = [
     path(
@@ -110,3 +115,4 @@ urlpatterns = [
         name='enrolled-courses'
     ),
 ]
+urlpatterns +=school_router.urls
