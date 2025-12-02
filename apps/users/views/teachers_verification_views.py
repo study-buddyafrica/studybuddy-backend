@@ -14,10 +14,16 @@ class TeacherProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return TeacherProfile.objects.filter(is_verified=False)
-        return TeacherProfile.objects.filter(user=user)
 
+        if self.action == "list":
+            if user.is_staff or user.is_superuser:
+                return TeacherProfile.objects.filter(is_verified=False)
+            return TeacherProfile.objects.filter(user=user)
+
+        if user.is_staff or user.is_superuser:
+            return TeacherProfile.objects.all()
+
+        return TeacherProfile.objects.filter(user=user)
     def get_permissions(self):
         if self.action in ["verify_teacher", "unverify_teacher", "destroy"]:
             return [IsAdminOrStaff()]
