@@ -60,7 +60,7 @@ class DepositAPIView(APIView):
             client = APIService(
                 token=settings.INTASEND_SECRET_KEY.strip(),
                 publishable_key=settings.INTASEND_PUBLISHABLE_KEY.strip(),
-                test=True,
+                test=False,
             )
 
             webhook_url = request.build_absolute_uri(reverse("intasend-webhook"))
