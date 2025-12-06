@@ -32,7 +32,7 @@ class WithdrawalService:
         service = APIService(
             token=settings.INTASEND_SECRET_KEY.strip(),
             publishable_key=settings.INTASEND_PUBLISHABLE_KEY.strip(),
-            test=False,  
+            test=True,  
         )
         preview_transactions = [{
             "name": user.username,
