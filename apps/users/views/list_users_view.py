@@ -19,9 +19,24 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
 
-        queryset = User.objects.only(
-            "id", "email", "first_name", "last_name", "username", "role", "is_active", "is_staff"
-        ).order_by("-created_at")
+        queryset = (
+            User.objects
+            .select_related(
+                "teacher_profile",
+                "parent_profile",
+                "student_profile"
+            )
+            .only(
+                "id", "email", "first_name", "last_name",
+                "username", "role", "is_active", "is_staff",
+                "account_confirmed",
+                # profile PKs
+                "teacher_profile__id",
+                "parent_profile__id",
+                "student_profile__id",
+            )
+            .order_by("-created_at")
+        )
 
         role = self.request.query_params.get("role")
         email = self.request.query_params.get("email")
@@ -31,10 +46,12 @@ class UserListView(generics.ListAPIView):
 
         if email:
             queryset = queryset.filter(email__icontains=email.strip())
-            
+
         if user.is_superuser:
             return queryset
+
         return queryset.filter(id=user.id)
+
 
     def list(self, request, *args, **kwargs):
         """Custom response structure."""
