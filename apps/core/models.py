@@ -70,7 +70,6 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
         max_length=50,
         choices=AfricanCountry.choices,
         default=AfricanCountry.KENYA,
-    
     )
    
     objects = UserManager()

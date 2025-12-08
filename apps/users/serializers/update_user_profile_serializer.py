@@ -15,8 +15,10 @@ class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
             "teacher_license_number",
             "teacher_license_certificate",
             "academic_certificate",
-            "cv","birth_date",
+            "cv",
+            "birth_date",
             "gender",
+            "school",
             "national_identity_number",
             "national_identity_card",
         ]
