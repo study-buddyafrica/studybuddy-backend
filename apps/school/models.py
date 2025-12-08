@@ -10,7 +10,11 @@ class School(Core):
     name = models.CharField(max_length=100)
     address = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
-    country = models.CharField(max_length=50)
+    country = models.CharField(
+        max_length=50,
+        choices=AfricanCountry.choices,
+        default=AfricanCountry.KENYA,
+    )
     contact = models.CharField(max_length=50)
     is_approved = models.BooleanField(default=False)
     id = models.UUIDField(
@@ -29,7 +33,7 @@ class School(Core):
     class Meta:
         db_table = "schools"
         ordering = ["name"]
-    
+
     def __str__(self):
         return self.name
 
@@ -97,7 +101,7 @@ class Grade(Core):
 
     def __str__(self):
         return f"{self.level}"
-    
+
 
 class BookingStatus(models.TextChoices):
     PENDING = "pending", "Pending"
@@ -497,7 +501,7 @@ class SubtopicProgress(models.Model):
     class Meta:
         unique_together = ("student", "subtopic")
 
-    
+
 class TopicProgress(models.Model):
     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)

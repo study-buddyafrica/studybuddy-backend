@@ -167,6 +167,13 @@ class TeacherProfile(models.Model):
         choices=VERIFICATION_STATUS_CHOICES, 
         default='ongoing',
     )
+    school = models.ForeignKey(
+        "school.School",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="teachers",
+    )
 
     class Meta:
         db_table = "teacher_profiles"
