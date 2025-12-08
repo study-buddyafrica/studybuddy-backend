@@ -31,7 +31,11 @@ class StudentProfileUpdateView(generics.RetrieveUpdateAPIView):
     """
     Allows admin, student, or related parent to view/update the student profile.
     """
-    queryset = StudentProfile.objects.select_related("user", "grade", "school").prefetch_related("subjects")
+    queryset = (
+        StudentProfile.objects
+        .select_related("user", "grade", "school")
+        .prefetch_related("parents")
+    )
     serializer_class = StudentProfileUpdateSerializer
     permission_classes = [
         permissions.IsAuthenticated, 
