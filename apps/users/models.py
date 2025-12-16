@@ -185,14 +185,16 @@ class TeacherProfile(models.Model):
 
 class StudentProfile(Core):
     """Represents a student's profile and academic relationships."""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name="student_profile"
     )
-
     grade = models.ForeignKey(
         'school.Grade',
         on_delete=models.SET_NULL,
@@ -201,7 +203,6 @@ class StudentProfile(Core):
         related_name="students",
         db_index=True,
     )
-
     school = models.ForeignKey(
         'school.School',
         on_delete=models.SET_NULL,
@@ -221,7 +222,6 @@ class StudentProfile(Core):
         through=ParentChild,
         related_name="student_profiles",
     )
-    
 
     class Meta:
         db_table = "student_profiles"
@@ -285,3 +285,33 @@ class TeacherRating(models.Model):
 
     def __str__(self):
         return f"{self.teacher} rated {self.rating}/5 by {self.student}"
+
+
+class StudentLead(Core):
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
+    course = models.ForeignKey(
+        "school.Course",
+        on_delete=models.CASCADE,
+        related_name="student_leads",
+    )
+    student_profile = models.ForeignKey(
+            StudentProfile,
+            on_delete=models.CASCADE,
+            related_name="leads",
+    )
+    is_a_lead = models.BooleanField(default=False)
+
+    class Meta:
+        db_table ='student_leads'
+        unique_together = ("course", "student_profile")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.student_profile.user.first_name} is a lead {self.is_a_lead}"

@@ -333,7 +333,6 @@ class SessionBooking(Core):
         return f"Booking: {self.student} ({self.status})"
 
 class LiveSession(Core):
-    capacity = models.PositiveIntegerField(default=0)
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField()
     id = models.UUIDField(
@@ -363,7 +362,8 @@ class LiveSession(Core):
     teacher = models.ForeignKey(
         'users.TeacherProfile', 
         on_delete=models.CASCADE, 
-        related_name="live_sessions"  
+        related_name="live_sessions"  ,
+        null=True, blank=True
     )
 
     def __str__(self):
@@ -536,3 +536,4 @@ class CourseProgress(models.Model):
 
     class Meta:
         unique_together = ("student", "course")
+
