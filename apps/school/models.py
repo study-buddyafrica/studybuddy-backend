@@ -292,7 +292,9 @@ class Subtopic(Core):
 class SessionBooking(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     student = models.ForeignKey(
-        'users.StudentProfile', on_delete=models.CASCADE, related_name="student_session_bookings" 
+        'users.StudentProfile', 
+        on_delete=models.CASCADE, 
+        related_name="student_session_bookings" 
     )
     status = models.CharField(
         max_length=20,
@@ -331,24 +333,38 @@ class SessionBooking(Core):
         return f"Booking: {self.student} ({self.status})"
 
 class LiveSession(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    title = models.CharField(max_length=200)
-    description = models.TextField(null=True, blank=True)
-    meeting_link = models.URLField(max_length=1000, null=True, blank=True)
-    whiteboard_link = models.URLField(max_length=500, null=True,blank=True)
     capacity = models.PositiveIntegerField(default=0)
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField()
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
+    student_meeting_link = models.URLField(max_length=1000, null=True, blank=True)
+    teacher_meeting_link = models.URLField(max_length=1000, null=True, blank=True)
+    whiteboard_link = models.URLField(max_length=500, null=True,blank=True)
     session = models.OneToOneField(
         SessionBooking,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
-        related_name="live_session"
+        related_name="live_session",
+    )
+    course = models.ForeignKey( 
+        Course,
+        null=True,
+        blank=True,
+        related_name="live_lessons",
+        on_delete=models.CASCADE,
     )
     teacher = models.ForeignKey(
-        'users.TeacherProfile', on_delete=models.CASCADE, related_name="live_sessions"  
+        'users.TeacherProfile', 
+        on_delete=models.CASCADE, 
+        related_name="live_sessions"  
     )
-
 
     def __str__(self):
         return f"{self.title} ({self.started_at:%Y-%m-%d})"

@@ -25,6 +25,10 @@ from apps.school.views.assessments_views import (
 from apps.school.views.course_enrollment_view import (
     CourseEnrollmentView, ListEnrolledCourseView
 )
+from apps.school.views.course_sessions_views import (
+    CourseLiveSessionCreateView,
+    StudentCourseLiveSessionListView
+)
 
 school_router = DefaultRouter()
 school_router.register(r'subjects', SubjectViewSet)
@@ -116,5 +120,17 @@ urlpatterns = [
         ListEnrolledCourseView.as_view(),
         name='enrolled-courses'
     ),
+    path(
+        "teacher/course/live-lession/",
+        CourseLiveSessionCreateView.as_view(),
+        name="course-live-lession-create"
+    ),
+
+    path(
+        "student/join/lessions/",
+        StudentCourseLiveSessionListView.as_view(),
+        name="join-lession"
+    ),
+
 ]
 urlpatterns +=school_router.urls

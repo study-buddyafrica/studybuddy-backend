@@ -24,7 +24,6 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "session_booking_id",
-            "meeting_link",
             "teacher_meeting_link",
             "student_meeting_link",
             "whiteboard_link",
@@ -35,7 +34,6 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
-            "meeting_link",
             "teacher_meeting_link",
             "student_meeting_link",
             "whiteboard_link",
@@ -95,16 +93,14 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         live_session = LiveSession.objects.create(
             session=booking,
             teacher=booking.teacher,
-            meeting_link=teacher_token["room_url"],
+            teacher_meeting_link=teacher_token["room_url"],
+            student_meeting_link=student_token["room_url"],
             whiteboard_link=DEFAULT_WHITEBOARD_LINK,
             started_at=timezone.now(),
             ended_at=booking.scheduled_end,
             title=title,
             description=description
         )
-        live_session.teacher_meeting_link = teacher_token["room_url"]
-        live_session.student_meeting_link = student_token["room_url"]
-
         booking.status = "accepted"
         booking.save(update_fields=["status"])
 
