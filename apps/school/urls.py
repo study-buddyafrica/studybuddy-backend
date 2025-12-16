@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from apps.school.views.peer_to_peer_session_view import PeerLiveSessionViewSet
 from apps.school.views.school_view import SchoolListCreateView
 from apps.school.views.subject_view import SubjectViewSet
 from apps.school.views.grade_view import GradeViewSet
@@ -33,6 +34,11 @@ from apps.school.views.course_sessions_views import (
 school_router = DefaultRouter()
 school_router.register(r'subjects', SubjectViewSet)
 school_router.register(r'grades', GradeViewSet)
+school_router.register(
+    r"peer-to-peer-sessions",
+    PeerLiveSessionViewSet, 
+    basename="peer-live-session"
+)
 
 urlpatterns = [
     path(

@@ -7,6 +7,7 @@ from apps.users.views.list_users_view import UserListView,UserDetailView
 from apps.users.views.delete_user import UserDeleteView
 from apps.users.views.update_user import UserUpdateView
 from apps.users.views.list_teachers_view import TeacherListView
+from apps.users.views.student_lead_view import StudentLeadViewSet
 from apps.users.views.update_profile_views import (
     ParentProfileUpdateView,StudentProfileUpdateView,
     TeacherProfileUpdateView
@@ -17,6 +18,11 @@ user_router.register(
     "teachers", 
     TeacherProfileViewSet, 
     basename="teacher"
+)
+user_router.register(
+    r"student-leads",
+    StudentLeadViewSet,
+    basename="student-lead"
 )
 
 urlpatterns = [
