@@ -69,7 +69,7 @@ class CourseCreateListView(generics.ListCreateAPIView):
             cache_key = f"courses_teacher_{user.teacher_profile.id}"
         elif hasattr(user, "student_profile"):
             cache_key = (
-                f"courses_student_country_{user.student_profile.country}"
+                f"courses_student_country_{user.country}"
             )
         else:
             cache_key = "courses_default"
