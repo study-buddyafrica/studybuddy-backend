@@ -49,7 +49,7 @@ class CourseCreateListView(generics.ListCreateAPIView):
             ).order_by("title")
         
         if hasattr(user, "student_profile"):
-            student_country = user.student_profile.country
+            student_country = user.country
             return qs.filter(
                 Q(is_universal=True) |
                 Q(country=student_country)
