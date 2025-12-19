@@ -1,11 +1,13 @@
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Prefetch
+from django.shortcuts import get_object_or_404
 
 from apps.school.models import CourseEnrollment
 from apps.school.serializers.course_enrollment_serializer import CourseEnrollmentSerializer
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.core.permissions import IsVerified
+from apps.core.utils.cache import cache_get_or_set
 
 
 class CourseEnrollmentView(generics.ListCreateAPIView):
@@ -40,24 +42,44 @@ class CourseEnrollmentView(generics.ListCreateAPIView):
         serializer.context["request"] = self.request
         serializer.save(student=user.student_profile)
 
-class ListEnrolledCourseView(generics.ListAPIView):
+
+class RetrieveEnrolledCourseView(generics.RetrieveAPIView):
+    """
+    Retrieve a single enrolled course with all related topics/subtopics.
+    - Students: can only access their own enrollment
+    - Admins/Staff: can access any enrollment
+    """
+
     serializer_class = CourseEnrollmentSerializer
-    pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, IsVerified]
+    lookup_field = "enrollment_id"
 
     def get_queryset(self):
-        user = self.request.user
-
-        qs = CourseEnrollment.objects.select_related(
+        return CourseEnrollment.objects.select_related(
             "student__user",
             "course__subject",
             "course__grade",
             "course__teacher__user",
-        ).prefetch_related(
-            "course__topics__subtopics"
-        ).distinct()
+        ).prefetch_related("course__topics__subtopics")
 
-        if user.is_staff:
-            return qs.order_by("course__title")
+    def get_object(self):
+        user = self.request.user
+        enrollment_id = self.kwargs["enrollment_id"]
+        qs = self.get_queryset()
 
-        return qs.filter(student=user.student_profile).order_by("course__title")
+        if user.is_staff or user.is_superuser:
+            enrollment = get_object_or_404(qs, id=enrollment_id)
+        else:
+            enrollment = get_object_or_404(
+                qs, id=enrollment_id, student=user.student_profile
+            )
+
+        cache_key = f"enrolled_course:{enrollment_id}:{user.id}"
+
+        def fetch():
+            serializer = self.get_serializer(enrollment)
+            return serializer.data
+
+        cached_data = cache_get_or_set(cache_key, fetch, timeout=60 * 10)  # 10 minutes
+
+        return enrollment

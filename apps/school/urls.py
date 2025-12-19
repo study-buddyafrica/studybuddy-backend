@@ -24,7 +24,8 @@ from apps.school.views.assessments_views import (
     AssessmentRetrieveUpdateView
 )
 from apps.school.views.course_enrollment_view import (
-    CourseEnrollmentView, ListEnrolledCourseView
+    CourseEnrollmentView,
+    RetrieveEnrolledCourseView,
 )
 from apps.school.views.course_sessions_views import (
     CourseLiveSessionCreateView,
@@ -41,102 +42,76 @@ school_router.register(
 )
 
 urlpatterns = [
+    path("schools/", SchoolListCreateView.as_view(), name="school-list-create"),
     path(
-        "schools/", 
-        SchoolListCreateView.as_view(), 
-        name="school-list-create"
-        ),
+        "student/live-session/<uuid:session_booking_id>/join/",
+        StudentJoinLiveSessionView.as_view(),
+        name="join-livesession",
+    ),
+    path("live-sessions/", LiveSessionListView.as_view(), name="livesession-list-view"),
     path(
-        "student/live-session/<uuid:session_booking_id>/join/", 
-        StudentJoinLiveSessionView.as_view(), 
-        name='join-livesession'
-        ),
-    path(
-        "live-sessions/", 
-        LiveSessionListView.as_view(), 
-        name="livesession-list-view"
-        ),
-    path(
-        "booked-sessions/", 
-        SessionBookingListView.as_view(), 
-        name="bookedsession-list-view"
-        ),
+        "booked-sessions/",
+        SessionBookingListView.as_view(),
+        name="bookedsession-list-view",
+    ),
     path(
         "student/session-bookings/",
         SessionBookingCreateUpdateView.as_view(),
-        name="session-booking-create"
+        name="session-booking-create",
     ),
     path(
         "student/session-bookings/<uuid:pk>/",
         SessionBookingCreateUpdateView.as_view(),
-        name="session-booking-update"
+        name="session-booking-update",
     ),
     path(
-        "teacher/live-session/", 
-        LiveSessionCreateView.as_view(), 
-        name="live-session-create"
+        "teacher/live-session/",
+        LiveSessionCreateView.as_view(),
+        name="live-session-create",
     ),
     path(
-        "teacher/live-session/update/<uuid:pk>/", 
-        LiveSessionUpdateView.as_view(), 
-        name="live-session-update"
+        "teacher/live-session/update/<uuid:pk>/",
+        LiveSessionUpdateView.as_view(),
+        name="live-session-update",
+    ),
+    path("topics/", TopicCreateListView.as_view(), name="topic-list-create"),
+    path("subtopics/", SubtopicCreateListView.as_view(), name="subtopic-list-create"),
+    path(
+        "revision-materials/",
+        RevisionMaterialCreateListView.as_view(),
+        name="revision-materials",
+    ),
+    path("assessments/", AssessmentCreateListView.as_view(), name="assessments"),
+    path(
+        "assessments/",
+        AssessmentCreateListView.as_view(),
+        name="assessments-list-create",
     ),
     path(
-        "topics/", 
-        TopicCreateListView.as_view(), 
-        name="topic-list-create"
+        "assessments/<uuid:id>/",
+        AssessmentRetrieveUpdateView.as_view(),
+        name="assessments-detail-update",
+    ),
+    path("courses/", CourseCreateListView.as_view(), name="course-list-create"),
+    path(
+        "courses/enrollments/",
+        CourseEnrollmentView.as_view(),
+        name="course-enrollments",
     ),
     path(
-        "subtopics/", 
-        SubtopicCreateListView.as_view(), 
-        name="subtopic-list-create"
-    ),
-    path(
-        "revision-materials/", 
-        RevisionMaterialCreateListView.as_view(), 
-        name="revision-materials"
-    ),
-    path(
-        "assessments/", 
-        AssessmentCreateListView.as_view(), 
-        name="assessments"
-    ),
-    path(
-        "assessments/", 
-        AssessmentCreateListView.as_view(), 
-        name="assessments-list-create"
-    ),
-    path(
-        "assessments/<uuid:id>/", 
-        AssessmentRetrieveUpdateView.as_view(), 
-        name="assessments-detail-update"
-    ),
-    path(
-        "courses/", 
-        CourseCreateListView.as_view(), 
-        name="course-list-create"
-    ),
-    path(
-        "courses/enrollments/", 
-        CourseEnrollmentView.as_view(), 
-        name="course-enrollments"
-    ),
-    path(
-        "student/enrolled/courses/",
-        ListEnrolledCourseView.as_view(),
-        name='enrolled-courses'
+        "student/enrolled/course/<uuid:enrollment_id>/",
+        RetrieveEnrolledCourseView.as_view(),
+        name="retrieve-enrolled-course",
     ),
     path(
         "teacher/course/live-lession/",
         CourseLiveSessionCreateView.as_view(),
-        name="course-live-lession-create"
+        name="course-live-lession-create",
     ),
-
     path(
         "student/join/lessions/",
         StudentCourseLiveSessionListView.as_view(),
-        name="join-lession"
+        name="join-lession",
     ),
-
 ]
 urlpatterns +=school_router.urls
