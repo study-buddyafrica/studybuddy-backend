@@ -114,6 +114,6 @@ if __name__ == "__main__":
     miro = MiroAPI()  
 
     board = miro.create_board(name="Math Session Whiteboard", description="Board for Algebra lesson")
-    print("Board created:", board["url"])
+   
 
   
