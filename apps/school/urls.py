@@ -26,6 +26,7 @@ from apps.school.views.assessments_views import (
 from apps.school.views.course_enrollment_view import (
     CourseEnrollmentView,
     RetrieveEnrolledCourseView,
+    ListEnrolledCourseView
 )
 from apps.school.views.course_sessions_views import (
     CourseLiveSessionCreateView,
@@ -102,6 +103,11 @@ urlpatterns = [
         "student/enrolled/course/<uuid:enrollment_id>/",
         RetrieveEnrolledCourseView.as_view(),
         name="retrieve-enrolled-course",
+    ),
+    path(
+        "student/enrolled/courses/",
+        ListEnrolledCourseView.as_view(),
+        name="student-enrolled-courses",
     ),
     path(
         "teacher/course/live-lession/",
