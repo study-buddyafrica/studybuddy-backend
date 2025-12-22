@@ -3,11 +3,14 @@ from rest_framework.exceptions import PermissionDenied
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
-from apps.school.models import CourseEnrollment
-from apps.school.serializers.course_enrollment_serializer import CourseEnrollmentSerializer
-from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.core.permissions import IsVerified
 from apps.core.utils.cache import cache_get_or_set
+from apps.school.models import CourseEnrollment, Course
+from apps.core.auth.views.pagination_view import StandardResultsSetPagination
+from apps.school.serializers.course_enrollment_serializer import (
+    CourseEnrollmentSerializer,
+    EnrolledStudentSerializer
+)
 
 
 class CourseEnrollmentView(generics.ListCreateAPIView):
@@ -41,6 +44,42 @@ class CourseEnrollmentView(generics.ListCreateAPIView):
 
         serializer.context["request"] = self.request
         serializer.save(student=user.student_profile)
+
+
+class ListEnrolledStudentsView(generics.ListAPIView):
+    """
+    - Admin/Staff: View students enrolled in any course
+    - Teacher: View students enrolled in their own course only
+    """
+
+    serializer_class = EnrolledStudentSerializer 
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+
+    def get_queryset(self):
+        user = self.request.user
+        course_id = self.kwargs.get("course_id")
+        course = get_object_or_404(Course, id=course_id)
+
+        if hasattr(user, "teacher_profile") and course.teacher != user.teacher_profile:
+            raise PermissionDenied("This course does not belong to you.")
+
+        qs = (
+            CourseEnrollment.objects.select_related(
+                "student__user", 
+                "course__teacher__user",
+            )
+            .filter(course_id=course_id)
+            .order_by("-purchased_at")
+        )
+
+        if user.is_staff or user.is_superuser:
+            return qs
+
+        if hasattr(user, "teacher_profile"):
+            return qs.filter(course__teacher=user.teacher_profile)
+
+        raise PermissionDenied("You are not allowed to view enrolled students.")
 
 
 class ListEnrolledCourseView(generics.ListAPIView):

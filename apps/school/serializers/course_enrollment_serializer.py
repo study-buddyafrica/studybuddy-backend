@@ -78,7 +78,6 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
         attrs["course_price"] = course_price
 
         return attrs
-    
 
     def create(self, validated_data):
         student = validated_data["student"]
@@ -132,3 +131,23 @@ class CourseEnrollmentSerializer(serializers.ModelSerializer):
         enrollment.amount_paid = amount.amount
         return enrollment
 
+
+class EnrolledStudentSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source="student.user.first_name")
+    last_name = serializers.CharField(source="student.user.last_name")
+    email = serializers.EmailField(source="student.user.email")
+    student_id = serializers.UUIDField(source="student.id")
+    enrolled_at = serializers.DateTimeField(source="purchased_at")
+    is_active = serializers.BooleanField()
+
+    class Meta:
+        model = CourseEnrollment
+        fields = [
+            "id",
+            "student_id",
+            "first_name",
+            "last_name",
+            "email",
+            "enrolled_at",
+            "is_active",
+        ]
