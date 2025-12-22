@@ -36,6 +36,6 @@ class GradeViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated or not hasattr(user, "teacher_profile"):
             return Grade.objects.all().order_by("level")
 
-        return Grade.objects.filter(teacher_profiles=user.teacher_profile).order_by(
+        return Grade.objects.filter(teacher_grades=user.teacher_profile).order_by(
             "level"
         )
