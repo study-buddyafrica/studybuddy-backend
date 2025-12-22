@@ -1,5 +1,5 @@
-from rest_framework import viewsets
-from rest_framework import permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
 
 from apps.school.serializers.grade_serializer import GradeSerializer
 from apps.school.models import Grade
@@ -36,6 +36,44 @@ class GradeViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated or not hasattr(user, "teacher_profile"):
             return Grade.objects.all().order_by("level")
 
-        return Grade.objects.filter(teacher_profiles=user.teacher_profile).order_by(
+        return Grade.objects.filter(teacher_grades=user.teacher_profile).order_by(
             "level"
+        )
+
+    def create(self, request, *args, **kwargs):
+        """
+        Disable create method - grades are created automatically
+        """
+        return Response(
+            {"detail": 'Method "POST" not allowed. Grades are created automatically.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        """
+        Disable update method - grades are created automatically
+        """
+        return Response(
+            {"detail": 'Method "PUT" not allowed. Grades are created automatically.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Disable partial update method - grades are created automatically
+        """
+        return Response(
+            {"detail": 'Method "PATCH" not allowed. Grades are created automatically.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Disable delete method - grades are created automatically
+        """
+        return Response(
+            {
+                "detail": 'Method "DELETE" not allowed. Grades are created automatically.'
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )

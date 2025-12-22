@@ -89,6 +89,7 @@ class Grade(Core):
     )
     level = models.CharField(
         max_length=50,
+        unique=True,
         choices=GradeLevel.choices,
         default=GradeLevel.GENERAL,
         db_index=True
