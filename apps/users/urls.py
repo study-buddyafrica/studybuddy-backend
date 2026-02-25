@@ -32,11 +32,6 @@ urlpatterns = [
         name="user-list"
     ),
     path(
-        "users/register/", 
-        UserRegistrationView.as_view(), 
-        name="user-register"
-    ),
-    path(
         "user/retrieve/<uuid:pk>/", 
         UserDetailView.as_view(), 
         name="user-detail"
