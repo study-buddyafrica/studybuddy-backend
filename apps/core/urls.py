@@ -18,10 +18,6 @@ urlpatterns = [
         TokenRefreshView.as_view(), 
         name="token_refresh"
     ),
-    path("token/request/",
-         CustomObtainTokenPairView.as_view(), 
-         name="token_request"
-        ),
     path(
         "verify-email/request/", 
         RequestRegistrationVerificationCode.as_view(), 
