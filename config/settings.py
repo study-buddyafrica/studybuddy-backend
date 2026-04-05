@@ -12,7 +12,7 @@ SECRET_KEY =os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26','127.0.0.1']
+ALLOWED_HOSTS = ["backend.studybuddy.africa",'54.225.241.26','127.0.0.1',"localhost"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -98,6 +98,11 @@ SWAGGER_SETTINGS = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=4  ),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+
+    'AUTH_COOKIE': 'refresh_token',
+    'AUTH_COOKIE_SECURE': not DEBUG,       # True in Production (requires HTTPS)
+    'AUTH_COOKIE_HTTP_ONLY': True,         # Blocks XSS attacks from reading it
+    'AUTH_COOKIE_SAMESITE': 'Lax',         # Protects against CSRF attacks
 
 }
 
@@ -247,3 +252,7 @@ INTASEND_SECRET_KEY =os.getenv('INTASEND_TOKEN')
 INTASEND_ENV ='sandbox',
 INTASEND_WEBHOOK_CHALLENGE ='studyyddubbuddy'
 
+
+# If we are developing locally, print emails to the terminal instead of actually sending them.
+if DEBUG == True:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
