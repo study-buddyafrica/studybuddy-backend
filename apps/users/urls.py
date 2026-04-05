@@ -27,6 +27,11 @@ user_router.register(
 
 urlpatterns = [
     path(
+        "users/register/", 
+        UserRegistrationView.as_view(), 
+        name="user-register"
+    ),
+    path(
         "users/users-list/", 
         UserListView.as_view(), 
         name="user-list"

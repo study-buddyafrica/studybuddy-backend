@@ -14,6 +14,11 @@ from apps.core.auth.views.reset_password_view import (
 
 urlpatterns = [
     path(
+        "login/", 
+        CustomObtainTokenPairView.as_view(), 
+        name="token_obtain_pair"
+    ),
+    path(
         "token/refresh/", 
         TokenRefreshView.as_view(), 
         name="token_refresh"
