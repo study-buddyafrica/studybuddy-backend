@@ -1,5 +1,6 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -30,16 +31,17 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
 
-        profile_id = self.get_profile_id(self.user)
+        # stop returning user object in API call
+        # profile_id = self.get_profile_id(self.user)
 
-        user_data = {
-            "id": self.user.id,
-            "email": self.user.email,
-            "first_name": self.user.first_name,
-            "role": getattr(self.user, "role", None),
-            "is_superuser": self.user.is_superuser,
-            "profile_id": profile_id,
-        }
+        # user_data = {
+        #     "id": self.user.id,
+        #     "email": self.user.email,
+        #     "first_name": self.user.first_name,
+        #     "role": getattr(self.user, "role", None),
+        #     "is_superuser": self.user.is_superuser,
+        #     "profile_id": profile_id,
+        # }
 
-        data.update({"user": user_data})
+        # data.update({"user": data})
         return data

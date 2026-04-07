@@ -1,9 +1,13 @@
+from datetime import datetime
+
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
 from drf_spectacular.views import (SpectacularAPIView, 
     SpectacularSwaggerView, SpectacularRedocView)
 from django.conf import settings
 from django.conf.urls.static import static
+
 
 urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -15,6 +19,10 @@ urlpatterns = [
     path('api/',include('apps.core.urls')),
     path('api/', include('apps.users.urls')),
     path('api/',include('apps.school.urls')),
-    path('api/',include('apps.transactions.urls'))
+    path('api/',include('apps.transactions.urls')),
+    path("", lambda request: JsonResponse({
+    "message": "Welcome to StudyBuddy API",
+    "time": datetime.now().isoformat()
+    })),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
