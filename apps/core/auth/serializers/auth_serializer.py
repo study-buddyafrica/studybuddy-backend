@@ -42,7 +42,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         #     "is_superuser": self.user.is_superuser,
         #     "profile_id": profile_id,
         # }
-        data = super().validate(attrs)
 
         # data.update({"user": data})
         return data
