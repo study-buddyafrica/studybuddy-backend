@@ -12,7 +12,13 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ["backend.studybuddy.africa", "54.225.241.26", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    "backend.studybuddy.africa",
+    "54.225.241.26",
+    "127.0.0.1",
+    "localhost",
+    "wathi.tail433a8c.ts.net",
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -37,12 +43,24 @@ INSTALLED_APPS = [
 ]
 
 
-X_FRAME_OPTIONS = "ALLOWALL"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+
+SECURE_REFERRER_POLICY = "same-origin"
+
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True  # force HTTPS
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
 """# Content Security Policy settings"""
-CSP_DEFAULT_SRC = ("'self'",)
+CSP_DEFAULT_SRC = ("'none'",)
 
 """# Allow embedding in iframes from these specific origins"""
 CSP_FRAME_ANCESTORS = (
@@ -54,6 +72,8 @@ CSP_FRAME_ANCESTORS = (
     "http://localhost:5174",
 )
 
+CSP_SCRIPT_SRC = ("'self'",)
+CSP_STYLE_SRC = "'self'"
 
 CORS_ALLOW_ALL_HEADERS = True
 CORS_ALLOW_ALL_ORIGINS = False
@@ -83,6 +103,12 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.studybuddy.africa",
 ]
 
+X_FRAME_OPTIONS = "SAMEORIGIN"
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
 """ swagger settings"""
 
 SWAGGER_SETTINGS = {
@@ -118,6 +144,14 @@ SPECTACULAR_SETTINGS = {
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ]
+    if not DEBUG
+    else [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -187,9 +221,7 @@ if DATABASE_URL == "":
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
-    print(
-        f"using database: name {os.getenv('DB_NAME')}: host{os.getenv('DB_HOST')}: password:{os.getenv('DB_PASSWORD')}"
-    )
+    print(f"using database: name {os.getenv('DB_NAME')}: host{os.getenv('DB_HOST')}")
 else:
     DATABASES = {
         "default": dj_database_url.config(
