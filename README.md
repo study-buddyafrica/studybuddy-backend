@@ -39,26 +39,42 @@ python manage.py makemigrations
 python manage.py migrate
 
 python manage.py run server
-#or
+# or
 gunicorn config.wsgi
+# or
+uvicorn config.asgi:application --reload
 
 #then on a new tab
-curl -I http://127.0.0.1:8000/api/
+curl -I http://127.0.0.1:8000/api/health/
 ```
 
 Response:
 ```json
-HTTP/1.1 200 OK
-Date: Tue, 07 Apr 2026 11:16:25 GMT
-Server: WSGIServer/0.2 CPython/3.14.3
-Content-Type: application/json
-Vary: Accept, origin
+HTTP/2.0 200 OK
 Allow: GET, HEAD, OPTIONS
-X-Frame-Options: ALLOWALL
-Content-Length: 109
-X-Content-Type-Options: nosniff
-Referrer-Policy: same-origin
+Content-Length: 28
+Content-Type: application/json
 Cross-Origin-Opener-Policy: same-origin
+Date: Tue, 07 Apr 2026 18:34:30 GMT
+Referrer-Policy: same-origin
+Server: uvicorn
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+Vary: origin
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+
+{
+  db_ms: 21.6
+  status: "ok"
+}
 ```
 
 Swagger UI: <http://127.0.0.1:8000/api/swagger/>
+
+To check for outdated packages:
+
+```bash
+pip-audit
+
+pip-review --auto # to update outdated packages
+```
