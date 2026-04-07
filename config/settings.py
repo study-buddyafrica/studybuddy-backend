@@ -129,8 +129,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 5,
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler"
-
+    "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler",
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/m',       
+        'user': '2000/h',     
+        'auth': '5/m',         
+        'burst': '30/m',      
+    }
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}
 
@@ -166,24 +175,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-POSTGRES_LOCALLY = True
-DATABASES = {}
+POSTGRES_LOCALLY = os.getenv("POSTGRES_LOCALLY", default=False)
 
-if DEBUG == False or POSTGRES_LOCALLY == True:
+if not DEBUG or POSTGRES_LOCALLY:
     DATABASES = {
-        'default': dj_database_url.config(
-            default=os.getenv('TEST_DATABASE_URI')
+        "default": dj_database_url.config(
+            default=os.getenv("DATABASE_URL"),
+            conn_max_age=600,
+            conn_health_checks=True,
         )
-
     }
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 
+APPEND_SLASH = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {

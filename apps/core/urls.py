@@ -11,6 +11,7 @@ from apps.core.auth.views.reset_password_view import (
     RequestPasswordResetView,
     ConfirmPasswordResetView
 )
+from apps.core.views.health_check_view import DatabaseHealthCheckView
 
 urlpatterns = [
     path(
@@ -47,6 +48,11 @@ urlpatterns = [
         "password/reset/confirm/", 
         ConfirmPasswordResetView.as_view(), 
         name="password-reset-confirm"
+    ),
+    path(
+        "health/",
+        DatabaseHealthCheckView.as_view(),
+        name="database-health-check"
     ),
 
 ]

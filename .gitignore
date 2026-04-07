@@ -213,3 +213,6 @@ docker-compose.dev.yml
 venv/
 .venv/
 env/
+*.omx/
+omx/
+.codex
