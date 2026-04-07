@@ -1,5 +1,4 @@
 import time
-
 from django.db import DatabaseError, connection
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -24,7 +23,9 @@ class DatabaseHealthCheckView(APIView):
                     "status": "degraded" if degraded else "ok",
                     "db_ms": elapsed_ms,
                 },
-                status=status.HTTP_503_SERVICE_UNAVAILABLE if degraded else status.HTTP_200_OK,
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+                if degraded
+                else status.HTTP_200_OK,
             )
 
         except Exception as e:

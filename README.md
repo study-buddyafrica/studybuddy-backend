@@ -1,6 +1,6 @@
 # Studybuddy-backend
 
-To get started:
+To get started: (the readme assumes you are running on a Linux/MacOs system)
 
 Ensure you have Python (>=3.11), Git, pip + virtualenv, postgresql (or docker), uv (optional)
 
@@ -26,6 +26,13 @@ cp .env.example .env
 
 3. Run and test the code
 ```bash
+
+#optional (start the docker postgresql service)
+# ensure to stop any other postgresql running on port 5432 -> failed to bind host port 0.0.0.0:5432/tcp: address already in use
+sudo systemctl stop postgresql
+
+docker compose up # add -d to detach it or open a new tab
+
 # make database migrations
 python manage.py makemigrations
 
@@ -53,3 +60,5 @@ X-Content-Type-Options: nosniff
 Referrer-Policy: same-origin
 Cross-Origin-Opener-Policy: same-origin
 ```
+
+Swagger UI: <http://127.0.0.1:8000/api/swagger/>

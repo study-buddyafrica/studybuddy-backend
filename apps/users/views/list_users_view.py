@@ -2,6 +2,9 @@ from rest_framework import generics, permissions, filters
 from rest_framework.response import Response
 from apps.users.serializers.list_users_serliazer import UserSerializer
 from apps.core.models import User
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 
 
 class UserListView(generics.ListAPIView):
@@ -11,6 +14,7 @@ class UserListView(generics.ListAPIView):
       - Regular user → can only view their own info.
     Supports filtering by role and email.
     """
+
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter]
@@ -20,15 +24,18 @@ class UserListView(generics.ListAPIView):
         user = self.request.user
 
         queryset = (
-            User.objects
-            .select_related(
-                "teacher_profile",
-                "parent_profile",
-                "student_profile"
+            User.objects.select_related(
+                "teacher_profile", "parent_profile", "student_profile"
             )
             .only(
-                "id", "email", "first_name", "last_name",
-                "username", "role", "is_active", "is_staff",
+                "id",
+                "email",
+                "first_name",
+                "last_name",
+                "username",
+                "role",
+                "is_active",
+                "is_staff",
                 "account_confirmed",
                 # profile PKs
                 "teacher_profile__id",
@@ -52,18 +59,18 @@ class UserListView(generics.ListAPIView):
 
         return queryset.filter(id=user.id)
 
-
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
     def list(self, request, *args, **kwargs):
         """Custom response structure."""
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            "count": queryset.count(),
-            "results": serializer.data
-        })  
+        return Response({"count": queryset.count(), "results": serializer.data})
+
 
 class UserDetailView(generics.RetrieveAPIView):
     """Retrieve single user detail"""
+
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "pk"
