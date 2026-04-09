@@ -18,6 +18,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "wathi.tail433a8c.ts.net",
+    '34.234.64.73'
 ]
 
 INSTALLED_APPS = [
