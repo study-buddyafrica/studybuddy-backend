@@ -12,6 +12,7 @@ from apps.core.models import User
 from apps.school.models import (
     School,
     Subject,
+    EducationLevel,
     Grade,
     Course,
     Topic,
@@ -57,17 +58,18 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE(f"Seeding demo data with limit={limit}"))
 
+        education_levels = self._seed_education_levels()
         grades = self._seed_grades(limit)
         subjects = self._seed_subjects(limit)
         schools = self._seed_schools(limit)
 
-        teachers = self._seed_teachers(limit, schools, grades, subjects)
-        students = self._seed_students(limit, schools, grades)
+        teachers = self._seed_teachers(limit, schools, grades, subjects, education_levels)
+        students = self._seed_students(limit, schools, grades, education_levels)
         parents = self._seed_parents(limit)
         self._seed_wallets(students, teachers, parents)
 
         self._link_parents_children(parents, students)
-        courses = self._seed_courses(limit, subjects, grades, teachers)
+        courses = self._seed_courses(limit, subjects, grades, teachers, education_levels)
         self._seed_enrollments_and_leads(courses, students)
         self._seed_session_bookings(courses, students, teachers)
         self._seed_topics_and_subtopics(limit, courses)
@@ -133,6 +135,27 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Grades: {len(created)} ready"))
         return created
 
+    def _seed_education_levels(self):
+        items = [
+            ("k12", "K-12", "Primary and secondary education tracks."),
+            ("university", "University", "Higher education and tertiary tracks."),
+            ("continuous", "Continuous Learning", "Professional and lifelong learning tracks."),
+        ]
+        created = []
+        for code, name, description in items:
+            level, _ = EducationLevel.objects.get_or_create(
+                code=code,
+                defaults={"name": name, "description": description},
+            )
+            if level.name != name or level.description != description:
+                level.name = name
+                level.description = description
+                level.save(update_fields=["name", "description"])
+            created.append(level)
+
+        self.stdout.write(self.style.SUCCESS(f"Education levels: {len(created)} ready"))
+        return created
+
     def _seed_subjects(self, limit):
         names = ["Mathematics", "English", "Biology", "Physics", "Chemistry"][:limit]
         created = []
@@ -161,7 +184,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Schools: {len(created)} ready"))
         return created
 
-    def _seed_teachers(self, limit, schools, grades, subjects):
+    def _seed_teachers(self, limit, schools, grades, subjects, education_levels):
         created = []
         for idx in range(1, limit + 1):
             email = f"teacher{idx}@studybuddy.demo"
@@ -192,6 +215,7 @@ class Command(BaseCommand):
                     "gender": "Male" if idx % 2 else "Female",
                     "teacher_license_number": f"TCH-DEMO-{idx:04d}",
                     "national_identity_number": f"ID-DEMO-{idx:06d}",
+                    "education_level": education_levels[(idx - 1) % len(education_levels)] if education_levels else None,
                 },
             )
 
@@ -220,6 +244,10 @@ class Command(BaseCommand):
             if not teacher.is_verified:
                 teacher.is_verified = True
                 changed = True
+            target_level = education_levels[(idx - 1) % len(education_levels)] if education_levels else None
+            if target_level and teacher.education_level_id != target_level.id:
+                teacher.education_level = target_level
+                changed = True
             if changed:
                 teacher.save()
 
@@ -236,7 +264,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Teachers: {len(created)} ready"))
         return created
 
-    def _seed_students(self, limit, schools, grades):
+    def _seed_students(self, limit, schools, grades, education_levels):
         created = []
         for idx in range(1, limit + 1):
             email = f"student{idx}@studybuddy.demo"
@@ -258,11 +286,16 @@ class Command(BaseCommand):
                 defaults={
                     "birth_date": date(2010, min(idx, 12), min(idx, 28)),
                     "grade": grades[(idx - 1) % len(grades)] if grades else None,
+                    "education_level": education_levels[(idx - 1) % len(education_levels)] if education_levels else None,
                     "school": schools[(idx - 1) % len(schools)] if schools else None,
                     "contact_name": f"Guardian {idx}",
                     "guardian_contact": f"+2547111111{idx}",
                 },
             )
+            target_level = education_levels[(idx - 1) % len(education_levels)] if education_levels else None
+            if target_level and student.education_level_id != target_level.id:
+                student.education_level = target_level
+                student.save(update_fields=["education_level"])
             created.append(student)
         self.stdout.write(self.style.SUCCESS(f"Students: {len(created)} ready"))
         return created
@@ -308,7 +341,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Parent-child links: {links} created/ensured"))
 
-    def _seed_courses(self, limit, subjects, grades, teachers):
+    def _seed_courses(self, limit, subjects, grades, teachers, education_levels):
         created = []
         if not subjects:
             self.stdout.write(self.style.WARNING("Courses: 0 (no subjects available)"))
@@ -320,12 +353,17 @@ class Command(BaseCommand):
                 defaults={
                     "subject": subjects[(idx - 1) % len(subjects)],
                     "grade": grades[(idx - 1) % len(grades)] if grades else None,
+                    "education_level": education_levels[(idx - 1) % len(education_levels)] if education_levels else None,
                     "description": f"Demo course description {idx}.",
                     "price": Decimal("1000.00") + Decimal(str(idx * 100)),
                     "teacher": teachers[(idx - 1) % len(teachers)] if teachers else None,
                     "is_universal": True,
                 },
             )
+            target_level = education_levels[(idx - 1) % len(education_levels)] if education_levels else None
+            if target_level and course.education_level_id != target_level.id:
+                course.education_level = target_level
+                course.save(update_fields=["education_level"])
             created.append(course)
 
         self.stdout.write(self.style.SUCCESS(f"Courses: {len(created)} ready"))
@@ -430,6 +468,7 @@ class Command(BaseCommand):
                 defaults={
                     "teacher": booking.teacher,
                     "course": course,
+                    "education_level": booking.education_level or (course.education_level if course else None),
                     "title": f"{course.title if course else 'Demo'} Live Session",
                     "description": f"Live class for booking {booking.id}.",
                     "started_at": booking.scheduled_start,
@@ -732,6 +771,7 @@ class Command(BaseCommand):
                     "is_allowed": True,
                     "cost": Decimal("750.00"),
                     "course": course,
+                    "education_level": course.education_level,
                 },
             )
 
@@ -745,6 +785,9 @@ class Command(BaseCommand):
                 changed = True
             if booking.course_id is None:
                 booking.course = course
+                changed = True
+            if booking.education_level_id is None and course.education_level_id is not None:
+                booking.education_level = course.education_level
                 changed = True
             if changed:
                 booking.save()

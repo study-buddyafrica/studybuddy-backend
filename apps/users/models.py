@@ -120,6 +120,13 @@ class TeacherProfile(models.Model):
         related_name='teacher_grades', 
         blank=True, null=True
     )
+    education_level = models.ForeignKey(
+        'school.EducationLevel',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='teacher_profiles',
+    )
     profile_picture = models.ImageField(
         upload_to="profiles/", 
         null=True, blank=True
@@ -202,6 +209,13 @@ class StudentProfile(Core):
         blank=True,
         related_name="students",
         db_index=True,
+    )
+    education_level = models.ForeignKey(
+        'school.EducationLevel',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='students',
     )
     school = models.ForeignKey(
         'school.School',

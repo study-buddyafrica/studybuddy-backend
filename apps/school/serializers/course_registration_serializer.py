@@ -9,6 +9,7 @@ class CourseSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     sanitize_fields = ["title", "description"]
     subject_name = serializers.CharField(source="subject.name", read_only=True)
     grade_name = serializers.CharField(source="grade.name", read_only=True)
+    education_level_name = serializers.CharField(source="education_level.name", read_only=True)
     teacher_name = serializers.CharField(
         source="teacher.user.get_full_name", read_only=True
     )
@@ -24,6 +25,8 @@ class CourseSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "subject_name",
             "grade",
             "grade_name",
+            "education_level",
+            "education_level_name",
             "price",
             "is_active",
             "cover_image",
@@ -79,6 +82,7 @@ class CoursePublicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
     grade = serializers.SerializerMethodField()
     subject = serializers.SerializerMethodField()
+    education_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -92,6 +96,7 @@ class CoursePublicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "teacher",
             "grade",
             "subject",
+            "education_level",
         ]
 
     def get_teacher(self, obj):
@@ -115,6 +120,11 @@ class CoursePublicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             return {"name": obj.subject.name}
         return None
 
+    def get_education_level(self, obj):
+        if obj.education_level:
+            return {"code": obj.education_level.code, "name": obj.education_level.name}
+        return None
+
 
 class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     sanitize_fields = ["title", "description"]
@@ -122,6 +132,7 @@ class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     teacher = serializers.SerializerMethodField()
     grade = serializers.SerializerMethodField()
     subject = serializers.SerializerMethodField()
+    education_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -131,6 +142,7 @@ class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "description",
             "price",
             "grade",
+            "education_level",
             "subject",
             "teacher",
             "is_universal",
@@ -157,6 +169,11 @@ class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     def get_subject(self, obj):
         if obj.subject:
             return {"name": obj.subject.name}
+        return None
+
+    def get_education_level(self, obj):
+        if obj.education_level:
+            return {"code": obj.education_level.code, "name": obj.education_level.name}
         return None
 
     def get_topics(self, obj):

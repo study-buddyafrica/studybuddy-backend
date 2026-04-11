@@ -21,6 +21,7 @@ class LiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     teacher_meeting_link = serializers.CharField(read_only=True)
     student_meeting_link = serializers.CharField(read_only=True)
     whiteboard_link = serializers.URLField(read_only=True)
+    education_level_name = serializers.CharField(source="education_level.name", read_only=True)
 
     class Meta:
         model = LiveSession
@@ -34,6 +35,8 @@ class LiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "ended_at",
             "title",
             "description",
+            "education_level",
+            "education_level_name",
         ]
         read_only_fields = [
             "id",
@@ -107,6 +110,7 @@ class LiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             ended_at=booking.scheduled_end,
             title=title,
             description=description,
+            education_level=booking.education_level or getattr(booking.course, "education_level", None),
         )
         booking.status = "accepted"
         booking.save(update_fields=["status"])

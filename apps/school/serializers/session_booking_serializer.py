@@ -19,14 +19,15 @@ class SessionBookingSerializer(serializers.ModelSerializer):
     cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     teacher_name = serializers.SerializerMethodField()
     course_title = serializers.SerializerMethodField()
+    education_level_name = serializers.SerializerMethodField()
 
     class Meta:
         model = SessionBooking
         fields = [
             "id", "teacher_id", "teacher_name", "scheduled_start", "duration_hours", "course",
-            "course_title", "scheduled_end", "status", "is_allowed", "attended", "cost"
+            "course_title", "education_level", "education_level_name", "scheduled_end", "status", "is_allowed", "attended", "cost"
         ]
-        read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end", "teacher_name", "course_title"]
+        read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end", "teacher_name", "course_title", "education_level_name"]
 
     def get_teacher_name(self, obj):
         """Return teacher full name"""
@@ -37,6 +38,9 @@ class SessionBookingSerializer(serializers.ModelSerializer):
     def get_course_title(self, obj):
         """Return course title"""
         return obj.course.title if obj.course else ""
+
+    def get_education_level_name(self, obj):
+        return obj.education_level.name if obj.education_level else ""
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -53,6 +57,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
         duration_hours = validated_data.pop("duration_hours")
         scheduled_start = validated_data.pop("scheduled_start")
         course = validated_data.pop("course")
+        education_level = validated_data.pop("education_level", None)
 
         try:
             teacher = TeacherProfile.objects.get(id=teacher_id)
@@ -117,6 +122,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                     cost=total_cost,
                     is_allowed=True,
                     course=course,
+                    education_level=education_level or getattr(course, "education_level", None),
                     **validated_data,
                 )
         else:
@@ -127,6 +133,8 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                 scheduled_end=scheduled_end,
                 cost=total_cost,
                 is_allowed=True,
+                course=course,
+                education_level=education_level or getattr(course, "education_level", None),
                 **validated_data,
             )
 

@@ -33,7 +33,7 @@ class DatabaseHealthCheckView(APIView):
                 {
                     "status": "error",
                     "db_ms": None,
-                    "detail": str(e),
+                    "detail": "database unavailable",
                 },
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )

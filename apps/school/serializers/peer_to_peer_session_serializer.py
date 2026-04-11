@@ -6,9 +6,11 @@ from rest_framework import serializers
 from apps.core.utils.dailyco import DailyCoAPI
 from apps.school.models import CourseEnrollment, LiveSession
 from apps.school.serializers.livesession_serializer import DEFAULT_WHITEBOARD_LINK
+from apps.core.serializers import SanitizeHTMLMixin
 
 
-class PeerLiveSessionSerializer(serializers.ModelSerializer):
+class PeerLiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
     duration_hours = serializers.FloatField(write_only=True)
     started_at = serializers.DateTimeField()
     ended_at = serializers.DateTimeField(read_only=True)
@@ -118,6 +120,7 @@ class PeerLiveSessionSerializer(serializers.ModelSerializer):
         live_session = LiveSession.objects.create(
             course=course,
             teacher=course.teacher,
+            education_level=course.education_level,
             title=title,
             description=description,
             teacher_meeting_link=teacher_token["room_url"],

@@ -17,7 +17,7 @@ from apps.core.auth.views.reset_password_view import (
     ConfirmPasswordResetView,
     ResetPasswordCompatibilityView,
 )
-from apps.core.views.admin_views import get_classes, get_subjects
+from apps.core.views.admin_views import get_classes, get_subjects, admin_dashboard_stats
 from apps.school.views.performance_compatibility_views import (
     StudentPerformanceView,
     CompletedLessonsView,
@@ -58,6 +58,8 @@ urlpatterns = [
     path('admin/get-classes/', get_classes, name='root-admin-get-classes'),
     path('admin/get-subjects', get_subjects, name='root-admin-get-subjects-no-slash'),
     path('admin/get-subjects/', get_subjects, name='root-admin-get-subjects'),
+    path('admin/dashboard-stats', admin_dashboard_stats, name='root-admin-dashboard-stats-no-slash'),
+    path('admin/dashboard-stats/', admin_dashboard_stats, name='root-admin-dashboard-stats'),
     # Performance and lessons compatibility routes used by frontend
     path('performance/api/student-performance/<str:student_id>', StudentPerformanceView.as_view(), name='performance-student-no-slash'),
     path('performance/api/student-performance/<str:student_id>/', StudentPerformanceView.as_view(), name='performance-student'),

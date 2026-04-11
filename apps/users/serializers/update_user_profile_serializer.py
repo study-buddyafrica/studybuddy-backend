@@ -21,6 +21,7 @@ class TeacherProfileUpdateSerializer(SanitizeHTMLMixin, serializers.ModelSeriali
             "hourly_rate",
             "subjects",
             "grade",
+            "education_level",
             "experience",
             "profile_picture",
             "teacher_license_number",
@@ -91,6 +92,7 @@ class StudentProfileUpdateSerializer(SanitizeHTMLMixin, serializers.ModelSeriali
             "contact_name",
             "guardian_contact",
             "grade",
+            "education_level",
             "school",
         ]
         read_only_fields = ["id", "user", "enrollment_date"]
