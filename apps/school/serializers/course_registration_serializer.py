@@ -1,44 +1,40 @@
 from rest_framework import serializers
 from djmoney.contrib.django_rest_framework import MoneyField
 
-from apps.school.models import (
-    Course, 
-    Topic, Subtopic
-    )
+from apps.school.models import Course, Topic, Subtopic
+from apps.core.serializers import SanitizeHTMLMixin
 
-class CourseSerializer(serializers.ModelSerializer):
-    subject_name = serializers.CharField(
-        source="subject.name", 
-        read_only=True
-    )
-    grade_name = serializers.CharField(
-        source="grade.name", 
-        read_only=True
-    )
+
+class CourseSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
+    subject_name = serializers.CharField(source="subject.name", read_only=True)
+    grade_name = serializers.CharField(source="grade.name", read_only=True)
     teacher_name = serializers.CharField(
-        source="teacher.user.get_full_name", 
-        read_only=True
+        source="teacher.user.get_full_name", read_only=True
     )
-    price = MoneyField(
-        max_digits=10, 
-        decimal_places=2,
-        default_currency="KES"
-    )
+    price = MoneyField(max_digits=10, decimal_places=2, default_currency="KES")
 
     class Meta:
         model = Course
         fields = [
-            "id","title","description",
-            "subject","subject_name",
-            "grade","grade_name","price",
-            "is_active","cover_image",
-            "teacher","teacher_name","created_at",
-            "updated_at",'country', 'is_universal',
+            "id",
+            "title",
+            "description",
+            "subject",
+            "subject_name",
+            "grade",
+            "grade_name",
+            "price",
+            "is_active",
+            "cover_image",
+            "teacher",
+            "teacher_name",
+            "created_at",
+            "updated_at",
+            "country",
+            "is_universal",
         ]
-        read_only_fields = [
-            "id", "created_at", 
-            "updated_at", "teacher_name"
-        ]
+        read_only_fields = ["id", "created_at", "updated_at", "teacher_name"]
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -47,15 +43,13 @@ class CourseSerializer(serializers.ModelSerializer):
         if hasattr(user, "teacher_profile") and not user.is_staff:
             if "teacher" in attrs and attrs["teacher"] != user.teacher_profile:
                 raise serializers.ValidationError(
-                    "You can only create courses" \
-                    " under your own profile."
+                    "You can only create courses under your own profile."
                 )
             attrs["teacher"] = user.teacher_profile
 
         if user.is_staff and not attrs.get("teacher"):
             raise serializers.ValidationError(
-                "Admin must assign a teacher" \
-                " when creating a course."
+                "Admin must assign a teacher when creating a course."
             )
 
         if not attrs.get("subject"):
@@ -66,24 +60,22 @@ class CourseSerializer(serializers.ModelSerializer):
 
         if is_universal:
             if country:
-                raise serializers.ValidationError({
-                    "country": "Universal courses "
-                    "must not include a country."
-                })
+                raise serializers.ValidationError(
+                    {"country": "Universal courses must not include a country."}
+                )
             attrs["country"] = None
 
         else:
             if not country:
-                raise serializers.ValidationError({
-                    "country": "Country is required "
-                    "for non-universal courses."
-                })
+                raise serializers.ValidationError(
+                    {"country": "Country is required for non-universal courses."}
+                )
 
         return attrs
-    
 
 
-class CoursePublicSerializer(serializers.ModelSerializer):
+class CoursePublicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
     teacher = serializers.SerializerMethodField()
     grade = serializers.SerializerMethodField()
     subject = serializers.SerializerMethodField()
@@ -91,9 +83,15 @@ class CoursePublicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            "id", "title", "description",
-            "price", "country","is_universal",
-            "teacher", "grade", "subject", 
+            "id",
+            "title",
+            "description",
+            "price",
+            "country",
+            "is_universal",
+            "teacher",
+            "grade",
+            "subject",
         ]
 
     def get_teacher(self, obj):
@@ -109,19 +107,17 @@ class CoursePublicSerializer(serializers.ModelSerializer):
 
     def get_grade(self, obj):
         if obj.grade:
-            return {
-                "level": obj.grade.level
-            }
+            return {"level": obj.grade.level}
         return None
 
     def get_subject(self, obj):
         if obj.subject:
-            return {
-                "name": obj.subject.name
-            }
+            return {"name": obj.subject.name}
         return None
 
-class CourseNestedSerializer(serializers.ModelSerializer):
+
+class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
     topics = serializers.SerializerMethodField()
     teacher = serializers.SerializerMethodField()
     grade = serializers.SerializerMethodField()
@@ -130,10 +126,16 @@ class CourseNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            "id", "title", "description",
-            "price", "grade", "subject",
-            "teacher", "is_universal",
-            "country", "topics",
+            "id",
+            "title",
+            "description",
+            "price",
+            "grade",
+            "subject",
+            "teacher",
+            "is_universal",
+            "country",
+            "topics",
         ]
 
     def get_teacher(self, obj):
@@ -149,16 +151,12 @@ class CourseNestedSerializer(serializers.ModelSerializer):
 
     def get_grade(self, obj):
         if obj.grade:
-            return {
-                "level": obj.grade.level
-            }
+            return {"level": obj.grade.level}
         return None
 
     def get_subject(self, obj):
         if obj.subject:
-            return {
-                "name": obj.subject.name
-            }
+            return {"name": obj.subject.name}
         return None
 
     def get_topics(self, obj):
@@ -193,14 +191,19 @@ class CourseNestedSerializer(serializers.ModelSerializer):
         return None
 
 
-class TopicSerializer(serializers.ModelSerializer):
+class TopicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
+
     class Meta:
         model = Topic
         fields = [
-            "id", "course", ""
-            "title", "description",
-            "content_file", "order",
-            'is_locked'
+            "id",
+            "course",
+            "title",
+            "description",
+            "content_file",
+            "order",
+            "is_locked",
         ]
 
     def validate_course(self, value):
@@ -208,11 +211,10 @@ class TopicSerializer(serializers.ModelSerializer):
         if hasattr(user, "teacher_profile") and not user.is_staff:
             if value.teacher != user.teacher_profile:
                 raise serializers.ValidationError(
-                    "You cannot add topics " \
-                    "to a course you don't own."
+                    "You cannot add topics to a course you don't own."
                 )
         return value
-    
+
     def get_content_file_url(self, obj):
         if obj.content_file:
             request = self.context.get("request")
@@ -220,16 +222,22 @@ class TopicSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.content_file.url)
             return obj.content_file.url
         return None
-    
-class SubtopicSerializer(serializers.ModelSerializer):
+
+
+class SubtopicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "content"]
     content_file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Subtopic
         fields = [
-            "id", "topic", "title", 
-            "content", "content_file_url", 
-            "order","is_locked",
+            "id",
+            "topic",
+            "title",
+            "content",
+            "content_file_url",
+            "order",
+            "is_locked",
         ]
 
     def validate(self, attrs):
@@ -256,4 +264,3 @@ class SubtopicSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.content_file.url)
             return obj.content_file.url
         return None
-

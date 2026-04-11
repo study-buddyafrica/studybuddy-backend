@@ -18,7 +18,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "wathi.tail433a8c.ts.net",
-    '34.234.64.73'
+    "34.234.64.73",
 ]
 
 INSTALLED_APPS = [
@@ -223,7 +223,7 @@ if DATABASE_URL == "":
         }
     }
     print(f"using database: name {os.getenv('DB_NAME')}: host{os.getenv('DB_HOST')}")
-else:
+elif DATABASE_URL == "" and DEBUG:
     DATABASES = {
         "default": dj_database_url.config(
             default=DATABASE_URL,

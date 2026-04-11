@@ -4,13 +4,14 @@ To get started: (the readme assumes you are running on a Linux/MacOs system)
 
 Ensure you have Python (>=3.11), Git, pip + virtualenv, postgresql (or docker), uv (optional)
 
-
 1. Clone the repo:
+
 ```bash
 git clone https://github.com/studybuddyafrica/studybuddy-backend
 ```
 
-2. cd to the repo and setup the environment + install dependecies
+1. cd to the repo and setup the environment + install dependecies
+
 ```bash
 cd studybuddy-backend
 
@@ -24,7 +25,8 @@ pip install -r requirements.txt
 cp .env.example .env
 ````
 
-3. Run and test the code
+1. Run and test the code
+
 ```bash
 
 #optional (start the docker postgresql service)
@@ -49,6 +51,7 @@ curl -I http://127.0.0.1:8000/api/health/
 ```
 
 Response:
+
 ```json
 HTTP/2.0 200 OK
 Allow: GET, HEAD, OPTIONS
@@ -77,4 +80,11 @@ To check for outdated packages:
 pip-audit
 
 pip-review --auto # to update outdated packages
+```
+
+Known issues:
+
+```
+'default': connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
+ Is the server running on that host and accepting TCP/IP connections?
 ```
