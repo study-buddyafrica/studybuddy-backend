@@ -71,6 +71,7 @@ CSP_FRAME_ANCESTORS = (
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://localhost:5174",
+    "https://studybuddy-frotend.vercel.app"
 )
 
 CSP_SCRIPT_SRC = ("'self'",)

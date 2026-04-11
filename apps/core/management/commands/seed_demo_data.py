@@ -1,6 +1,5 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-import io
 import requests
 
 from django.core.management.base import BaseCommand
@@ -19,8 +18,25 @@ from apps.school.models import (
     Subtopic,
     CourseEnrollment,
     SessionBooking,
+    LiveSession,
+    RevisionMaterial,
+    Assessment,
+    AssessmentSubmission,
+    Question,
+    Choice,
+    SubtopicProgress,
+    TopicProgress,
+    CourseProgress,
 )
-from apps.users.models import TeacherProfile, StudentProfile, ParentProfile, ParentChild, StudentLead
+from apps.users.models import (
+    TeacherProfile,
+    StudentProfile,
+    ParentProfile,
+    ParentChild,
+    StudentLead,
+    Availability,
+    TeacherRating,
+)
 from apps.transactions.models import Wallet
 
 
@@ -55,6 +71,9 @@ class Command(BaseCommand):
         self._seed_enrollments_and_leads(courses, students)
         self._seed_session_bookings(courses, students, teachers)
         self._seed_topics_and_subtopics(limit, courses)
+        self._seed_teacher_availability_and_ratings(teachers, students)
+        self._seed_live_lessons(courses)
+        self._seed_learning_artifacts(courses, students)
 
         self.stdout.write(self.style.SUCCESS("Seed complete."))
 
@@ -343,6 +362,218 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Topics: {topics} created/ensured"))
         self.stdout.write(self.style.SUCCESS(f"Subtopics: {subtopics} created/ensured"))
+
+    def _seed_teacher_availability_and_ratings(self, teachers, students):
+        """Seed teacher availability slots and student reviews for teacher profiles."""
+        if not teachers:
+            self.stdout.write(self.style.WARNING("Availability/ratings: 0 (no teachers)"))
+            return
+
+        base = timezone.make_aware(datetime(2026, 1, 15, 9, 0, 0))
+        availability_count = 0
+        ratings_count = 0
+
+        for idx, teacher in enumerate(teachers, start=1):
+            for slot in range(2):
+                start_time = base + timedelta(days=idx, hours=slot * 2)
+                availability, created = Availability.objects.get_or_create(
+                    teacher=teacher,
+                    date=start_time,
+                    defaults={
+                        "end_date": start_time + timedelta(hours=1),
+                        "is_blocked": False,
+                    },
+                )
+                if availability.end_date is None:
+                    availability.end_date = start_time + timedelta(hours=1)
+                    availability.save(update_fields=["end_date"])
+                if created:
+                    availability_count += 1
+
+            if not students:
+                continue
+
+            for offset in range(min(2, len(students))):
+                student = students[(idx + offset - 1) % len(students)]
+                rating_value = 4 + ((idx + offset) % 2)
+                rating, created = TeacherRating.objects.get_or_create(
+                    teacher=teacher,
+                    student=student,
+                    defaults={"rating": rating_value},
+                )
+                if rating.rating != rating_value:
+                    rating.rating = rating_value
+                    rating.save(update_fields=["rating"])
+                if created:
+                    ratings_count += 1
+
+        self.stdout.write(self.style.SUCCESS(f"Availability slots: {availability_count} created/ensured"))
+        self.stdout.write(self.style.SUCCESS(f"Teacher ratings: {ratings_count} created/ensured"))
+
+    def _seed_live_lessons(self, courses):
+        """Seed live lesson records from accepted bookings for teacher dashboards."""
+        bookings = SessionBooking.objects.filter(status="accepted").select_related(
+            "teacher__user", "student__user", "course"
+        )
+
+        if not bookings.exists():
+            self.stdout.write(self.style.WARNING("Live lessons: 0 (no accepted bookings)"))
+            return
+
+        created = 0
+        for booking in bookings:
+            course = booking.course or (courses[0] if courses else None)
+            room_key = str(booking.id).replace("-", "")[:12]
+
+            _, was_created = LiveSession.objects.get_or_create(
+                session=booking,
+                defaults={
+                    "teacher": booking.teacher,
+                    "course": course,
+                    "title": f"{course.title if course else 'Demo'} Live Session",
+                    "description": f"Live class for booking {booking.id}.",
+                    "started_at": booking.scheduled_start,
+                    "ended_at": booking.scheduled_end,
+                    "teacher_meeting_link": f"https://mock.daily.co/{room_key}-teacher",
+                    "student_meeting_link": f"https://mock.daily.co/{room_key}-student",
+                    "whiteboard_link": "https://excalidraw.com/",
+                },
+            )
+            if was_created:
+                created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"Live lessons: {created} created/ensured"))
+
+    def _seed_learning_artifacts(self, courses, students):
+        """Seed revision materials, assessments, submissions, and progress records."""
+        if not courses:
+            self.stdout.write(self.style.WARNING("Learning artifacts: 0 (no courses)"))
+            return
+
+        materials = 0
+        assessments = 0
+        questions = 0
+        submissions = 0
+        progress_rows = 0
+        due_base = timezone.now() + timedelta(days=7)
+
+        for idx, course in enumerate(courses, start=1):
+            teacher = course.teacher
+            if teacher is None:
+                continue
+
+            _, mat_created = RevisionMaterial.objects.get_or_create(
+                title=f"{course.title} Revision Pack",
+                course=course,
+                uploaded_by=teacher,
+                defaults={
+                    "description": f"Revision material for {course.title}.",
+                },
+            )
+            if mat_created:
+                materials += 1
+
+            assessment, ass_created = Assessment.objects.get_or_create(
+                title=f"{course.title} Weekly Quiz",
+                course=course,
+                teacher=teacher,
+                defaults={
+                    "description": f"Auto-seeded quiz for {course.title}.",
+                    "due_date": due_base + timedelta(days=idx),
+                    "max_score": 100,
+                    "assessment_type": "mcq",
+                },
+            )
+            if ass_created:
+                assessments += 1
+
+            question, q_created = Question.objects.get_or_create(
+                assessment=assessment,
+                order=1,
+                defaults={
+                    "text": f"What is the key concept in {course.title}?",
+                    "points": 5,
+                },
+            )
+            if q_created:
+                questions += 1
+
+            Choice.objects.get_or_create(
+                question=question,
+                text="Concept A",
+                defaults={"is_correct": True},
+            )
+            Choice.objects.get_or_create(
+                question=question,
+                text="Concept B",
+                defaults={"is_correct": False},
+            )
+
+            enrolled = list(
+                CourseEnrollment.objects.filter(course=course, is_active=True)
+                .select_related("student__user")[:2]
+            )
+
+            for row in enrolled:
+                submission, sub_created = AssessmentSubmission.objects.get_or_create(
+                    assessment=assessment,
+                    student=row.student,
+                    defaults={
+                        "answers": {"q1": "Concept A"},
+                        "grading": 80.0,
+                        "feedback": "Good attempt.",
+                        "status": "graded",
+                    },
+                )
+                if submission.status != "graded":
+                    submission.status = "graded"
+                    submission.save(update_fields=["status"])
+                if sub_created:
+                    submissions += 1
+
+                first_topic = Topic.objects.filter(course=course).order_by("order", "created_at").first()
+                if first_topic:
+                    _, created = TopicProgress.objects.get_or_create(
+                        student=row.student,
+                        topic=first_topic,
+                        defaults={
+                            "is_complete": True,
+                            "completed_at": timezone.now() - timedelta(days=1),
+                        },
+                    )
+                    if created:
+                        progress_rows += 1
+
+                    first_subtopic = (
+                        Subtopic.objects.filter(topic=first_topic).order_by("order", "created_at").first()
+                    )
+                    if first_subtopic:
+                        _, created = SubtopicProgress.objects.get_or_create(
+                            student=row.student,
+                            subtopic=first_subtopic,
+                            defaults={
+                                "is_complete": True,
+                                "completed_at": timezone.now() - timedelta(days=1),
+                            },
+                        )
+                        if created:
+                            progress_rows += 1
+
+                _, created = CourseProgress.objects.get_or_create(
+                    student=row.student,
+                    course=course,
+                    defaults={
+                        "is_complete": False,
+                    },
+                )
+                if created:
+                    progress_rows += 1
+
+        self.stdout.write(self.style.SUCCESS(f"Revision materials: {materials} created/ensured"))
+        self.stdout.write(self.style.SUCCESS(f"Assessments: {assessments} created/ensured"))
+        self.stdout.write(self.style.SUCCESS(f"Assessment questions: {questions} created/ensured"))
+        self.stdout.write(self.style.SUCCESS(f"Assessment submissions: {submissions} created/ensured"))
+        self.stdout.write(self.style.SUCCESS(f"Progress rows: {progress_rows} created/ensured"))
 
     def _seed_enrollments_and_leads(self, courses, students):
         """Create active enrollments and designate a lead student per course."""
