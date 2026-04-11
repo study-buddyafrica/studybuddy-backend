@@ -24,6 +24,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
     """
     serializer_class = SessionBookingSerializer
     permission_classes = [permissions.IsAuthenticated,IsVerified]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return SessionBooking.objects.select_related("student__user", "teacher__user")
@@ -44,6 +45,47 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                 "initiated_by": wallet.user.email if wallet.user else "system",
             },
         )
+
+    def get(self, request, pk=None, *args, **kwargs):
+        """
+        GET compatibility handler:
+        - /student/session-bookings/           -> list bookings for current user
+        - /student/session-bookings/<uuid>/    -> retrieve one booking if owned/allowed
+        - /student/session-bookings/undefined/ -> list bookings (legacy frontend fallback)
+        """
+        user = request.user
+        qs = self.get_queryset()
+
+        # Legacy frontend compatibility: treat undefined id as list request.
+        if pk in (None, "", "undefined", "null"):
+            if user.is_superuser:
+                filtered = qs.order_by("-scheduled_start")
+            else:
+                student_qs = qs.filter(student__user=user)
+                teacher_qs = qs.filter(teacher__user=user)
+                filtered = (student_qs | teacher_qs).distinct().order_by("-scheduled_start")
+
+            page = self.paginate_queryset(filtered)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(filtered, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        try:
+            booking = qs.get(pk=pk)
+        except SessionBooking.DoesNotExist:
+            return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.is_superuser:
+            is_owner = booking.student and booking.student.user_id == user.id
+            is_teacher = booking.teacher and booking.teacher.user_id == user.id
+            if not (is_owner or is_teacher):
+                return Response({"detail": "Not permitted."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(booking)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """

@@ -72,6 +72,17 @@ urlpatterns = [
         SessionBookingCreateUpdateView.as_view(),
         name="session-booking-update",
     ),
+    # Legacy frontend compatibility for undefined booking ids
+    path(
+        "student/session-bookings/undefined/",
+        SessionBookingCreateUpdateView.as_view(),
+        name="session-booking-update-undefined",
+    ),
+    path(
+        "student/session-bookings/undefined",
+        SessionBookingCreateUpdateView.as_view(),
+        name="session-booking-update-undefined-no-slash",
+    ),
     path(
         "teacher/live-session/",
         LiveSessionCreateView.as_view(),

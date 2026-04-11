@@ -88,6 +88,14 @@ class ParentProfileView(generics.RetrieveUpdateAPIView):
         """Partial update of current parent profile"""
         return self.partial_update(request, *args, **kwargs)
 
+    def put(self, request, *args, **kwargs):
+        """Full update of current parent profile."""
+        return self.update(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """Compatibility: treat POST as partial update for legacy frontend clients."""
+        return self.partial_update(request, *args, **kwargs)
+
 
 class ParentChildrenView(generics.ListAPIView):
     """
@@ -106,3 +114,57 @@ class ParentChildrenView(generics.ListAPIView):
 
     def get_serializer_class(self):
         return StudentProfileUpdateSerializer
+
+
+class ParentRegisterStudentView(generics.CreateAPIView):
+    """
+    POST: Parent registers/creates a student account
+    Automatically links the created student to the parent
+    """
+
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+
+    def post(self, request, *args, **kwargs):
+        """Register/create a student and link to current parent"""
+        from apps.users.serializers.user_profile_serializer import (
+            StudentRegistrationSerializer,
+        )
+        from apps.users.models import ParentChild
+
+        # Create user serializer for registration
+        serializer = StudentRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            # Create user with student role
+            user = serializer.save(role="student")
+
+            # Get parent profile
+            try:
+                parent_profile = ParentProfile.objects.get(user=request.user)
+            except ParentProfile.DoesNotExist:
+                return Response(
+                    {"error": "Parent profile not found"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            # Get or create student profile
+            student_profile, created = StudentProfile.objects.get_or_create(user=user)
+
+            # Link parent to student
+            ParentChild.objects.get_or_create(
+                parent=parent_profile, child=student_profile
+            )
+
+            return Response(
+                {
+                    "message": "Student registered and linked to parent",
+                    "student": {
+                        "id": student_profile.id,
+                        "email": user.email,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                    },
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

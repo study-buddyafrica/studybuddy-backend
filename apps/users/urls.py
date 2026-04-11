@@ -18,6 +18,7 @@ from apps.users.views.profile_views import (
     StudentProfileView,
     ParentProfileView,
     ParentChildrenView,
+    ParentRegisterStudentView,
 )
 
 user_router = DefaultRouter()
@@ -36,10 +37,37 @@ urlpatterns = [
         ParentProfileUpdateView.as_view(),
         name="parent-profile-update",
     ),
+    # Legacy frontend compatibility for undefined id update route
+    path(
+        "parent/profile/update/undefined/",
+        ParentProfileView.as_view(),
+        name="parent-profile-update-undefined",
+    ),
+    path(
+        "parent/profile/update/",
+        ParentProfileView.as_view(),
+        name="parent-profile-update-current",
+    ),
     path(
         "student/profile/update/<uuid:id>/",
         StudentProfileUpdateView.as_view(),
         name="student-profile-update",
+    ),
+    # Legacy frontend compatibility for numeric/placeholder ids
+    path(
+        "student/profile/update/<int:id>/",
+        StudentProfileView.as_view(),
+        name="student-profile-update-int",
+    ),
+    path(
+        "student/profile/update/undefined/",
+        StudentProfileView.as_view(),
+        name="student-profile-update-undefined",
+    ),
+    path(
+        "student/profile/update/",
+        StudentProfileView.as_view(),
+        name="student-profile-update-current",
     ),
     path(
         "teacher/profile/update/",
@@ -51,4 +79,14 @@ urlpatterns = [
     path("student/profile/", StudentProfileView.as_view(), name="student-profile"),
     path("parent/profile/", ParentProfileView.as_view(), name="parent-profile"),
     path("parent/children/", ParentChildrenView.as_view(), name="parent-children"),
+    path(
+        "parent/register-student/",
+        ParentRegisterStudentView.as_view(),
+        name="parent-register-student",
+    ),
+    path(
+        "parent/register-student",
+        ParentRegisterStudentView.as_view(),
+        name="parent-register-student-no-slash",
+    ),
 ] + user_router.urls
