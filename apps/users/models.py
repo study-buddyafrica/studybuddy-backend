@@ -5,28 +5,26 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.core.models import User, Core
 
+
 def certificate_upload_path(instance, filename):
-    ext = filename.split('.')[-1]
+    ext = filename.split(".")[-1]
     new_filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join("certificates", new_filename)
 
 
 def validate_pdf(value):
-    if not value.name.lower().endswith('.pdf'):
+    if not value.name.lower().endswith(".pdf"):
         raise ValidationError("Only PDF files are allowed.")
-    if value.size > 10 * 1024 * 1024:  
+    if value.size > 10 * 1024 * 1024:
         raise ValidationError("File too large ( >5MB ).")
+
 
 class ParentChild(Core):
     parent = models.ForeignKey(
-        'ParentProfile',
-        on_delete=models.CASCADE,
-        related_name="parent_children"
+        "ParentProfile", on_delete=models.CASCADE, related_name="parent_children"
     )
     child = models.ForeignKey(
-        'StudentProfile',
-        on_delete=models.CASCADE,
-        related_name="child_parents"
+        "StudentProfile", on_delete=models.CASCADE, related_name="child_parents"
     )
 
     class Meta:
@@ -39,28 +37,25 @@ class ParentChild(Core):
 
 class ParentProfile(models.Model):
     user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name="parent_profile"
+        User, on_delete=models.CASCADE, related_name="parent_profile"
     )
     children = models.ManyToManyField(
-        'StudentProfile',
-        through=ParentChild,
-        related_name="parent_profiles"
+        "StudentProfile", through=ParentChild, related_name="parent_profiles"
     )
     profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
     national_identity_number = models.CharField(
-        max_length=15, 
-        null=True, 
+        max_length=15,
+        null=True,
         blank=True,
         help_text="National Identity Number",
     )
     national_identity_card = models.FileField(
         upload_to="identity_cards/",
-        null=True, blank=True,
-        help_text = "National Identity card "
+        null=True,
+        blank=True,
+        help_text="National Identity card ",
     )
 
     def __str__(self):
@@ -73,106 +68,69 @@ class TeacherProfile(models.Model):
         ("approved", "Approved"),
         ("rejected", "Rejected"),
     ]
-    is_verified= models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
     experience = models.PositiveSmallIntegerField(default=0)
-    id = models.UUIDField(
-        primary_key=True, 
-        default=uuid.uuid4, 
-        editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name="teacher_profile",
     )
     teacher_license_number = models.CharField(
-        max_length=50, 
+        max_length=50,
         unique=True,
-        null=True, 
-        blank=True, 
+        null=True,
+        blank=True,
         db_index=True,
     )
     teacher_license_certificate = models.FileField(
         upload_to=certificate_upload_path,
-        validators=[validate_pdf], 
-        null=True, blank=True
+        validators=[validate_pdf],
+        null=True,
+        blank=True,
     )
     academic_certificate = models.FileField(
         upload_to=certificate_upload_path,
-        validators=[validate_pdf], 
-        null=True, blank=True
+        validators=[validate_pdf],
+        null=True,
+        blank=True,
     )
-    bio = models.TextField(
-        null=True, blank=True
-    )
-    phone = models.CharField(
-        max_length=50, 
-        null=True, blank=True
-    )
+    bio = models.TextField(null=True, blank=True)
+    phone = models.CharField(max_length=50, null=True, blank=True)
     hourly_rate = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        null=True, 
-        blank=True
+        max_digits=10, decimal_places=2, null=True, blank=True
     )
-    grade =models.ManyToManyField(
-        'school.Grade', 
-        related_name='teacher_grades', 
-        blank=True, null=True
+    grade = models.ManyToManyField(
+        "school.Grade", related_name="teacher_grades", blank=True
     )
     education_level = models.ForeignKey(
-        'school.EducationLevel',
+        "school.EducationLevel",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='teacher_profiles',
+        related_name="teacher_profiles",
     )
-    profile_picture = models.ImageField(
-        upload_to="profiles/", 
-        null=True, blank=True
-    )
-    birth_date = models.DateField(
-        null=True, blank=True
-    )
-    google_access_token = models.TextField(
-        null=True, 
-        blank=True
-    )
-    google_refresh_token = models.TextField(
-        null=True, 
-        blank=True
-    )
-    google_token_expiry = models.DateTimeField(
-        null=True, 
-        blank=True
-    )
-    gender = models.CharField(
-        max_length=50, 
-        null=True, 
-        blank=True
-    )
+    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    google_access_token = models.TextField(null=True, blank=True)
+    google_refresh_token = models.TextField(null=True, blank=True)
+    google_token_expiry = models.DateTimeField(null=True, blank=True)
+    gender = models.CharField(max_length=50, null=True, blank=True)
     national_identity_number = models.CharField(
-        max_length=15, 
-        null=True, 
+        max_length=15,
+        null=True,
         blank=True,
         help_text="National Identity Number",
     )
     national_identity_card = models.FileField(
-        upload_to="identity_cards/",
-        null=True, blank=True
+        upload_to="identity_cards/", null=True, blank=True
     )
-    cv = models.FileField(
-        upload_to="cvs/", 
-        null=True, blank=True
-    )
-    subjects = models.ManyToManyField(
-        "school.Subject",
-        related_name="teacher_profiles" 
-    )
+    cv = models.FileField(upload_to="cvs/", null=True, blank=True)
+    subjects = models.ManyToManyField("school.Subject", related_name="teacher_profiles")
     verification_status = models.CharField(
-        max_length=20, 
-        choices=VERIFICATION_STATUS_CHOICES, 
-        default='ongoing',
+        max_length=20,
+        choices=VERIFICATION_STATUS_CHOICES,
+        default="ongoing",
     )
     school = models.ForeignKey(
         "school.School",
@@ -192,18 +150,13 @@ class TeacherProfile(models.Model):
 
 class StudentProfile(Core):
     """Represents a student's profile and academic relationships."""
-    id = models.UUIDField(
-        primary_key=True, 
-        default=uuid.uuid4, 
-        editable=False
-    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name="student_profile"
+        User, on_delete=models.CASCADE, related_name="student_profile"
     )
     grade = models.ForeignKey(
-        'school.Grade',
+        "school.Grade",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -211,14 +164,14 @@ class StudentProfile(Core):
         db_index=True,
     )
     education_level = models.ForeignKey(
-        'school.EducationLevel',
+        "school.EducationLevel",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='students',
+        related_name="students",
     )
     school = models.ForeignKey(
-        'school.School',
+        "school.School",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -232,7 +185,7 @@ class StudentProfile(Core):
     gender = models.CharField(max_length=50, null=True, blank=True)
     id_number = models.CharField(max_length=15, null=True, blank=True)
     parents = models.ManyToManyField(
-        'ParentProfile',
+        "ParentProfile",
         through=ParentChild,
         related_name="student_profiles",
     )
@@ -251,6 +204,7 @@ class StudentProfile(Core):
 
 class Availability(models.Model):
     """Teacher recurring availability or single slots"""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     teacher = models.ForeignKey(
         TeacherProfile,
@@ -302,25 +256,21 @@ class TeacherRating(models.Model):
 
 
 class StudentLead(Core):
-    id = models.UUIDField(
-        primary_key=True, 
-        default=uuid.uuid4, 
-        editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(
         "school.Course",
         on_delete=models.CASCADE,
         related_name="student_leads",
     )
     student_profile = models.ForeignKey(
-            StudentProfile,
-            on_delete=models.CASCADE,
-            related_name="leads",
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="leads",
     )
     is_a_lead = models.BooleanField(default=False)
 
     class Meta:
-        db_table ='student_leads'
+        db_table = "student_leads"
         unique_together = ("course", "student_profile")
         ordering = ["-created_at"]
         indexes = [

@@ -8,7 +8,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = (
+    os.getenv("SECRET_KEY") or "sjdfhskjdfhskjdfhskjdfhskjdfhskjdfhskjdfhskjdfh"
+)
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
@@ -71,7 +73,7 @@ CSP_FRAME_ANCESTORS = (
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://localhost:5174",
-    "https://studybuddy-frotend.vercel.app"
+    "https://studybuddy-frotend.vercel.app",
 )
 
 CSP_SCRIPT_SRC = ("'self'",)
@@ -85,6 +87,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
+    "http://0.0.0.0:8000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -297,7 +300,10 @@ GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0"),
+        "LOCATION": os.getenv(
+            "REDIS_URL",
+            f"redis://{os.getenv('REDIS_HOST', '127.0.0.1')}:{os.getenv('REDIS_PORT', '6379')}/{os.getenv('REDIS_DB', '0')}",
+        ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
