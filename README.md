@@ -33,6 +33,9 @@ cp .env.example .env
 # ensure to stop any other postgresql running on port 5432 -> failed to bind host port 0.0.0.0:5432/tcp: address already in use
 sudo systemctl stop postgresql
 
+sudo systemctl stop redis
+
+# will start postgresql and redis in docker (make sure you have docker installed and running)
 docker compose up # add -d to detach it or open a new tab
 
 # make database migrations
@@ -48,6 +51,9 @@ uvicorn config.asgi:application --reload
 
 #then on a new tab
 curl -I http://127.0.0.1:8000/api/health/
+
+# seed the database
+source .venv/bin/activate && python manage.py seed_demo_data --limit 5
 ```
 
 Response:

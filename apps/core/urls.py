@@ -15,9 +15,12 @@ from apps.core.views.health_check_view import DatabaseHealthCheckView
 from apps.core.views.admin_views import (
     admin_dashboard_stats,
     admin_get_classes,
+    admin_get_subjects,
     admin_list_users,
     admin_list_teachers,
     admin_list_students,
+    get_classes,
+    get_subjects,
 )
 
 urlpatterns = [
@@ -52,7 +55,15 @@ urlpatterns = [
     # Admin Dashboard Endpoints
     path("admin/dashboard-stats/", admin_dashboard_stats, name="admin-dashboard-stats"),
     path("admin/get-classes/", admin_get_classes, name="admin-get-classes"),
+    path("admin/get-classes", admin_get_classes, name="admin-get-classes-no-slash"),
+    path("admin/get-subjects/", admin_get_subjects, name="admin-get-subjects"),
+    path("admin/get-subjects", admin_get_subjects, name="admin-get-subjects-no-slash"),
     path("admin/users/", admin_list_users, name="admin-list-users"),
     path("admin/teachers/", admin_list_teachers, name="admin-list-teachers"),
     path("admin/students/", admin_list_students, name="admin-list-students"),
+    # Frontend compatibility endpoints
+    path("get-classes/", get_classes, name="get-classes"),
+    path("get-classes", get_classes, name="get-classes-no-slash"),
+    path("get-subjects/", get_subjects, name="get-subjects"),
+    path("get-subjects", get_subjects, name="get-subjects-no-slash"),
 ]

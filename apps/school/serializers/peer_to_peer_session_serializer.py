@@ -63,8 +63,20 @@ class PeerLiveSessionSerializer(serializers.ModelSerializer):
                 student_profile=user.student_profile, course=course, is_a_lead=True
             ).exists()
             if not enrolled or not is_lead:
+                lead_qs = StudentLead.objects.filter(
+                    course=course, is_a_lead=True
+                ).select_related("student_profile__user")
+                lead_names = [
+                    f"{lead.student_profile.user.first_name} {lead.student_profile.user.last_name}".strip()
+                    for lead in lead_qs[:5]
+                ]
+                if not lead_names:
+                    raise serializers.ValidationError(
+                        "Only course leads can create live sessions. No lead is currently assigned for this course."
+                    )
                 raise serializers.ValidationError(
-                    "Only course leads can create live sessions."
+                    "Only course leads can create live sessions. "
+                    f"Current lead(s): {', '.join(lead_names)}."
                 )
             return attrs
 

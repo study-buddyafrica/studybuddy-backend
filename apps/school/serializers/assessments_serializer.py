@@ -67,6 +67,12 @@ class AssessmentSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "questions",
         ]
 
+    def validate_assessment_type(self, value):
+        """Compatibility: map legacy assessment type aliases to supported choices."""
+        if value == "essay":
+            return AssessmentType.FILE
+        return value
+
     def validate_course(self, value):
         user = self.context["request"].user
         if hasattr(user, "teacher_profile") and not user.is_staff:

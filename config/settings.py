@@ -123,6 +123,7 @@ SWAGGER_SETTINGS = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=4),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "UPDATE_LAST_LOGIN": True,
     "AUTH_COOKIE": "refresh_token",
     "AUTH_COOKIE_SECURE": not DEBUG,  # True in Production (requires HTTPS)
     "AUTH_COOKIE_HTTP_ONLY": True,  # Blocks XSS attacks from reading it

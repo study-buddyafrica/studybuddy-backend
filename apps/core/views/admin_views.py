@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Count, Q
 from apps.core.models import User
 from apps.users.models import TeacherProfile, StudentProfile
-from apps.school.models import Course, Grade
+from apps.school.models import Course, Grade, Subject
 from apps.core.permissions import IsVerified
 from rest_framework.permissions import IsAdminUser
 
@@ -188,3 +188,33 @@ def admin_list_students(request):
         )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated, IsAdminUser])
+def admin_get_subjects(request):
+    """GET: Admin endpoint returning subjects with basic metadata."""
+    try:
+        subjects = Subject.objects.values("id", "name", "description", "created_at").order_by("name")
+        return Response(
+            {"subjects": list(subjects), "total": subjects.count()},
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated, IsVerified])
+def get_classes(request):
+    """Compatibility endpoint for frontend class listing."""
+    grades = Grade.objects.values("id", "level").order_by("level")
+    return Response({"grades": list(grades), "total": grades.count()}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated, IsVerified])
+def get_subjects(request):
+    """Compatibility endpoint for frontend subject listing."""
+    subjects = Subject.objects.values("id", "name", "description").order_by("name")
+    return Response({"subjects": list(subjects), "total": subjects.count()}, status=status.HTTP_200_OK)

@@ -113,6 +113,14 @@ class StudentProfileUpdateSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["grade_id"] = data.get("grade")
+        data["school_id"] = data.get("school")
+        data["grade"] = instance.grade.level if instance.grade else None
+        data["school"] = instance.school.name if instance.school else None
+        return data
+
 
 class ParentProfileUpdateSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField(read_only=True)

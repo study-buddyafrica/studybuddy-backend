@@ -116,6 +116,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             teacher_id = serializer.validated_data.get("teacher_id")
             duration_hours = serializer.validated_data.get("duration_hours")
             scheduled_start = serializer.validated_data.get("scheduled_start")
+            course = serializer.validated_data.get("course")
 
             teacher = TeacherProfile.objects.get(id=teacher_id)
             teacher_rate = float(teacher.hourly_rate)
@@ -165,6 +166,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     scheduled_end=scheduled_end,
                     cost=total_cost,
                     is_allowed=True,
+                    course=course,
                 )
 
         else:
