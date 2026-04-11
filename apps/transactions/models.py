@@ -6,25 +6,20 @@ import uuid
 
 from apps.core.models import Core, User
 
+
 class Wallet(Core):
     """Represents a user's wallet with balance and account type."""
+
     ACCOUNT_TYPE_CHOICES = [
         ("student", "Student"),
         ("teacher", "Teacher"),
+        ("parent", "Parent"),
         ("system", "System"),
     ]
     is_active = models.BooleanField(default=True)
     failed_withdraw_attempts = models.IntegerField(default=0)
-    id = models.UUIDField(
-        primary_key=True, 
-        default=uuid.uuid4, 
-        editable=False
-    )
-    code = models.UUIDField( 
-        default=uuid.uuid4, 
-        null=True,
-        blank=True
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.UUIDField(default=uuid.uuid4, null=True, blank=True)
 
     user = models.OneToOneField(
         User,
@@ -32,18 +27,11 @@ class Wallet(Core):
         related_name="wallet",
     )
 
-
     balance = MoneyField(
-        max_digits=14,
-        decimal_places=2,
-        default_currency='KES',
-        default=0.00
+        max_digits=14, decimal_places=2, default_currency="KES", default=0.00
     )
 
-    account_type = models.CharField(
-        max_length=20,
-        choices=ACCOUNT_TYPE_CHOICES
-    )
+    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES)
 
     class Meta:
         db_table = "wallets"
@@ -56,20 +44,21 @@ class Wallet(Core):
     def __str__(self):
         owner = self.user.email if self.user else "SYSTEM"
         return f"{owner} - {self.account_type} ({self.balance})"
-    
+
     def clean(self):
-        """Enforce only one system wallet, 
-        must belong to superuser, 
+        """Enforce only one system wallet,
+        must belong to superuser,
         and cannot be recreated.
-        
+
         """
         if self.account_type == "system":
             if self.user is None or not self.user.is_superuser:
-                raise ValidationError(
-                    "System wallet must be " \
-                    "linked to a superuser."
-                )
-            if Wallet.objects.filter(account_type="system").exclude(id=self.id).exists():
+                raise ValidationError("System wallet must be linked to a superuser.")
+            if (
+                Wallet.objects.filter(account_type="system")
+                .exclude(id=self.id)
+                .exists()
+            ):
                 raise ValidationError("Only one system wallet is allowed.")
         else:
             if not self.user:
@@ -79,7 +68,7 @@ class Wallet(Core):
                 )
 
     def save(self, *args, **kwargs):
-        self.full_clean()  
+        self.full_clean()
         super().save(*args, **kwargs)
 
     def can_make_transaction(self, amount):
@@ -87,16 +76,20 @@ class Wallet(Core):
             return self.balance >= amount
         return self.balance >= Money(amount, self.balance.currency)
 
-    def deposit(self, amount, currency='KES'):
-        deposit_amount = amount if isinstance(amount, Money) else Money(amount, currency)
+    def deposit(self, amount, currency="KES"):
+        deposit_amount = (
+            amount if isinstance(amount, Money) else Money(amount, currency)
+        )
         if deposit_amount.currency != self.balance.currency:
             raise ValueError("Currency mismatch in deposit.")
         self.balance += deposit_amount
         self.save(update_fields=["balance"])
         return self.balance
 
-    def withdraw(self, amount, currency='KES'):
-        withdraw_amount = amount if isinstance(amount, Money) else Money(amount, currency)
+    def withdraw(self, amount, currency="KES"):
+        withdraw_amount = (
+            amount if isinstance(amount, Money) else Money(amount, currency)
+        )
         if withdraw_amount.currency != self.balance.currency:
             raise ValueError("Currency mismatch in withdrawal.")
         if not self.can_make_transaction(withdraw_amount):
@@ -105,8 +98,10 @@ class Wallet(Core):
         self.save(update_fields=["balance"])
         return self.balance
 
+
 class Transaction(Core):
     """Represents a financial transaction tied to a user's wallet."""
+
     TRANSACTION_TYPE_CHOICES = [
         ("deposit", "Deposit"),
         ("withdrawal", "Withdrawal"),
@@ -148,11 +143,7 @@ class Transaction(Core):
         db_index=True,
     )
 
-    amount = MoneyField(
-        max_digits=14,
-        decimal_places=2,
-        default_currency='KES'
-    )
+    amount = MoneyField(max_digits=14, decimal_places=2, default_currency="KES")
 
     transaction_type = models.CharField(
         max_length=20,
@@ -192,11 +183,11 @@ class Transaction(Core):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     related_transaction = models.ForeignKey(
-        'self',
+        "self",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="related_transactions"
+        related_name="related_transactions",
     )
 
     class Meta:
@@ -234,6 +225,7 @@ class Transaction(Core):
 
 class PaymentWebhookLog(Core):
     """Stores logs for payment webhooks from external payment gateways."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     transaction = models.ForeignKey(
@@ -269,9 +261,7 @@ class PaymentWebhookLog(Core):
         blank=True,
     )
     response_data = models.JSONField(
-        null=True,
-        blank=True,
-        help_text="Response sent back to webhook caller"
+        null=True, blank=True, help_text="Response sent back to webhook caller"
     )
 
     class Meta:

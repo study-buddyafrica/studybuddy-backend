@@ -222,7 +222,7 @@ if DATABASE_URL == "":
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
-    print(f"using database: name {os.getenv('DB_NAME')}: host{os.getenv('DB_HOST')}")
+    print(f"using database: name {os.getenv('DB_NAME')}: host:{os.getenv('DB_HOST')}")
 elif DATABASE_URL == "" and DEBUG:
     DATABASES = {
         "default": dj_database_url.config(
