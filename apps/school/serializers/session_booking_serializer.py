@@ -17,14 +17,26 @@ class SessionBookingSerializer(serializers.ModelSerializer):
     duration_hours = serializers.FloatField(write_only=True)
     scheduled_end = serializers.DateTimeField(read_only=True)
     cost = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    teacher_name = serializers.SerializerMethodField()
+    course_title = serializers.SerializerMethodField()
 
     class Meta:
         model = SessionBooking
         fields = [
-            "id", "teacher_id", "scheduled_start", "duration_hours","course",
-            "scheduled_end", "status", "is_allowed", "attended", "cost"
+            "id", "teacher_id", "teacher_name", "scheduled_start", "duration_hours", "course",
+            "course_title", "scheduled_end", "status", "is_allowed", "attended", "cost"
         ]
-        read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end"]
+        read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end", "teacher_name", "course_title"]
+
+    def get_teacher_name(self, obj):
+        """Return teacher full name"""
+        if obj.teacher and obj.teacher.user:
+            return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+        return ""
+
+    def get_course_title(self, obj):
+        """Return course title"""
+        return obj.course.title if obj.course else ""
 
     def create(self, validated_data):
         request = self.context.get("request")

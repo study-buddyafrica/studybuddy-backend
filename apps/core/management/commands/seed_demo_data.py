@@ -1,12 +1,25 @@
 from datetime import date
 from decimal import Decimal
+import io
+import requests
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.core.files.base import ContentFile
 from djmoney.money import Money
+from django.utils import timezone
 
 from apps.core.models import User
-from apps.school.models import School, Subject, Grade, Course, Topic, Subtopic, CourseEnrollment
+from apps.school.models import (
+    School,
+    Subject,
+    Grade,
+    Course,
+    Topic,
+    Subtopic,
+    CourseEnrollment,
+    SessionBooking,
+)
 from apps.users.models import TeacherProfile, StudentProfile, ParentProfile, ParentChild, StudentLead
 from apps.transactions.models import Wallet
 
@@ -32,14 +45,15 @@ class Command(BaseCommand):
         subjects = self._seed_subjects(limit)
         schools = self._seed_schools(limit)
 
-        teachers = self._seed_teachers(limit, schools)
+        teachers = self._seed_teachers(limit, schools, grades, subjects)
         students = self._seed_students(limit, schools, grades)
         parents = self._seed_parents(limit)
-        self._seed_wallets(students)
+        self._seed_wallets(students, teachers, parents)
 
         self._link_parents_children(parents, students)
         courses = self._seed_courses(limit, subjects, grades, teachers)
         self._seed_enrollments_and_leads(courses, students)
+        self._seed_session_bookings(courses, students, teachers)
         self._seed_topics_and_subtopics(limit, courses)
 
         self.stdout.write(self.style.SUCCESS("Seed complete."))
@@ -64,6 +78,32 @@ class Command(BaseCommand):
 
         if changed:
             user.save()
+
+    def _download_profile_picture(self, profile_obj, index):
+        """Download and save a profile picture for seeded profiles."""
+        # Profile picture URLs - using a pattern that returns different images
+        urls = [
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeb71XHQZlqHtJeBw1QVYXofy0XEFfD-nzZQ&s",  # Teacher 1
+            "https://i.pravatar.cc/150?img=1",  # Teacher 2
+            "https://i.pravatar.cc/150?img=2",  # Teacher 3
+            "https://i.pravatar.cc/150?img=3",  # Teacher 4
+            "https://i.pravatar.cc/150?img=4",  # Teacher 5
+        ]
+        
+        try:
+            url = urls[min(index - 1, len(urls) - 1)]
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            
+            filename = f"profile_teacher_{index}.jpg"
+            profile_obj.profile_picture.save(
+                filename,
+                ContentFile(response.content),
+                save=True
+            )
+        except Exception as e:
+            # Silently fail if download doesn't work (development environment)
+            pass
 
     def _seed_grades(self, limit):
         level_values = [choice[0] for choice in Grade.GradeLevel.choices][:limit]
@@ -102,7 +142,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Schools: {len(created)} ready"))
         return created
 
-    def _seed_teachers(self, limit, schools):
+    def _seed_teachers(self, limit, schools, grades, subjects):
         created = []
         for idx in range(1, limit + 1):
             email = f"teacher{idx}@studybuddy.demo"
@@ -129,8 +169,50 @@ class Command(BaseCommand):
                     "verification_status": "approved",
                     "school": schools[(idx - 1) % len(schools)] if schools else None,
                     "bio": f"Teacher demo profile {idx}.",
+                    "phone": f"+254722000{idx:03d}",
+                    "gender": "Male" if idx % 2 else "Female",
+                    "teacher_license_number": f"TCH-DEMO-{idx:04d}",
+                    "national_identity_number": f"ID-DEMO-{idx:06d}",
                 },
             )
+
+            changed = False
+            if not teacher.teacher_license_number:
+                teacher.teacher_license_number = f"TCH-DEMO-{idx:04d}"
+                changed = True
+            if not teacher.national_identity_number:
+                teacher.national_identity_number = f"ID-DEMO-{idx:06d}"
+                changed = True
+            if not teacher.phone:
+                teacher.phone = f"+254722000{idx:03d}"
+                changed = True
+            if not teacher.birth_date:
+                teacher.birth_date = date(1990, min(idx, 12), min(idx, 28))
+                changed = True
+            if not teacher.hourly_rate:
+                teacher.hourly_rate = Decimal("500.00") + Decimal(str(idx * 50))
+                changed = True
+            if not teacher.school_id and schools:
+                teacher.school = schools[(idx - 1) % len(schools)]
+                changed = True
+            if teacher.verification_status != "approved":
+                teacher.verification_status = "approved"
+                changed = True
+            if not teacher.is_verified:
+                teacher.is_verified = True
+                changed = True
+            if changed:
+                teacher.save()
+
+            if grades:
+                teacher.grade.set([grades[(idx - 1) % len(grades)]])
+            if subjects:
+                teacher.subjects.set([subjects[(idx - 1) % len(subjects)]])
+
+            # Download and set profile picture
+            if not teacher.profile_picture:
+                self._download_profile_picture(teacher, idx)
+
             created.append(teacher)
         self.stdout.write(self.style.SUCCESS(f"Teachers: {len(created)} ready"))
         return created
@@ -272,18 +354,29 @@ class Command(BaseCommand):
         leads = 0
 
         for idx, course in enumerate(courses):
-            student = students[idx % len(students)]
-            _, created = CourseEnrollment.objects.get_or_create(
-                course=course,
-                student=student,
-                defaults={"is_active": True},
-            )
-            if created:
-                enrollments += 1
+            lead_student = students[idx % len(students)]
+
+            enrolled_students = []
+            for offset in range(min(3, len(students))):
+                student = students[(idx + offset) % len(students)]
+                enrollment, created = CourseEnrollment.objects.get_or_create(
+                    course=course,
+                    student=student,
+                    defaults={"is_active": True},
+                )
+                if not enrollment.is_active:
+                    enrollment.is_active = True
+                    enrollment.save(update_fields=["is_active"])
+                if created:
+                    enrollments += 1
+                enrolled_students.append(student)
+
+            if lead_student not in enrolled_students:
+                enrolled_students.append(lead_student)
 
             lead, lead_created = StudentLead.objects.get_or_create(
                 course=course,
-                student_profile=student,
+                student_profile=lead_student,
                 defaults={"is_a_lead": True},
             )
             if not lead.is_a_lead:
@@ -295,8 +388,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Enrollments: {enrollments} created/ensured"))
         self.stdout.write(self.style.SUCCESS(f"Course leads: {leads} created/ensured"))
 
-    def _seed_wallets(self, students):
-        """Ensure system wallet exists and students have sufficient funds for testing."""
+    def _seed_wallets(self, students, teachers, parents):
+        """Ensure wallets exist and are funded for all key actors in local testing."""
         system_user, _ = User.objects.get_or_create(
             email="system@studybuddy.demo",
             defaults={
@@ -333,7 +426,8 @@ class Command(BaseCommand):
             system_wallet.balance = Money(200000, "KES")
         system_wallet.save()
 
-        funded = 0
+        funded = {"student": 0, "teacher": 0, "parent": 0}
+
         for student in students:
             wallet, _ = Wallet.objects.get_or_create(
                 user=student.user,
@@ -343,14 +437,88 @@ class Command(BaseCommand):
                     "balance": Money(0, "KES"),
                 },
             )
-
-            if wallet.account_type != "student":
-                wallet.account_type = "student"
-
+            wallet.account_type = "student"
             if wallet.balance < Money(10000, "KES"):
                 wallet.balance = Money(10000, "KES")
-                funded += 1
+                funded["student"] += 1
+            wallet.save()
+
+        for teacher in teachers:
+            wallet, _ = Wallet.objects.get_or_create(
+                user=teacher.user,
+                defaults={
+                    "account_type": "teacher",
+                    "failed_withdraw_attempts": 0,
+                    "balance": Money(0, "KES"),
+                },
+            )
+            wallet.account_type = "teacher"
+            if wallet.balance < Money(2000, "KES"):
+                wallet.balance = Money(2000, "KES")
+                funded["teacher"] += 1
+            wallet.save()
+
+        for parent in parents:
+            wallet, _ = Wallet.objects.get_or_create(
+                user=parent.user,
+                defaults={
+                    "account_type": "parent",
+                    "failed_withdraw_attempts": 0,
+                    "balance": Money(0, "KES"),
+                },
+            )
+            wallet.account_type = "parent"
+            if wallet.balance < Money(15000, "KES"):
+                wallet.balance = Money(15000, "KES")
+                funded["parent"] += 1
             wallet.save()
 
         self.stdout.write(self.style.SUCCESS("System wallet: ensured and funded"))
-        self.stdout.write(self.style.SUCCESS(f"Student wallets funded/updated: {funded}"))
+        self.stdout.write(self.style.SUCCESS(f"Student wallets funded/updated: {funded['student']}"))
+        self.stdout.write(self.style.SUCCESS(f"Teacher wallets funded/updated: {funded['teacher']}"))
+        self.stdout.write(self.style.SUCCESS(f"Parent wallets funded/updated: {funded['parent']}"))
+
+    def _seed_session_bookings(self, courses, students, teachers):
+        """Create accepted bookings so teacher live-session dropdown has data."""
+        if not courses or not students or not teachers:
+            self.stdout.write(self.style.WARNING("Session bookings: 0 (insufficient data)"))
+            return
+
+        created = 0
+        now = timezone.now()
+        for idx in range(min(len(students), len(teachers), 5)):
+            course = courses[idx % len(courses)]
+            student = students[idx % len(students)]
+            teacher = teachers[idx % len(teachers)]
+
+            booking, was_created = SessionBooking.objects.get_or_create(
+                student=student,
+                teacher=teacher,
+                scheduled_start=now + timezone.timedelta(days=idx + 1),
+                defaults={
+                    "scheduled_end": now + timezone.timedelta(days=idx + 1, hours=1),
+                    "status": "accepted",
+                    "is_allowed": True,
+                    "cost": Decimal("750.00"),
+                    "course": course,
+                },
+            )
+
+            # Keep existing records usable for dropdown if already present.
+            changed = False
+            if booking.status != "accepted":
+                booking.status = "accepted"
+                changed = True
+            if not booking.is_allowed:
+                booking.is_allowed = True
+                changed = True
+            if booking.course_id is None:
+                booking.course = course
+                changed = True
+            if changed:
+                booking.save()
+
+            if was_created:
+                created += 1
+
+        self.stdout.write(self.style.SUCCESS(f"Session bookings accepted/ensured: {created}"))

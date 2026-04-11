@@ -20,6 +20,7 @@ from apps.school.views.livesession_view import (
     LiveSessionUpdateView,
     LiveSessionListView,
 )
+from apps.school.views.teacher_live_lessons_view import TeacherLiveLessonsView
 from apps.school.views.assessments_views import (
     AssessmentCreateListView,
     RevisionMaterialCreateListView,
@@ -41,6 +42,7 @@ from apps.school.views.lessons_view import (
     CourseTopicsListView,
     TopicSubtopicsListView,
 )
+from apps.school.views.teacher_videos_view import TeacherVideosView
 
 school_router = DefaultRouter()
 school_router.register(r"subjects", SubjectViewSet)
@@ -92,6 +94,11 @@ urlpatterns = [
         "teacher/live-session/update/<uuid:pk>/",
         LiveSessionUpdateView.as_view(),
         name="live-session-update",
+    ),
+    path(
+        "teacher/live-lessons/",
+        TeacherLiveLessonsView.as_view(),
+        name="teacher-live-lessons",
     ),
     path("topics/", TopicCreateListView.as_view(), name="topic-list-create"),
     path("subtopics/", SubtopicCreateListView.as_view(), name="subtopic-list-create"),
@@ -162,6 +169,12 @@ urlpatterns = [
         "topics/<uuid:topic_id>/subtopics/",
         TopicSubtopicsListView.as_view(),
         name="topic-subtopics",
+    ),
+    # Teacher Videos Endpoint
+    path(
+        "lessons/api/videos/teacher/<uuid:teacher_id>/",
+        TeacherVideosView.as_view(),
+        name="teacher-videos",
     ),
 ]
 urlpatterns += school_router.urls

@@ -20,12 +20,11 @@ class DailyCoAPI:
 
     def __init__(self, api_key: Optional[str] = None, room_url_base: Optional[str] = None):
         self.api_key = api_key or os.getenv("DAILY_API_KEY")
-        if not self.api_key:
-            raise ValueError("Missing DAILY_API_KEY in environment variables or constructor.")
+        self.mock_mode = not bool(self.api_key)
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
-        }
+        } if self.api_key else {}
 
         self.room_url_base = room_url_base or \
         os.getenv("DAILY_ROOM_URL_BASE", "https://studybuddyafrica.daily.co")
@@ -70,6 +69,19 @@ class DailyCoAPI:
             "privacy": privacy,
             "properties": final_props
         }
+
+        if self.mock_mode:
+            return {
+                "url": f"{self.room_url_base}/{name}",
+                "name": name,
+                "privacy": privacy,
+                "expires_at": datetime.fromtimestamp(final_props["exp"]).isoformat() if final_props.get("exp") else None,
+                "id": name,
+                "raw": {
+                    "mock": True,
+                    **payload,
+                },
+            }
 
         resp = self._request("POST", f"{self.BASE_URL}/rooms", json=payload)
 
@@ -119,6 +131,21 @@ class DailyCoAPI:
                 **(extra_properties or {})
             }
         }
+
+        if self.mock_mode:
+            token = f"mock-{room_name}-{user_id}"
+            room_url = f"{self.room_url_base}/{room_name}?t={token}"
+            return {
+                "token": token,
+                "room_url": room_url,
+                "user_id": user_id,
+                "user_name": user_name,
+                "is_owner": is_owner,
+                "raw": {
+                    "mock": True,
+                    **token_payload,
+                },
+            }
 
         token_data = self._request("POST", f"{self.BASE_URL}/meeting-tokens", json=token_payload)
 

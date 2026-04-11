@@ -29,14 +29,20 @@ class SubjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Teachers: list subjects they are linked with.
-        Admin/Students/Anonymous: list all subjects.
+        Default: list all subjects for frontend dropdown compatibility.
+        Optional: teachers can request only their linked subjects via ?mine=true.
         """
         user = self.request.user
+        mine = str(self.request.GET.get("mine", "")).lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+        teacher_profile = getattr(user, "teacher_profile", None)
 
-        if not user.is_authenticated or not hasattr(user, "teacher_profile"):
+        if not mine or not user.is_authenticated or teacher_profile is None:
             return Subject.objects.all().order_by("name")
 
-        return Subject.objects.filter(teacher_profiles=user.teacher_profile).order_by(
+        return Subject.objects.filter(teacher_profiles=teacher_profile).order_by(
             "name"
         )

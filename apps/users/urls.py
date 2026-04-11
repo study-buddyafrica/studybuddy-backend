@@ -8,6 +8,7 @@ from apps.users.views.delete_user import UserDeleteView
 from apps.users.views.update_user import UserUpdateView
 from apps.users.views.list_teachers_view import TeacherListView
 from apps.users.views.student_lead_view import StudentLeadViewSet
+from apps.users.views.availability_view import AvailabilityViewSet
 from apps.users.views.update_profile_views import (
     ParentProfileUpdateView,
     StudentProfileUpdateView,
@@ -17,6 +18,7 @@ from apps.users.views.profile_views import (
     TeacherProfileView,
     StudentProfileView,
     ParentProfileView,
+    ParentFullProfileView,
     ParentChildrenView,
     ParentRegisterStudentView,
 )
@@ -24,6 +26,7 @@ from apps.users.views.profile_views import (
 user_router = DefaultRouter()
 user_router.register("teachers", TeacherProfileViewSet, basename="teacher")
 user_router.register(r"student-leads", StudentLeadViewSet, basename="student-lead")
+user_router.register(r"availability", AvailabilityViewSet, basename="availability")
 
 urlpatterns = [
     path("users/register/", UserRegistrationView.as_view(), name="user-register"),
@@ -78,6 +81,7 @@ urlpatterns = [
     path("teacher/profile/", TeacherProfileView.as_view(), name="teacher-profile"),
     path("student/profile/", StudentProfileView.as_view(), name="student-profile"),
     path("parent/profile/", ParentProfileView.as_view(), name="parent-profile"),
+    path("parent/profile/full/", ParentFullProfileView.as_view(), name="parent-full-profile"),
     path("parent/children/", ParentChildrenView.as_view(), name="parent-children"),
     path(
         "parent/register-student/",
@@ -85,8 +89,18 @@ urlpatterns = [
         name="parent-register-student",
     ),
     path(
+        "parent/<uuid:parent_id>/register-student/",
+        ParentRegisterStudentView.as_view(),
+        name="parent-register-student-by-id",
+    ),
+    path(
         "parent/register-student",
         ParentRegisterStudentView.as_view(),
         name="parent-register-student-no-slash",
+    ),
+    path(
+        "parent/<uuid:parent_id>/register-student",
+        ParentRegisterStudentView.as_view(),
+        name="parent-register-student-by-id-no-slash",
     ),
 ] + user_router.urls

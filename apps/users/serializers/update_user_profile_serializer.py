@@ -1,14 +1,18 @@
 from rest_framework import serializers
 from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
+from apps.transactions.models import Wallet
 from apps.core.validators import (
     validate_birth_date_teacher,
     validate_phone_number,
     validate_hourly_rate,
     validate_string_length,
 )
+from apps.core.serializers.sanitize_mixin import SanitizeHTMLMixin
 
 
-class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
+class TeacherProfileUpdateSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["bio"]
+
     class Meta:
         model = TeacherProfile
         fields = [
@@ -76,7 +80,9 @@ class TeacherProfileUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class StudentProfileUpdateSerializer(serializers.ModelSerializer):
+class StudentProfileUpdateSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["contact_name"]
+
     class Meta:
         model = StudentProfile
         fields = [
@@ -143,3 +149,64 @@ class ParentProfileUpdateSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
+
+
+class ParentChildSummarySerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    grade = serializers.SerializerMethodField()
+    school = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentProfile
+        fields = ["id", "full_name", "grade", "school", "birth_date"]
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip()
+
+    def get_grade(self, obj):
+        return obj.grade.level if obj.grade else None
+
+    def get_school(self, obj):
+        return obj.school.name if obj.school else None
+
+
+class ParentFullProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    email = serializers.EmailField(source="user.email", read_only=True)
+    children = ParentChildSummarySerializer(many=True, read_only=True)
+    wallet_balance = serializers.SerializerMethodField()
+    wallet_currency = serializers.SerializerMethodField()
+    wallet_account_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ParentProfile
+        fields = [
+            "id",
+            "full_name",
+            "email",
+            "profile_picture",
+            "birth_date",
+            "gender",
+            "national_identity_number",
+            "children",
+            "wallet_balance",
+            "wallet_currency",
+            "wallet_account_type",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip()
+
+    def get_wallet_balance(self, obj):
+        wallet = Wallet.objects.filter(user=obj.user).first()
+        return str(wallet.balance) if wallet else None
+
+    def get_wallet_currency(self, obj):
+        wallet = Wallet.objects.filter(user=obj.user).first()
+        return wallet.balance_currency if wallet else None
+
+    def get_wallet_account_type(self, obj):
+        wallet = Wallet.objects.filter(user=obj.user).first()
+        return wallet.account_type if wallet else None

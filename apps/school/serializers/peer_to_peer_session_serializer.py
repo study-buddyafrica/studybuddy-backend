@@ -5,7 +5,6 @@ from rest_framework import serializers
 
 from apps.core.utils.dailyco import DailyCoAPI
 from apps.school.models import CourseEnrollment, LiveSession
-from apps.users.models import StudentLead
 from apps.school.serializers.livesession_serializer import DEFAULT_WHITEBOARD_LINK
 
 
@@ -13,29 +12,46 @@ class PeerLiveSessionSerializer(serializers.ModelSerializer):
     duration_hours = serializers.FloatField(write_only=True)
     started_at = serializers.DateTimeField()
     ended_at = serializers.DateTimeField(read_only=True)
+    course_title = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
 
     class Meta:
         model = LiveSession
         fields = [
             "id",
             "course",
+            "course_title",
             "teacher",
+            "teacher_name",
             "title",
             "description",
             "teacher_meeting_link",
             "student_meeting_link",
             "whiteboard_link",
             "started_at",
-            "duration_hours", "ended_at",
+            "duration_hours",
+            "ended_at",
         ]
         read_only_fields = [
             "id",
+            "course_title",
+            "teacher_name",
             "teacher_meeting_link",
             "student_meeting_link",
             "whiteboard_link",
             "started_at",
             "ended_at",
         ]
+
+    def get_course_title(self, obj):
+        """Return course title"""
+        return obj.course.title if obj.course else ""
+
+    def get_teacher_name(self, obj):
+        """Return teacher full name"""
+        if obj.teacher and obj.teacher.user:
+            return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
+        return ""
 
     def validate(self, attrs):
         request = self.context["request"]
@@ -56,28 +72,8 @@ class PeerLiveSessionSerializer(serializers.ModelSerializer):
             return attrs
 
         if hasattr(user, "student_profile"):
-            enrolled = CourseEnrollment.objects.filter(
-                student=user.student_profile, course=course, is_active=True
-            ).exists()
-            is_lead = StudentLead.objects.filter(
-                student_profile=user.student_profile, course=course, is_a_lead=True
-            ).exists()
-            if not enrolled or not is_lead:
-                lead_qs = StudentLead.objects.filter(
-                    course=course, is_a_lead=True
-                ).select_related("student_profile__user")
-                lead_names = [
-                    f"{lead.student_profile.user.first_name} {lead.student_profile.user.last_name}".strip()
-                    for lead in lead_qs[:5]
-                ]
-                if not lead_names:
-                    raise serializers.ValidationError(
-                        "Only course leads can create live sessions. No lead is currently assigned for this course."
-                    )
-                raise serializers.ValidationError(
-                    "Only course leads can create live sessions. "
-                    f"Current lead(s): {', '.join(lead_names)}."
-                )
+            # Any authenticated student can create a peer session for a course.
+            # The invite flow is handled client-side by sharing the room URL.
             return attrs
 
         raise serializers.ValidationError(

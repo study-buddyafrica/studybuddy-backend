@@ -11,7 +11,7 @@ from apps.school.models import (
 
 class CourseLiveSessionCreateSerializer(serializers.ModelSerializer):
     course_id = serializers.UUIDField(write_only=True)
-
+    course_title = serializers.SerializerMethodField()
     teacher_meeting_link = serializers.CharField(read_only=True)
     student_meeting_link = serializers.CharField(read_only=True)
     whiteboard_link = serializers.URLField(read_only=True)
@@ -21,6 +21,8 @@ class CourseLiveSessionCreateSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "course_id",
+            "course",
+            "course_title",
             "title",
             "description",
             "teacher_meeting_link",
@@ -31,10 +33,16 @@ class CourseLiveSessionCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "course",
+            "course_title",
             "teacher_meeting_link",
             "student_meeting_link",
             "whiteboard_link",
         ]
+
+    def get_course_title(self, obj):
+        """Return course title"""
+        return obj.course.title if obj.course else ""
 
     def create(self, validated_data):
         request = self.context["request"]

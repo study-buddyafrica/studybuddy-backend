@@ -1,4 +1,5 @@
 from datetime import timedelta
+import uuid
 
 from django.db.models import Avg, Count
 from rest_framework import permissions, status
@@ -7,7 +8,7 @@ from rest_framework.views import APIView
 
 from apps.core.permissions import IsVerified
 from apps.school.models import SessionBooking
-from apps.users.models import StudentProfile, TeacherRating
+from apps.users.models import Availability, StudentProfile, TeacherProfile, TeacherRating
 
 
 class StudentPerformanceView(APIView):
@@ -144,3 +145,70 @@ class CompletedLessonsView(APIView):
             )
 
         return Response({"completed_lessons": lessons, "total": len(lessons)}, status=status.HTTP_200_OK)
+
+
+class SubmitTimeRangeView(APIView):
+    """Compatibility endpoint for frontend lesson timer submissions."""
+
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+
+    def post(self, request, item_id=None):
+        payload = {
+            "item_id": item_id,
+            "start_time": request.data.get("start_time"),
+            "end_time": request.data.get("end_time"),
+            "duration_seconds": request.data.get("duration_seconds"),
+            "status": "recorded",
+        }
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+class AvailableTimesView(APIView):
+    """Compatibility endpoint for frontend teacher availability lookup."""
+
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+
+    def _resolve_teacher(self, teacher_id):
+        if teacher_id in (None, "", "undefined", "null"):
+            return None
+
+        try:
+            parsed_id = uuid.UUID(str(teacher_id))
+        except (ValueError, TypeError, AttributeError):
+            return None
+
+        teacher = TeacherProfile.objects.filter(id=parsed_id).first()
+        if teacher:
+            return teacher
+
+        # Legacy clients sometimes pass non-UUID identifiers.
+        return None
+
+    def get(self, request, teacher_id=None):
+        teacher = self._resolve_teacher(teacher_id)
+        if teacher is None:
+            return Response({"teacher_id": teacher_id, "available_times": [], "total": 0}, status=status.HTTP_200_OK)
+
+        slots = (
+            Availability.objects.filter(teacher=teacher, is_blocked=False)
+            .order_by("date")
+            .values("id", "date", "end_date")
+        )
+
+        available_times = [
+            {
+                "id": str(slot["id"]),
+                "start": slot["date"],
+                "end": slot["end_date"],
+            }
+            for slot in slots
+        ]
+
+        return Response(
+            {
+                "teacher_id": str(teacher.id),
+                "available_times": available_times,
+                "total": len(available_times),
+            },
+            status=status.HTTP_200_OK,
+        )

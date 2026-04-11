@@ -14,6 +14,9 @@ class RequestPasswordResetSerializer(serializers.Serializer):
 
     def save(self):
         email = self.validated_data["email"]
+        if not User.objects.filter(email=email).exists():
+            return True
+
         code = f"{random.randint(100000, 999999)}"
         ResetPasswordCode.objects.filter(email=email).delete()
         ResetPasswordCode.objects.create(email=email, code=code)

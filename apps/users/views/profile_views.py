@@ -10,6 +10,7 @@ from apps.users.serializers.update_user_profile_serializer import (
     TeacherProfileUpdateSerializer,
     StudentProfileUpdateSerializer,
     ParentProfileUpdateSerializer,
+    ParentFullProfileSerializer,
 )
 from apps.core.permissions import IsVerified
 
@@ -97,20 +98,41 @@ class ParentProfileView(generics.RetrieveUpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
+class ParentFullProfileView(generics.RetrieveAPIView):
+    """Return the full parent profile including children and wallet summary."""
+
+    serializer_class = ParentFullProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+
+    def get_object(self):
+        try:
+            return ParentProfile.objects.select_related("user").prefetch_related("children__user", "children__grade", "children__school").get(user=self.request.user)
+        except ParentProfile.DoesNotExist:
+            raise PermissionDenied("No parent profile found for this user.")
+
+
 class ParentChildrenView(generics.ListAPIView):
     """
     GET: List all children for current logged-in parent
     """
 
-    permission_classes = [permissions.IsAuthenticated, IsVerified]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Get children for current parent"""
-        try:
-            parent = ParentProfile.objects.get(user=self.request.user)
-            return parent.children.all()
-        except ParentProfile.DoesNotExist:
-            return StudentProfile.objects.none()
+        parent_id = self.kwargs.get("parent_id") or self.request.query_params.get("parent_id")
+
+        if parent_id and parent_id not in ("undefined", "null", ""):
+            parent = ParentProfile.objects.filter(id=parent_id).first()
+            if parent:
+                return parent.children.all()
+
+        if getattr(self.request.user, "is_authenticated", False) and hasattr(
+            self.request.user, "parent_profile"
+        ):
+            return self.request.user.parent_profile.children.all()
+
+        return StudentProfile.objects.none()
 
     def get_serializer_class(self):
         return StudentProfileUpdateSerializer
@@ -122,7 +144,21 @@ class ParentRegisterStudentView(generics.CreateAPIView):
     Automatically links the created student to the parent
     """
 
-    permission_classes = [permissions.IsAuthenticated, IsVerified]
+    permission_classes = [permissions.AllowAny]
+
+    def _resolve_parent_profile(self):
+        parent_id = self.kwargs.get("parent_id") or self.request.data.get("parent_id")
+
+        if parent_id and parent_id not in ("undefined", "null", ""):
+            try:
+                return ParentProfile.objects.get(id=parent_id)
+            except ParentProfile.DoesNotExist:
+                pass
+
+        if hasattr(self.request.user, "parent_profile"):
+            return self.request.user.parent_profile
+
+        return None
 
     def post(self, request, *args, **kwargs):
         """Register/create a student and link to current parent"""
@@ -137,12 +173,10 @@ class ParentRegisterStudentView(generics.CreateAPIView):
             # Create user with student role
             user = serializer.save(role="student")
 
-            # Get parent profile
-            try:
-                parent_profile = ParentProfile.objects.get(user=request.user)
-            except ParentProfile.DoesNotExist:
+            parent_profile = self._resolve_parent_profile()
+            if not parent_profile:
                 return Response(
-                    {"error": "Parent profile not found"},
+                    {"error": "Parent profile not found. Provide a valid parent_id or authenticate as a parent."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
