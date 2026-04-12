@@ -106,12 +106,13 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5174",
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
+    "http://34.234.64.73:8000"
 ]
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 """ swagger settings"""
