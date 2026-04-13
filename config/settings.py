@@ -141,6 +141,9 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "StudyBuddy API documentation",
     "VERSION": "3.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "PREPROCESSING_HOOKS": [
+        "apps.core.schema_hooks.preprocess_api_canonical_endpoints",
+    ],
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "filter": True,

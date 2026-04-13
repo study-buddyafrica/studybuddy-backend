@@ -1,4 +1,6 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework import serializers
+from apps.core.models import User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -45,3 +47,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # data.update({"user": data})
         return data
+
+
+class CheckUserSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return value.lower().strip()
+
+    def save(self):
+        email = self.validated_data["email"]
+        user = User.objects.filter(email=email).first()
+
+        if not user:
+            return {"exists": False}
+
+        return {
+            "exists": True,
+            "role": user.role,
+            "account_confirmed": user.account_confirmed,
+            "is_active": user.is_active,
+        }

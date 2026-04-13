@@ -17,6 +17,8 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "is_staff",
             "account_confirmed",
+            "created_at",
+            "last_login",
             "profile_id",
         ]
         read_only_fields = fields
@@ -25,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
         if hasattr(obj, "teacher_profile"):
             return str(obj.teacher_profile.id)
         if hasattr(obj, "parent_profile"):
-            return obj.parent_profile.id
+            return str(obj.parent_profile.id)
         if hasattr(obj, "student_profile"):
             return str(obj.student_profile.id)
         return None

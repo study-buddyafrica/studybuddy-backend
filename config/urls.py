@@ -21,6 +21,7 @@ from apps.core.auth.views.reset_password_view import (
     VerifyPasswordResetCodeView,
     ResetPasswordCompatibilityView,
 )
+from apps.core.auth.views.auth_views import CheckUserView
 from apps.core.views.admin_views import get_classes, get_subjects, admin_dashboard_stats
 from apps.school.views.performance_compatibility_views import (
     StudentPerformanceView,
@@ -55,6 +56,16 @@ urlpatterns = [
         "auth/forgot-password",
         RequestPasswordResetView.as_view(),
         name="auth-forgot-password-no-slash",
+    ),
+    path(
+        "auth/check_user",
+        CheckUserView.as_view(),
+        name="auth-check-user-no-slash",
+    ),
+    path(
+        "auth/check_user/",
+        CheckUserView.as_view(),
+        name="auth-check-user",
     ),
     path(
         "auth/forgot-password/",
@@ -95,6 +106,16 @@ urlpatterns = [
         "api/auth/forgot-password",
         RequestPasswordResetView.as_view(),
         name="api-auth-forgot-password-no-slash",
+    ),
+    path(
+        "api/auth/check_user",
+        CheckUserView.as_view(),
+        name="api-auth-check-user-no-slash",
+    ),
+    path(
+        "api/auth/check_user/",
+        CheckUserView.as_view(),
+        name="api-auth-check-user",
     ),
     path(
         "api/auth/forgot-password/",

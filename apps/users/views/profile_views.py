@@ -106,7 +106,13 @@ class ParentFullProfileView(generics.RetrieveAPIView):
 
     def get_object(self):
         try:
-            return ParentProfile.objects.select_related("user").prefetch_related("children__user", "children__grade", "children__school").get(user=self.request.user)
+            return (
+                ParentProfile.objects.select_related("user")
+                .prefetch_related(
+                    "children__user", "children__grade", "children__school"
+                )
+                .get(user=self.request.user)
+            )
         except ParentProfile.DoesNotExist:
             raise PermissionDenied("No parent profile found for this user.")
 
@@ -120,7 +126,9 @@ class ParentChildrenView(generics.ListAPIView):
 
     def get_queryset(self):
         """Get children for current parent"""
-        parent_id = self.kwargs.get("parent_id") or self.request.query_params.get("parent_id")
+        parent_id = self.kwargs.get("parent_id") or self.request.query_params.get(
+            "parent_id"
+        )
 
         if parent_id and parent_id not in ("undefined", "null", ""):
             parent = ParentProfile.objects.filter(id=parent_id).first()
@@ -162,31 +170,37 @@ class ParentRegisterStudentView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         """Register/create a student and link to current parent"""
+        from django.db import transaction
         from apps.users.serializers.user_profile_serializer import (
             StudentRegistrationSerializer,
         )
         from apps.users.models import ParentChild
 
+        parent_profile = self._resolve_parent_profile()
+        if not parent_profile:
+            return Response(
+                {
+                    "error": "Parent profile not found. Provide a valid parent_id or authenticate as a parent."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Create user serializer for registration
         serializer = StudentRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            # Create user with student role
-            user = serializer.save(role="student")
+            with transaction.atomic():
+                # Create user with student role
+                user = serializer.save(role="student")
 
-            parent_profile = self._resolve_parent_profile()
-            if not parent_profile:
-                return Response(
-                    {"error": "Parent profile not found. Provide a valid parent_id or authenticate as a parent."},
-                    status=status.HTTP_403_FORBIDDEN,
+                # Get or create student profile
+                student_profile, created = StudentProfile.objects.get_or_create(
+                    user=user
                 )
 
-            # Get or create student profile
-            student_profile, created = StudentProfile.objects.get_or_create(user=user)
-
-            # Link parent to student
-            ParentChild.objects.get_or_create(
-                parent=parent_profile, child=student_profile
-            )
+                # Link parent to student
+                ParentChild.objects.get_or_create(
+                    parent=parent_profile, child=student_profile
+                )
 
             return Response(
                 {

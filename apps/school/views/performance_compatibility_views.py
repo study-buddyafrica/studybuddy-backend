@@ -8,7 +8,12 @@ from rest_framework.views import APIView
 
 from apps.core.permissions import IsVerified
 from apps.school.models import SessionBooking
-from apps.users.models import Availability, StudentProfile, TeacherProfile, TeacherRating
+from apps.users.models import (
+    Availability,
+    StudentProfile,
+    TeacherProfile,
+    TeacherRating,
+)
 
 
 class StudentPerformanceView(APIView):
@@ -30,7 +35,16 @@ class StudentPerformanceView(APIView):
         if request.user.is_staff or request.user.is_superuser:
             return student
 
-        if hasattr(request.user, "student_profile") and request.user.student_profile.id == student.id:
+        if (
+            hasattr(request.user, "student_profile")
+            and request.user.student_profile.id == student.id
+        ):
+            return student
+
+        if (
+            hasattr(request.user, "parent_profile")
+            and request.user.parent_profile.children.filter(id=student.id).exists()
+        ):
             return student
 
         return None
@@ -61,7 +75,9 @@ class StudentPerformanceView(APIView):
                 total_minutes += max(int(delta.total_seconds() // 60), 0)
 
         avg_rating = (
-            TeacherRating.objects.filter(student=student).aggregate(avg=Avg("rating")).get("avg")
+            TeacherRating.objects.filter(student=student)
+            .aggregate(avg=Avg("rating"))
+            .get("avg")
             or 0
         )
 
@@ -108,7 +124,16 @@ class CompletedLessonsView(APIView):
         if request.user.is_staff or request.user.is_superuser:
             return student
 
-        if hasattr(request.user, "student_profile") and request.user.student_profile.id == student.id:
+        if (
+            hasattr(request.user, "student_profile")
+            and request.user.student_profile.id == student.id
+        ):
+            return student
+
+        if (
+            hasattr(request.user, "parent_profile")
+            and request.user.parent_profile.children.filter(id=student.id).exists()
+        ):
             return student
 
         return None
@@ -116,7 +141,9 @@ class CompletedLessonsView(APIView):
     def get(self, request, student_id=None):
         student = self._resolve_student(request, student_id)
         if student is None:
-            return Response({"completed_lessons": [], "total": 0}, status=status.HTTP_200_OK)
+            return Response(
+                {"completed_lessons": [], "total": 0}, status=status.HTTP_200_OK
+            )
 
         bookings = (
             SessionBooking.objects.filter(student=student, status="completed")
@@ -135,8 +162,12 @@ class CompletedLessonsView(APIView):
                 {
                     "id": str(booking.id),
                     "course": booking.course.title if booking.course else None,
-                    "subject": booking.course.subject.name if booking.course and booking.course.subject else None,
-                    "teacher": booking.teacher.user.first_name if booking.teacher and booking.teacher.user else None,
+                    "subject": booking.course.subject.name
+                    if booking.course and booking.course.subject
+                    else None,
+                    "teacher": booking.teacher.user.first_name
+                    if booking.teacher and booking.teacher.user
+                    else None,
                     "scheduled_start": booking.scheduled_start,
                     "scheduled_end": booking.scheduled_end,
                     "duration_hours": duration_hours,
@@ -144,7 +175,10 @@ class CompletedLessonsView(APIView):
                 }
             )
 
-        return Response({"completed_lessons": lessons, "total": len(lessons)}, status=status.HTTP_200_OK)
+        return Response(
+            {"completed_lessons": lessons, "total": len(lessons)},
+            status=status.HTTP_200_OK,
+        )
 
 
 class SubmitTimeRangeView(APIView):
@@ -187,7 +221,10 @@ class AvailableTimesView(APIView):
     def get(self, request, teacher_id=None):
         teacher = self._resolve_teacher(teacher_id)
         if teacher is None:
-            return Response({"teacher_id": teacher_id, "available_times": [], "total": 0}, status=status.HTTP_200_OK)
+            return Response(
+                {"teacher_id": teacher_id, "available_times": [], "total": 0},
+                status=status.HTTP_200_OK,
+            )
 
         slots = (
             Availability.objects.filter(teacher=teacher, is_blocked=False)
