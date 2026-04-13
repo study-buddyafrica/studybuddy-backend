@@ -63,13 +63,17 @@ class Command(BaseCommand):
         subjects = self._seed_subjects(limit)
         schools = self._seed_schools(limit)
 
-        teachers = self._seed_teachers(limit, schools, grades, subjects, education_levels)
+        teachers = self._seed_teachers(
+            limit, schools, grades, subjects, education_levels
+        )
         students = self._seed_students(limit, schools, grades, education_levels)
         parents = self._seed_parents(limit)
         self._seed_wallets(students, teachers, parents)
 
         self._link_parents_children(parents, students)
-        courses = self._seed_courses(limit, subjects, grades, teachers, education_levels)
+        courses = self._seed_courses(
+            limit, subjects, grades, teachers, education_levels
+        )
         self._seed_enrollments_and_leads(courses, students)
         self._seed_session_bookings(courses, students, teachers)
         self._seed_topics_and_subtopics(limit, courses)
@@ -110,17 +114,15 @@ class Command(BaseCommand):
             "https://i.pravatar.cc/150?img=3",  # Teacher 4
             "https://i.pravatar.cc/150?img=4",  # Teacher 5
         ]
-        
+
         try:
             url = urls[min(index - 1, len(urls) - 1)]
             response = requests.get(url, timeout=5)
             response.raise_for_status()
-            
+
             filename = f"profile_teacher_{index}.jpg"
             profile_obj.profile_picture.save(
-                filename,
-                ContentFile(response.content),
-                save=True
+                filename, ContentFile(response.content), save=True
             )
         except Exception as e:
             # Silently fail if download doesn't work (development environment)
@@ -139,7 +141,11 @@ class Command(BaseCommand):
         items = [
             ("k12", "K-12", "Primary and secondary education tracks."),
             ("university", "University", "Higher education and tertiary tracks."),
-            ("continuous", "Continuous Learning", "Professional and lifelong learning tracks."),
+            (
+                "continuous",
+                "Continuous Learning",
+                "Professional and lifelong learning tracks.",
+            ),
         ]
         created = []
         for code, name, description in items:
@@ -215,7 +221,11 @@ class Command(BaseCommand):
                     "gender": "Male" if idx % 2 else "Female",
                     "teacher_license_number": f"TCH-DEMO-{idx:04d}",
                     "national_identity_number": f"ID-DEMO-{idx:06d}",
-                    "education_level": education_levels[(idx - 1) % len(education_levels)] if education_levels else None,
+                    "education_level": education_levels[
+                        (idx - 1) % len(education_levels)
+                    ]
+                    if education_levels
+                    else None,
                 },
             )
 
@@ -244,7 +254,11 @@ class Command(BaseCommand):
             if not teacher.is_verified:
                 teacher.is_verified = True
                 changed = True
-            target_level = education_levels[(idx - 1) % len(education_levels)] if education_levels else None
+            target_level = (
+                education_levels[(idx - 1) % len(education_levels)]
+                if education_levels
+                else None
+            )
             if target_level and teacher.education_level_id != target_level.id:
                 teacher.education_level = target_level
                 changed = True
@@ -286,13 +300,21 @@ class Command(BaseCommand):
                 defaults={
                     "birth_date": date(2010, min(idx, 12), min(idx, 28)),
                     "grade": grades[(idx - 1) % len(grades)] if grades else None,
-                    "education_level": education_levels[(idx - 1) % len(education_levels)] if education_levels else None,
+                    "education_level": education_levels[
+                        (idx - 1) % len(education_levels)
+                    ]
+                    if education_levels
+                    else None,
                     "school": schools[(idx - 1) % len(schools)] if schools else None,
                     "contact_name": f"Guardian {idx}",
                     "guardian_contact": f"+2547111111{idx}",
                 },
             )
-            target_level = education_levels[(idx - 1) % len(education_levels)] if education_levels else None
+            target_level = (
+                education_levels[(idx - 1) % len(education_levels)]
+                if education_levels
+                else None
+            )
             if target_level and student.education_level_id != target_level.id:
                 student.education_level = target_level
                 student.save(update_fields=["education_level"])
@@ -330,7 +352,9 @@ class Command(BaseCommand):
     def _link_parents_children(self, parents, students):
         links = 0
         if not parents or not students:
-            self.stdout.write(self.style.WARNING("Parent-child links: 0 (insufficient profiles)"))
+            self.stdout.write(
+                self.style.WARNING("Parent-child links: 0 (insufficient profiles)")
+            )
             return
 
         for idx, student in enumerate(students):
@@ -339,7 +363,9 @@ class Command(BaseCommand):
             if created:
                 links += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Parent-child links: {links} created/ensured"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Parent-child links: {links} created/ensured")
+        )
 
     def _seed_courses(self, limit, subjects, grades, teachers, education_levels):
         created = []
@@ -353,14 +379,24 @@ class Command(BaseCommand):
                 defaults={
                     "subject": subjects[(idx - 1) % len(subjects)],
                     "grade": grades[(idx - 1) % len(grades)] if grades else None,
-                    "education_level": education_levels[(idx - 1) % len(education_levels)] if education_levels else None,
+                    "education_level": education_levels[
+                        (idx - 1) % len(education_levels)
+                    ]
+                    if education_levels
+                    else None,
                     "description": f"Demo course description {idx}.",
                     "price": Decimal("1000.00") + Decimal(str(idx * 100)),
-                    "teacher": teachers[(idx - 1) % len(teachers)] if teachers else None,
+                    "teacher": teachers[(idx - 1) % len(teachers)]
+                    if teachers
+                    else None,
                     "is_universal": True,
                 },
             )
-            target_level = education_levels[(idx - 1) % len(education_levels)] if education_levels else None
+            target_level = (
+                education_levels[(idx - 1) % len(education_levels)]
+                if education_levels
+                else None
+            )
             if target_level and course.education_level_id != target_level.id:
                 course.education_level = target_level
                 course.save(update_fields=["education_level"])
@@ -404,7 +440,9 @@ class Command(BaseCommand):
     def _seed_teacher_availability_and_ratings(self, teachers, students):
         """Seed teacher availability slots and student reviews for teacher profiles."""
         if not teachers:
-            self.stdout.write(self.style.WARNING("Availability/ratings: 0 (no teachers)"))
+            self.stdout.write(
+                self.style.WARNING("Availability/ratings: 0 (no teachers)")
+            )
             return
 
         base = timezone.make_aware(datetime(2026, 1, 15, 9, 0, 0))
@@ -445,8 +483,14 @@ class Command(BaseCommand):
                 if created:
                     ratings_count += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Availability slots: {availability_count} created/ensured"))
-        self.stdout.write(self.style.SUCCESS(f"Teacher ratings: {ratings_count} created/ensured"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Availability slots: {availability_count} created/ensured"
+            )
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Teacher ratings: {ratings_count} created/ensured")
+        )
 
     def _seed_live_lessons(self, courses):
         """Seed live lesson records from accepted bookings for teacher dashboards."""
@@ -455,7 +499,9 @@ class Command(BaseCommand):
         )
 
         if not bookings.exists():
-            self.stdout.write(self.style.WARNING("Live lessons: 0 (no accepted bookings)"))
+            self.stdout.write(
+                self.style.WARNING("Live lessons: 0 (no accepted bookings)")
+            )
             return
 
         created = 0
@@ -468,7 +514,8 @@ class Command(BaseCommand):
                 defaults={
                     "teacher": booking.teacher,
                     "course": course,
-                    "education_level": booking.education_level or (course.education_level if course else None),
+                    "education_level": booking.education_level
+                    or (course.education_level if course else None),
                     "title": f"{course.title if course else 'Demo'} Live Session",
                     "description": f"Live class for booking {booking.id}.",
                     "started_at": booking.scheduled_start,
@@ -481,7 +528,9 @@ class Command(BaseCommand):
             if was_created:
                 created += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Live lessons: {created} created/ensured"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Live lessons: {created} created/ensured")
+        )
 
     def _seed_learning_artifacts(self, courses, students):
         """Seed revision materials, assessments, submissions, and progress records."""
@@ -549,8 +598,9 @@ class Command(BaseCommand):
             )
 
             enrolled = list(
-                CourseEnrollment.objects.filter(course=course, is_active=True)
-                .select_related("student__user")[:2]
+                CourseEnrollment.objects.filter(
+                    course=course, is_active=True
+                ).select_related("student__user")[:2]
             )
 
             for row in enrolled:
@@ -570,7 +620,11 @@ class Command(BaseCommand):
                 if sub_created:
                     submissions += 1
 
-                first_topic = Topic.objects.filter(course=course).order_by("order", "created_at").first()
+                first_topic = (
+                    Topic.objects.filter(course=course)
+                    .order_by("order", "created_at")
+                    .first()
+                )
                 if first_topic:
                     _, created = TopicProgress.objects.get_or_create(
                         student=row.student,
@@ -584,7 +638,9 @@ class Command(BaseCommand):
                         progress_rows += 1
 
                     first_subtopic = (
-                        Subtopic.objects.filter(topic=first_topic).order_by("order", "created_at").first()
+                        Subtopic.objects.filter(topic=first_topic)
+                        .order_by("order", "created_at")
+                        .first()
                     )
                     if first_subtopic:
                         _, created = SubtopicProgress.objects.get_or_create(
@@ -608,16 +664,28 @@ class Command(BaseCommand):
                 if created:
                     progress_rows += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Revision materials: {materials} created/ensured"))
-        self.stdout.write(self.style.SUCCESS(f"Assessments: {assessments} created/ensured"))
-        self.stdout.write(self.style.SUCCESS(f"Assessment questions: {questions} created/ensured"))
-        self.stdout.write(self.style.SUCCESS(f"Assessment submissions: {submissions} created/ensured"))
-        self.stdout.write(self.style.SUCCESS(f"Progress rows: {progress_rows} created/ensured"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Revision materials: {materials} created/ensured")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Assessments: {assessments} created/ensured")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Assessment questions: {questions} created/ensured")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Assessment submissions: {submissions} created/ensured")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Progress rows: {progress_rows} created/ensured")
+        )
 
     def _seed_enrollments_and_leads(self, courses, students):
         """Create active enrollments and designate a lead student per course."""
         if not courses or not students:
-            self.stdout.write(self.style.WARNING("Enrollments/leads: 0 (insufficient data)"))
+            self.stdout.write(
+                self.style.WARNING("Enrollments/leads: 0 (insufficient data)")
+            )
             return
 
         enrollments = 0
@@ -655,7 +723,9 @@ class Command(BaseCommand):
             if lead_created:
                 leads += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Enrollments: {enrollments} created/ensured"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Enrollments: {enrollments} created/ensured")
+        )
         self.stdout.write(self.style.SUCCESS(f"Course leads: {leads} created/ensured"))
 
     def _seed_wallets(self, students, teachers, parents):
@@ -744,14 +814,22 @@ class Command(BaseCommand):
             wallet.save()
 
         self.stdout.write(self.style.SUCCESS("System wallet: ensured and funded"))
-        self.stdout.write(self.style.SUCCESS(f"Student wallets funded/updated: {funded['student']}"))
-        self.stdout.write(self.style.SUCCESS(f"Teacher wallets funded/updated: {funded['teacher']}"))
-        self.stdout.write(self.style.SUCCESS(f"Parent wallets funded/updated: {funded['parent']}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Student wallets funded/updated: {funded['student']}")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Teacher wallets funded/updated: {funded['teacher']}")
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"Parent wallets funded/updated: {funded['parent']}")
+        )
 
     def _seed_session_bookings(self, courses, students, teachers):
         """Create accepted bookings so teacher live-session dropdown has data."""
         if not courses or not students or not teachers:
-            self.stdout.write(self.style.WARNING("Session bookings: 0 (insufficient data)"))
+            self.stdout.write(
+                self.style.WARNING("Session bookings: 0 (insufficient data)")
+            )
             return
 
         created = 0
@@ -786,7 +864,10 @@ class Command(BaseCommand):
             if booking.course_id is None:
                 booking.course = course
                 changed = True
-            if booking.education_level_id is None and course.education_level_id is not None:
+            if (
+                booking.education_level_id is None
+                and course.education_level_id is not None
+            ):
                 booking.education_level = course.education_level
                 changed = True
             if changed:
@@ -795,4 +876,6 @@ class Command(BaseCommand):
             if was_created:
                 created += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Session bookings accepted/ensured: {created}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Session bookings accepted/ensured: {created}")
+        )

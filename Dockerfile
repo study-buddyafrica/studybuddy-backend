@@ -2,6 +2,9 @@ FROM python:3.14-alpine
 
 WORKDIR /backend
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 RUN apk add curl 
 #build-base libpq-dev python3-dev
 
