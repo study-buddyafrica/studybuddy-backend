@@ -4,8 +4,10 @@ from rest_framework.permissions import AllowAny
 
 from apps.core.auth.serializers.reset_password_serializer import (
     RequestPasswordResetSerializer,
-    ConfirmPasswordResetSerializer
+    VerifyPasswordResetCodeSerializer,
+    ConfirmPasswordResetSerializer,
 )
+
 
 class RequestPasswordResetView(generics.GenericAPIView):
     serializer_class = RequestPasswordResetSerializer
@@ -17,10 +19,8 @@ class RequestPasswordResetView(generics.GenericAPIView):
         serializer.save()
 
         return Response(
-            {"message": "If this email exists, "
-            "a reset code has been sent."
-            },
-            status=status.HTTP_200_OK
+            {"message": "If this email exists, a reset code has been sent."},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -34,8 +34,22 @@ class ConfirmPasswordResetView(generics.GenericAPIView):
         serializer.save()
 
         return Response(
-            {"message": "Password reset successful."},
-            status=status.HTTP_200_OK
+            {"message": "Password reset successful."}, status=status.HTTP_200_OK
+        )
+
+
+class VerifyPasswordResetCodeView(generics.GenericAPIView):
+    serializer_class = VerifyPasswordResetCodeSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"message": "Reset code is valid."},
+            status=status.HTTP_200_OK,
         )
 
 

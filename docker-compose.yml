@@ -32,6 +32,8 @@ services:
             - app_network
     app:
         build: .
+        env_file:
+            - .env
         develop:
             watch:
                 - action: sync

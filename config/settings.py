@@ -292,6 +292,12 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("MAIL_USERNAME")
 EMAIL_HOST_PASSWORD = os.getenv("MAIL_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("MAIL_DEFAULT_SENDER", EMAIL_HOST_USER)
+EMAIL_USE_SSL = False
+MAIL_DEBUG_CONSOLE = os.getenv("MAIL_DEBUG_CONSOLE", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 # google auth
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
@@ -319,5 +325,5 @@ INTASEND_WEBHOOK_CHALLENGE = "studyyddubbuddy"
 
 
 # If we are developing locally, print emails to the terminal instead of actually sending them.
-if DEBUG:
+if DEBUG and MAIL_DEBUG_CONSOLE:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

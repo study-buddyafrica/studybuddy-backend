@@ -25,6 +25,9 @@ def send_email(
         or getattr(settings, "EMAIL_HOST_USER", None)
         or "no-reply@studybuddy.africa"
     )
+    host_user = getattr(settings, "EMAIL_HOST_USER", None)
+    if "@" not in str(from_email) and host_user:
+        from_email = f"{from_email} <{host_user}>"
 
     if template_name and context:
         html_body = render_to_string(template_name, context)

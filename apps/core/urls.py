@@ -9,6 +9,7 @@ from apps.core.auth.views.email_verification_view import (
 )
 from apps.core.auth.views.reset_password_view import (
     RequestPasswordResetView,
+    VerifyPasswordResetCodeView,
     ConfirmPasswordResetView,
 )
 from apps.core.views.health_check_view import DatabaseHealthCheckView
@@ -50,6 +51,11 @@ urlpatterns = [
         "password/reset/confirm/",
         ConfirmPasswordResetView.as_view(),
         name="password-reset-confirm",
+    ),
+    path(
+        "password/reset/verify/",
+        VerifyPasswordResetCodeView.as_view(),
+        name="password-reset-verify",
     ),
     path("health/", DatabaseHealthCheckView.as_view(), name="database-health-check"),
     # Admin Dashboard Endpoints

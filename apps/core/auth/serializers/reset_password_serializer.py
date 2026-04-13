@@ -22,7 +22,34 @@ class RequestPasswordResetSerializer(serializers.Serializer):
         ResetPasswordCode.objects.create(email=email, code=code)
         send_password_reset_code(email, code)
         return True
-    
+
+
+def _get_valid_reset_record(email: str, code: str) -> ResetPasswordCode:
+    try:
+        record = ResetPasswordCode.objects.get(email=email, code=code, verified=False)
+    except ResetPasswordCode.DoesNotExist as exc:
+        raise serializers.ValidationError({"code": "Invalid or expired code."}) from exc
+
+    if record.is_expired():
+        record.delete()
+        raise serializers.ValidationError({"code": "This reset code has expired."})
+
+    return record
+
+
+class VerifyPasswordResetCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField()
+
+    def validate_email(self, value):
+        return value.lower().strip()
+
+    def save(self):
+        email = self.validated_data["email"]
+        code = self.validated_data["code"]
+        _get_valid_reset_record(email=email, code=code)
+        return True
+
 
 class ConfirmPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -42,15 +69,8 @@ class ConfirmPasswordResetSerializer(serializers.Serializer):
         email = self.validated_data["email"]
         code = self.validated_data["code"]
 
-        try:
-            record = ResetPasswordCode.objects.get(email=email, code=code, verified=False)
-        except ResetPasswordCode.DoesNotExist:
-            raise serializers.ValidationError({"code": "Invalid or expired code."})
+        record = _get_valid_reset_record(email=email, code=code)
 
-        if record.is_expired():
-            record.delete()
-            raise serializers.ValidationError({"code": "This reset code has expired."})
-        
         record.verified = True
         record.save(update_fields=["verified"])
         user = User.objects.get(email=email)
@@ -58,4 +78,3 @@ class ConfirmPasswordResetSerializer(serializers.Serializer):
         user.save()
 
         return user
-
