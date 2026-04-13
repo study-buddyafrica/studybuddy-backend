@@ -1,23 +1,19 @@
-FROM python:3.14-alpine
-
+# base image
+FROM python:3.13-alpine
+# use uv image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# working directory
 WORKDIR /backend
-
+# don't store bytecode and don't buffer output
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-RUN apk add curl 
-#build-base libpq-dev python3-dev
-
+# copy requirements and install dependencies (good for caching and speeding up builds)
 COPY requirements.txt .
-
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-RUN source $HOME/.local/bin/env 
-
-ENV PATH="/root/.local/bin:$PATH"
 
 RUN uv pip install --system -r requirements.txt
 
+# copy the rest of the code
 COPY . . 
 
 EXPOSE 8000

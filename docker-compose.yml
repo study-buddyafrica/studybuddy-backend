@@ -32,6 +32,16 @@ services:
             - app_network
     app:
         build: .
+        develop:
+            watch:
+                - action: sync
+                  path: ./
+                  target: .
+                  ignore:
+                      - venv/
+                      - .git/
+                - action: rebuild
+                  path: requirements.txt
         restart: unless-stopped
         command: >
             sh -c "python manage.py makemigrations &&
@@ -49,6 +59,7 @@ services:
             DB_PORT: 5432
             REDIS_HOST: redis
             REDIS_PORT: 6379
+
         depends_on:
             db:
                 condition: service_healthy

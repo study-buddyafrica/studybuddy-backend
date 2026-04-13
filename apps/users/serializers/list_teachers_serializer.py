@@ -23,13 +23,13 @@ class TeacherProfileListSerializer(serializers.ModelSerializer):
             "school",
         ]
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str | None:
         user = getattr(obj, "user", None)
         if not user:
             return None
         return f"{user.first_name} {user.last_name}".strip()
 
-    def get_subjects(self, obj):
+    def get_subjects(self, obj) -> list[dict[str, str]]:
         subjects = obj.subjects.all()
 
         if not subjects.exists():
@@ -37,11 +37,11 @@ class TeacherProfileListSerializer(serializers.ModelSerializer):
 
         return [{"id": s.id, "name": s.name} for s in subjects]
 
-    def get_grade(self, obj):
+    def get_grade(self, obj) -> list[str]:
         grades = obj.grade.all()
         return [g.level for g in grades] if grades.exists() else []
 
-    def get_school(self, obj):
+    def get_school(self, obj) -> dict[str, str | int] | None:
         school = getattr(obj, "school", None)
         if not school:
             return None

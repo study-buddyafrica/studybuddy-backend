@@ -149,7 +149,7 @@ class ParentProfileUpdateSerializer(serializers.ModelSerializer):
         validate_birth_date_parent(value)
         return value
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
 
 
@@ -162,13 +162,13 @@ class ParentChildSummarySerializer(serializers.ModelSerializer):
         model = StudentProfile
         fields = ["id", "full_name", "grade", "school", "birth_date"]
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
 
-    def get_grade(self, obj):
+    def get_grade(self, obj) -> str | None:
         return obj.grade.level if obj.grade else None
 
-    def get_school(self, obj):
+    def get_school(self, obj) -> str | None:
         return obj.school.name if obj.school else None
 
 
@@ -194,21 +194,19 @@ class ParentFullProfileSerializer(serializers.ModelSerializer):
             "wallet_balance",
             "wallet_currency",
             "wallet_account_type",
-            "created_at",
-            "updated_at",
         ]
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
 
-    def get_wallet_balance(self, obj):
+    def get_wallet_balance(self, obj) -> str | None:
         wallet = Wallet.objects.filter(user=obj.user).first()
         return str(wallet.balance) if wallet else None
 
-    def get_wallet_currency(self, obj):
+    def get_wallet_currency(self, obj) -> str | None:
         wallet = Wallet.objects.filter(user=obj.user).first()
         return wallet.balance_currency if wallet else None
 
-    def get_wallet_account_type(self, obj):
+    def get_wallet_account_type(self, obj) -> str | None:
         wallet = Wallet.objects.filter(user=obj.user).first()
         return wallet.account_type if wallet else None

@@ -106,7 +106,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5174",
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
-    "http://34.234.64.73:8000"
+    "http://34.234.64.73:8000",
 ]
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -227,7 +227,7 @@ if DATABASE_URL == "":
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
-elif DATABASE_URL == "" and DEBUG:
+elif DATABASE_URL != "" and DEBUG:
     DATABASES = {
         "default": dj_database_url.config(
             default=DATABASE_URL,
