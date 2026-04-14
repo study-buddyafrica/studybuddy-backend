@@ -20,11 +20,8 @@ def send_email(
     if not text_body and not html_body and not template_name:
         raise ValueError("Email content (text, html, or template) must be provided.")
 
-    from_email = (
-        getattr(settings, "DEFAULT_FROM_EMAIL", None)
-        or getattr(settings, "EMAIL_HOST_USER", None)
-        or "no-reply@studybuddy.africa"
-    )
+    from django.conf import settings
+    from_email = settings.EMAIL_HOST_USER # This pulls 'studybuddyafrica@gmail.com' automatically
     host_user = getattr(settings, "EMAIL_HOST_USER", None)
     if "@" not in str(from_email) and host_user:
         from_email = f"{from_email} <{host_user}>"
