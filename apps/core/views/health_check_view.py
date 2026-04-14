@@ -3,12 +3,15 @@ from django.db import DatabaseError, connection
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 
 class DatabaseHealthCheckView(APIView):
     permission_classes = [permissions.AllowAny]
     LATENCY_THRESHOLD_MS = 200
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, *args, **kwargs):
         start = time.perf_counter()
         try:

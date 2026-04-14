@@ -9,7 +9,7 @@ from apps.school.models import CourseEnrollment, Course
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
 from apps.school.serializers.course_enrollment_serializer import (
     CourseEnrollmentSerializer,
-    EnrolledStudentSerializer
+    EnrolledStudentSerializer,
 )
 
 
@@ -18,17 +18,16 @@ class CourseEnrollmentView(generics.ListCreateAPIView):
     - Students: Enroll in courses and view their enrollments.
     - Teachers/Admins: View enrollments for their own courses.
     """
+
     serializer_class = CourseEnrollmentSerializer
     pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated,IsVerified]
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
 
     def get_queryset(self):
         user = self.request.user
-        qs = (
-            CourseEnrollment.objects
-            .select_related("course__teacher__user", "student__user", "transaction")
-            .prefetch_related(Prefetch("course__enrollments"))
-        )
+        qs = CourseEnrollment.objects.select_related(
+            "course__teacher__user", "student__user", "transaction"
+        ).prefetch_related(Prefetch("course__enrollments"))
 
         if hasattr(user, "student_profile") and not user.is_staff:
             qs = qs.filter(student=user.student_profile)
@@ -52,13 +51,21 @@ class ListEnrolledStudentsView(generics.ListAPIView):
     - Teacher: View students enrolled in their own course only
     """
 
-    serializer_class = EnrolledStudentSerializer 
+    serializer_class = EnrolledStudentSerializer
     pagination_class = StandardResultsSetPagination
     permission_classes = [permissions.IsAuthenticated, IsVerified]
+    queryset = CourseEnrollment.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CourseEnrollment.objects.none()
+
         user = self.request.user
         course_id = self.kwargs.get("course_id")
+
+        if not getattr(user, "is_authenticated", False) or not course_id:
+            return CourseEnrollment.objects.none()
+
         course = get_object_or_404(Course, id=course_id)
 
         if hasattr(user, "teacher_profile") and course.teacher != user.teacher_profile:
@@ -66,7 +73,7 @@ class ListEnrolledStudentsView(generics.ListAPIView):
 
         qs = (
             CourseEnrollment.objects.select_related(
-                "student__user", 
+                "student__user",
                 "course__teacher__user",
             )
             .filter(course_id=course_id)
@@ -84,24 +91,38 @@ class ListEnrolledStudentsView(generics.ListAPIView):
 
 class ListEnrolledCourseView(generics.ListAPIView):
     serializer_class = CourseEnrollmentSerializer
-    pagination_class = StandardResultsSetPagination 
-    permission_classes = [permissions.IsAuthenticated, IsVerified] 
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
+    queryset = CourseEnrollment.objects.none()
 
-    def get_queryset(self): 
-        user = self.request.user 
-        qs = CourseEnrollment.objects.select_related(
-            "student__user", 
-            "course__subject", 
-            "course__grade", 
-            "course__teacher__user", 
-            ).prefetch_related( 
-            "course__topics__subtopics" 
-            ).distinct() 
-        
-        if user.is_staff: 
-            return qs.order_by("course__title") 
-        
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CourseEnrollment.objects.none()
+
+        user = self.request.user
+
+        if not getattr(user, "is_authenticated", False):
+            return CourseEnrollment.objects.none()
+
+        qs = (
+            CourseEnrollment.objects.select_related(
+                "student__user",
+                "course__subject",
+                "course__grade",
+                "course__teacher__user",
+            )
+            .prefetch_related("course__topics__subtopics")
+            .distinct()
+        )
+
+        if user.is_staff:
+            return qs.order_by("course__title")
+
+        if not hasattr(user, "student_profile"):
+            return CourseEnrollment.objects.none()
+
         return qs.filter(student=user.student_profile).order_by("course__title")
+
 
 class RetrieveEnrolledCourseView(generics.RetrieveAPIView):
     """

@@ -12,11 +12,12 @@ import uuid
 
 
 class StudentJoinLiveSessionView(generics.GenericAPIView):
+    serializer_class = LiveSessionSerializer
     permission_classes = [
-        permissions.IsAuthenticated, 
+        permissions.IsAuthenticated,
         IsStudent,
         IsVerified,
-        ]
+    ]
 
     def post(self, request, session_booking_id):
         user = request.user
@@ -28,7 +29,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
         except SessionBooking.DoesNotExist:
             return Response(
                 {"detail": "No session found for this student."},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         try:
@@ -36,17 +37,16 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
         except LiveSession.DoesNotExist:
             return Response(
                 {"detail": "Live session not created yet."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if booking.attended:
             return Response(
                 {"detail": "Session already marked as attended."},
-                status=status.HTTP_200_OK
+                status=status.HTTP_200_OK,
             )
-        
-        with transaction.atomic():
 
+        with transaction.atomic():
             system_wallet, _ = Wallet.objects.select_for_update().get_or_create(
                 account_type="system",
                 defaults={"balance": Money(0, "KES"), "is_active": True},
@@ -63,7 +63,7 @@ class StudentJoinLiveSessionView(generics.GenericAPIView):
             if system_wallet.balance < amount:
                 return Response(
                     {"detail": "System wallet has insufficient funds for payout."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
             system_wallet.balance -= amount

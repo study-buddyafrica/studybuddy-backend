@@ -6,7 +6,7 @@ from apps.core.permissions import IsVerified, IsTeacherOrAdmin
 from apps.school.models import LiveSession
 from apps.school.serializers.livesession_serializer import LiveSessionSerializer
 from apps.school.serializers.course_lessions_serializer import (
-    CourseLiveSessionCreateSerializer
+    CourseLiveSessionCreateSerializer,
 )
 
 
@@ -22,8 +22,18 @@ class CourseLiveSessionCreateView(generics.CreateAPIView):
 class StudentCourseLiveSessionListView(generics.ListAPIView):
     serializer_class = LiveSessionSerializer
     permission_classes = [permissions.IsAuthenticated, IsVerified]
+    queryset = LiveSession.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return LiveSession.objects.none()
+
+        if not getattr(self.request.user, "is_authenticated", False):
+            return LiveSession.objects.none()
+
+        if not hasattr(self.request.user, "student_profile"):
+            return LiveSession.objects.none()
+
         student = self.request.user.student_profile
 
         return (

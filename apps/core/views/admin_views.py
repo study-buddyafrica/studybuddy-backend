@@ -1,10 +1,12 @@
 """Admin dashboard and statistics endpoints"""
 
-from rest_framework import generics, permissions, status
+from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
-from django.db.models import Count, Q
+from django.db.models import Count
 from apps.core.models import User
 from apps.users.models import TeacherProfile, StudentProfile
 from apps.school.models import Course, Grade, Subject
@@ -12,6 +14,7 @@ from apps.core.permissions import IsVerified
 from rest_framework.permissions import IsAdminUser
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminUser])
 def admin_dashboard_stats(request):
@@ -42,6 +45,7 @@ def admin_dashboard_stats(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminUser])
 def admin_get_classes(request):
@@ -66,6 +70,7 @@ def admin_get_classes(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminUser])
 def admin_list_users(request):
@@ -104,6 +109,7 @@ def admin_list_users(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminUser])
 def admin_list_teachers(request):
@@ -145,6 +151,7 @@ def admin_list_teachers(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminUser])
 def admin_list_students(request):
@@ -190,12 +197,15 @@ def admin_list_students(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsAdminUser])
 def admin_get_subjects(request):
     """GET: Admin endpoint returning subjects with basic metadata."""
     try:
-        subjects = Subject.objects.values("id", "name", "description", "created_at").order_by("name")
+        subjects = Subject.objects.values(
+            "id", "name", "description", "created_at"
+        ).order_by("name")
         return Response(
             {"subjects": list(subjects), "total": subjects.count()},
             status=status.HTTP_200_OK,
@@ -204,17 +214,24 @@ def admin_get_subjects(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsVerified])
 def get_classes(request):
     """Compatibility endpoint for frontend class listing."""
     grades = Grade.objects.values("id", "level").order_by("level")
-    return Response({"grades": list(grades), "total": grades.count()}, status=status.HTTP_200_OK)
+    return Response(
+        {"grades": list(grades), "total": grades.count()}, status=status.HTTP_200_OK
+    )
 
 
+@extend_schema(request=None, responses=OpenApiTypes.OBJECT)
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated, IsVerified])
 def get_subjects(request):
     """Compatibility endpoint for frontend subject listing."""
     subjects = Subject.objects.values("id", "name", "description").order_by("name")
-    return Response({"subjects": list(subjects), "total": subjects.count()}, status=status.HTTP_200_OK)
+    return Response(
+        {"subjects": list(subjects), "total": subjects.count()},
+        status=status.HTTP_200_OK,
+    )

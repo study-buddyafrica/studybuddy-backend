@@ -101,6 +101,7 @@ class TeacherMeView(generics.GenericAPIView):
     """Detailed current teacher context endpoint."""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -196,6 +197,7 @@ class StudentMeView(generics.GenericAPIView):
     """Detailed current student context endpoint."""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -299,6 +301,7 @@ class ParentMeView(generics.GenericAPIView):
     """Detailed current parent context endpoint."""
 
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request, *args, **kwargs):
         user = request.user

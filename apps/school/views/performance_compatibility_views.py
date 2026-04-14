@@ -1,10 +1,12 @@
-from datetime import timedelta
 import uuid
 
 from django.db.models import Avg, Count
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
+from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 from apps.core.permissions import IsVerified
 from apps.school.models import SessionBooking
@@ -14,6 +16,12 @@ from apps.users.models import (
     TeacherProfile,
     TeacherRating,
 )
+
+
+class SubmitTimeRangeSerializer(serializers.Serializer):
+    start_time = serializers.DateTimeField(required=False, allow_null=True)
+    end_time = serializers.DateTimeField(required=False, allow_null=True)
+    duration_seconds = serializers.IntegerField(required=False, allow_null=True)
 
 
 class StudentPerformanceView(APIView):
@@ -49,6 +57,7 @@ class StudentPerformanceView(APIView):
 
         return None
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, student_id=None):
         student = self._resolve_student(request, student_id)
         if student is None:
@@ -138,6 +147,7 @@ class CompletedLessonsView(APIView):
 
         return None
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, student_id=None):
         student = self._resolve_student(request, student_id)
         if student is None:
@@ -181,11 +191,13 @@ class CompletedLessonsView(APIView):
         )
 
 
-class SubmitTimeRangeView(APIView):
+class SubmitTimeRangeView(generics.GenericAPIView):
     """Compatibility endpoint for frontend lesson timer submissions."""
 
     permission_classes = [permissions.IsAuthenticated, IsVerified]
+    serializer_class = SubmitTimeRangeSerializer
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def post(self, request, item_id=None):
         payload = {
             "item_id": item_id,
@@ -218,6 +230,7 @@ class AvailableTimesView(APIView):
         # Legacy clients sometimes pass non-UUID identifiers.
         return None
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, teacher_id=None):
         teacher = self._resolve_teacher(teacher_id)
         if teacher is None:

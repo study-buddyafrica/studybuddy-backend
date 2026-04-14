@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import transaction
-from datetime import timedelta,datetime
+from datetime import timedelta, datetime
 from decimal import Decimal
 from moneyed import Money
 import uuid
@@ -12,7 +12,7 @@ from apps.core.permissions import IsVerified
 from apps.school.models import SessionBooking
 from apps.users.models import TeacherProfile
 from apps.school.serializers.session_booking_serializer import SessionBookingSerializer
-from apps.transactions.models import Transaction,Wallet
+from apps.transactions.models import Transaction, Wallet
 
 
 class SessionBookingCreateUpdateView(generics.GenericAPIView):
@@ -22,8 +22,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
     - Rescheduling (refund + re-deduct)
     - Marking attendance (teacher payout)
     """
+
     serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated,IsVerified]
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -63,7 +64,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             else:
                 student_qs = qs.filter(student__user=user)
                 teacher_qs = qs.filter(teacher__user=user)
-                filtered = (student_qs | teacher_qs).distinct().order_by("-scheduled_start")
+                filtered = (
+                    (student_qs | teacher_qs).distinct().order_by("-scheduled_start")
+                )
 
             page = self.paginate_queryset(filtered)
             if page is not None:
@@ -76,13 +79,17 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         try:
             booking = qs.get(pk=pk)
         except SessionBooking.DoesNotExist:
-            return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         if not user.is_superuser:
             is_owner = booking.student and booking.student.user_id == user.id
             is_teacher = booking.teacher and booking.teacher.user_id == user.id
             if not (is_owner or is_teacher):
-                return Response({"detail": "Not permitted."}, status=status.HTTP_403_FORBIDDEN)
+                return Response(
+                    {"detail": "Not permitted."}, status=status.HTTP_403_FORBIDDEN
+                )
 
         serializer = self.get_serializer(booking)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -92,7 +99,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         Create a new booking:
         - Deduct student's wallet → system wallet
         """
-        serializer = self.get_serializer(data=request.data, context={"request": request})
+        serializer = self.get_serializer(
+            data=request.data, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
 
         user = request.user
@@ -160,7 +169,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                 )
 
                 booking = SessionBooking.objects.create(
-                    student=user.student_profile if hasattr(user, "student_profile") else None,
+                    student=user.student_profile
+                    if hasattr(user, "student_profile")
+                    else None,
                     teacher=teacher,
                     scheduled_start=scheduled_start,
                     scheduled_end=scheduled_end,
@@ -172,8 +183,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         else:
             booking = serializer.save()
 
-        return Response(self.get_serializer(booking).data, status=status.HTTP_201_CREATED)
-
+        return Response(
+            self.get_serializer(booking).data, status=status.HTTP_201_CREATED
+        )
 
     def patch(self, request, pk=None, *args, **kwargs):
         """
@@ -184,7 +196,9 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
         try:
             booking = self.get_queryset().get(pk=pk)
         except SessionBooking.DoesNotExist:
-            return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         user = request.user
         attended_flag = request.data.get("attended", None)
@@ -236,7 +250,10 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     {"detail": "Session marked as attended and teacher credited."},
                     status=status.HTTP_200_OK,
                 )
-            return Response({"detail": "Only teacher or admin can mark attendance."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Only teacher or admin can mark attendance."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if hasattr(user, "student_profile"):
             if booking.scheduled_start <= timezone.now():
@@ -253,7 +270,10 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
 
             new_start = request.data.get("scheduled_start")
             if not new_start:
-                return Response({"detail": "New start time required."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "New start time required."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             student_wallet = booking.student.user.wallet
             system_wallet = Wallet.objects.filter(account_type="system").first()
@@ -316,9 +336,14 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                 booking.cost = total_cost
                 booking.save()
 
-            return Response(self.get_serializer(booking).data, status=status.HTTP_200_OK)
+            return Response(
+                self.get_serializer(booking).data, status=status.HTTP_200_OK
+            )
 
-        return Response({"detail": "Action not permitted."}, status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"detail": "Action not permitted."}, status=status.HTTP_403_FORBIDDEN
+        )
+
 
 class SessionBookingListView(generics.ListAPIView):
     """
@@ -327,17 +352,22 @@ class SessionBookingListView(generics.ListAPIView):
       - Teachers: sees sessions they are teaching
       - Students: sees sessions they booked
     """
+
     serializer_class = SessionBookingSerializer
-    permission_classes = [permissions.IsAuthenticated,IsVerified]
+    permission_classes = [permissions.IsAuthenticated, IsVerified]
     pagination_class = StandardResultsSetPagination
+    queryset = SessionBooking.objects.none()
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SessionBooking.objects.none()
+
         user = self.request.user
 
-        qs = SessionBooking.objects.select_related(
-            "teacher__user",
-            "student__user"
-        )
+        if not getattr(user, "is_authenticated", False):
+            return SessionBooking.objects.none()
+
+        qs = SessionBooking.objects.select_related("teacher__user", "student__user")
 
         if user.is_superuser:
             return qs.order_by("-scheduled_start")

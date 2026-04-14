@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.school.models import AssessmentType
 from apps.school.models import RevisionMaterial, Assessment, Question, Choice
@@ -13,7 +14,8 @@ class RevisionMaterialSerializer(SanitizeHTMLMixin, serializers.ModelSerializer)
         model = RevisionMaterial
         fields = ["id", "title", "description", "file", "file_url", "course"]
 
-    def get_file_url(self, obj):
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_file_url(self, obj) -> str | None:
         if obj.file:
             request = self.context.get("request")
             if request:
