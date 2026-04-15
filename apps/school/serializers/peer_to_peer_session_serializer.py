@@ -2,6 +2,7 @@ import uuid
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.core.utils.dailyco import DailyCoAPI
 from apps.school.models import CourseEnrollment, LiveSession
@@ -45,11 +46,13 @@ class PeerLiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "ended_at",
         ]
 
-    def get_course_title(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_course_title(self, obj) -> str:
         """Return course title"""
         return obj.course.title if obj.course else ""
 
-    def get_teacher_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_teacher_name(self, obj) -> str:
         """Return teacher full name"""
         if obj.teacher and obj.teacher.user:
             return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
@@ -127,7 +130,7 @@ class PeerLiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             student_meeting_link=student_token["room_url"],
             whiteboard_link=DEFAULT_WHITEBOARD_LINK,
             started_at=started_at,
-            ended_at=ended_at
+            ended_at=ended_at,
         )
 
         return live_session

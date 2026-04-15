@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Prefetch
+from drf_spectacular.utils import extend_schema
 
 from apps.core.permissions import IsAdminOrReadOnly
 from apps.transactions.models import Wallet
@@ -19,17 +20,20 @@ class WalletViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = WalletSerializer
     queryset = Wallet.objects.all()
-    permission_classes = [
-        permissions.IsAuthenticated,
-        IsAdminOrReadOnly
-    ]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
 
         qs = Wallet.objects.select_related("user").only(
-            "id", "user", "account_type", "balance", 
-            "is_active", "failed_withdraw_attempts", "created_at", "updated_at"
+            "id",
+            "user",
+            "account_type",
+            "balance",
+            "is_active",
+            "failed_withdraw_attempts",
+            "created_at",
+            "updated_at",
         )
 
         if user.is_superuser:
@@ -71,18 +75,25 @@ class CurrentWalletView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=WalletSerializer)
     def get(self, request, wallet_id=None):
         if wallet_id in (None, "", "undefined", "null"):
             wallet = Wallet.objects.filter(user=request.user).first()
             if not wallet:
-                return Response({"detail": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"detail": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND
+                )
             return Response(WalletSerializer(wallet).data, status=status.HTTP_200_OK)
 
         wallet = Wallet.objects.filter(id=wallet_id).first()
         if not wallet:
-            return Response({"detail": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Wallet not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         if not request.user.is_superuser and wallet.user != request.user:
-            return Response({"detail": "Not permitted."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Not permitted."}, status=status.HTTP_403_FORBIDDEN
+            )
 
         return Response(WalletSerializer(wallet).data, status=status.HTTP_200_OK)

@@ -57,6 +57,17 @@ class ResetPasswordCompatibilityView(generics.GenericAPIView):
     """Accept either reset request payload or confirm payload on the same endpoint."""
 
     permission_classes = [AllowAny]
+    serializer_class = RequestPasswordResetSerializer
+
+    def get_serializer_class(self):
+        request = getattr(self, "request", None)
+        if not request:
+            return RequestPasswordResetSerializer
+
+        confirm_fields = {"code", "new_password", "confirm_password"}
+        if confirm_fields.intersection(request.data.keys()):
+            return ConfirmPasswordResetSerializer
+        return RequestPasswordResetSerializer
 
     def post(self, request, *args, **kwargs):
         data = request.data

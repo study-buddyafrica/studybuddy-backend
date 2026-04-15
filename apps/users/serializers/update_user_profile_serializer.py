@@ -125,6 +125,10 @@ class StudentProfileUpdateSerializer(SanitizeHTMLMixin, serializers.ModelSeriali
         data = super().to_representation(instance)
         data["grade_id"] = data.get("grade")
         data["school_id"] = data.get("school")
+        data["education_level_id"] = data.get("education_level")
+        data["education_level_name"] = (
+            instance.education_level.name if instance.education_level else None
+        )
         data["grade"] = instance.grade.level if instance.grade else None
         data["school"] = instance.school.name if instance.school else None
         return data

@@ -5,6 +5,7 @@ from apps.school.views.peer_to_peer_session_view import PeerLiveSessionViewSet
 from apps.school.views.school_view import SchoolListCreateView
 from apps.school.views.subject_view import SubjectViewSet
 from apps.school.views.grade_view import GradeViewSet
+from apps.school.views.education_level_view import EducationLevelViewSet
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.course_registration_view import (
     CourseCreateListView,
@@ -47,6 +48,9 @@ from apps.school.views.teacher_videos_view import TeacherVideosView
 school_router = DefaultRouter()
 school_router.register(r"subjects", SubjectViewSet)
 school_router.register(r"grades", GradeViewSet)
+school_router.register(
+    r"education-levels", EducationLevelViewSet, basename="education-level"
+)
 school_router.register(
     r"peer-to-peer-sessions", PeerLiveSessionViewSet, basename="peer-live-session"
 )

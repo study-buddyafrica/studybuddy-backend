@@ -1,13 +1,12 @@
 import uuid
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from django.core.exceptions import ValidationError
 
 from apps.core.utils.dailyco import DailyCoAPI
 from apps.school.serializers.livesession_serializer import DEFAULT_WHITEBOARD_LINK
-from apps.school.models import (
-    Course, LiveSession,
-    CourseEnrollment
-)
+from apps.school.models import Course, LiveSession, CourseEnrollment
+
 
 class CourseLiveSessionCreateSerializer(serializers.ModelSerializer):
     course_id = serializers.UUIDField(write_only=True)
@@ -40,7 +39,8 @@ class CourseLiveSessionCreateSerializer(serializers.ModelSerializer):
             "whiteboard_link",
         ]
 
-    def get_course_title(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_course_title(self, obj) -> str:
         """Return course title"""
         return obj.course.title if obj.course else ""
 
@@ -80,9 +80,7 @@ class CourseLiveSessionCreateSerializer(serializers.ModelSerializer):
         )
 
         student_token = daily_api.create_participant_token(
-            room_name=room_name, 
-            user_id=None,
-            user_name="Student"
+            room_name=room_name, user_id=None, user_name="Student"
         )
 
         session = LiveSession.objects.create(

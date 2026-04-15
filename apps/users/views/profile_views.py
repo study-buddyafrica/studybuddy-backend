@@ -12,6 +12,7 @@ from apps.users.serializers.update_user_profile_serializer import (
     ParentProfileUpdateSerializer,
     ParentFullProfileSerializer,
 )
+from apps.users.serializers.user_profile_serializer import StudentRegistrationSerializer
 from apps.core.permissions import IsVerified
 
 
@@ -153,6 +154,7 @@ class ParentRegisterStudentView(generics.CreateAPIView):
     """
 
     permission_classes = [permissions.AllowAny]
+    serializer_class = StudentRegistrationSerializer
 
     def _resolve_parent_profile(self):
         parent_id = self.kwargs.get("parent_id") or self.request.data.get("parent_id")
@@ -171,9 +173,6 @@ class ParentRegisterStudentView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         """Register/create a student and link to current parent"""
         from django.db import transaction
-        from apps.users.serializers.user_profile_serializer import (
-            StudentRegistrationSerializer,
-        )
         from apps.users.models import ParentChild
 
         parent_profile = self._resolve_parent_profile()

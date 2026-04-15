@@ -7,13 +7,21 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from intasend import APIService
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiResponse,
+    extend_schema,
+    inline_serializer,
+)
+from rest_framework import serializers
 
 from apps.transactions.models import Wallet, Transaction
 from apps.core.permissions import IsVerified
 
 
 class DepositAPIView(APIView):
-    permission_classes = [IsAuthenticated,IsVerified]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def _calculate_checkout_amount(self, amount):
         """Calculate total checkout amount including IntaSend fees."""
@@ -43,6 +51,19 @@ class DepositAPIView(APIView):
             "note": "Fees are added to ensure you receive the exact amount deposited",
         }
 
+    @extend_schema(
+        request=inline_serializer(
+            name="DepositRequest",
+            fields={
+                "amount": serializers.DecimalField(max_digits=10, decimal_places=2)
+            },
+        ),
+        responses={
+            200: OpenApiResponse(response=OpenApiTypes.OBJECT),
+            400: OpenApiResponse(response=OpenApiTypes.OBJECT),
+            500: OpenApiResponse(response=OpenApiTypes.OBJECT),
+        },
+    )
     def post(self, request):
         try:
             amount = Decimal(request.data.get("amount", 0))

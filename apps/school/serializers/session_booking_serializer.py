@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from decimal import Decimal
 from datetime import timedelta
 from django.db import transaction
@@ -10,6 +11,7 @@ import uuid
 from apps.school.models import SessionBooking
 from apps.users.models import TeacherProfile, StudentProfile
 from apps.transactions.models import Wallet, Transaction
+
 
 class SessionBookingSerializer(serializers.ModelSerializer):
     teacher_id = serializers.UUIDField(write_only=True)
@@ -24,22 +26,47 @@ class SessionBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SessionBooking
         fields = [
-            "id", "teacher_id", "teacher_name", "scheduled_start", "duration_hours", "course",
-            "course_title", "education_level", "education_level_name", "scheduled_end", "status", "is_allowed", "attended", "cost"
+            "id",
+            "teacher_id",
+            "teacher_name",
+            "scheduled_start",
+            "duration_hours",
+            "course",
+            "course_title",
+            "education_level",
+            "education_level_name",
+            "scheduled_end",
+            "status",
+            "is_allowed",
+            "attended",
+            "cost",
         ]
-        read_only_fields = ["id", "is_allowed", "status", "attended", "cost", "scheduled_end", "teacher_name", "course_title", "education_level_name"]
+        read_only_fields = [
+            "id",
+            "is_allowed",
+            "status",
+            "attended",
+            "cost",
+            "scheduled_end",
+            "teacher_name",
+            "course_title",
+            "education_level_name",
+        ]
 
-    def get_teacher_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_teacher_name(self, obj) -> str:
         """Return teacher full name"""
         if obj.teacher and obj.teacher.user:
             return f"{obj.teacher.user.first_name} {obj.teacher.user.last_name}"
         return ""
 
-    def get_course_title(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_course_title(self, obj) -> str:
         """Return course title"""
         return obj.course.title if obj.course else ""
 
-    def get_education_level_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_education_level_name(self, obj) -> str:
         return obj.education_level.name if obj.education_level else ""
 
     def create(self, validated_data):
@@ -51,7 +78,9 @@ class SessionBookingSerializer(serializers.ModelSerializer):
             try:
                 student_profile = StudentProfile.objects.get(user=user)
             except StudentProfile.DoesNotExist:
-                raise serializers.ValidationError("Only students can create session bookings.")
+                raise serializers.ValidationError(
+                    "Only students can create session bookings."
+                )
 
         teacher_id = validated_data.pop("teacher_id")
         duration_hours = validated_data.pop("duration_hours")
@@ -66,7 +95,7 @@ class SessionBookingSerializer(serializers.ModelSerializer):
 
         if not teacher.hourly_rate:
             raise serializers.ValidationError("Teacher hourly rate not set.")
-        
+
         teacher_rate = float(teacher.hourly_rate)
         total_cost = Decimal(duration_hours * teacher_rate)
         scheduled_end = scheduled_start + timedelta(hours=duration_hours)
@@ -79,11 +108,15 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Student wallet not found.")
 
             if student_wallet.balance < amount:
-                raise serializers.ValidationError("Insufficient balance to book this session.")
+                raise serializers.ValidationError(
+                    "Insufficient balance to book this session."
+                )
 
             system_wallet = Wallet.objects.filter(account_type="system").first()
             if not system_wallet:
-                raise serializers.ValidationError("System wallet not found. Contact admin.")
+                raise serializers.ValidationError(
+                    "System wallet not found. Contact admin."
+                )
 
             with transaction.atomic():
                 student_wallet.balance -= amount
@@ -122,7 +155,8 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                     cost=total_cost,
                     is_allowed=True,
                     course=course,
-                    education_level=education_level or getattr(course, "education_level", None),
+                    education_level=education_level
+                    or getattr(course, "education_level", None),
                     **validated_data,
                 )
         else:
@@ -134,7 +168,8 @@ class SessionBookingSerializer(serializers.ModelSerializer):
                 cost=total_cost,
                 is_allowed=True,
                 course=course,
-                education_level=education_level or getattr(course, "education_level", None),
+                education_level=education_level
+                or getattr(course, "education_level", None),
                 **validated_data,
             )
 
@@ -144,7 +179,9 @@ class SessionBookingSerializer(serializers.ModelSerializer):
         """Prevent update if within 30 minutes of session start."""
         now = timezone.now()
         if instance.scheduled_start - now <= timedelta(minutes=30):
-            raise ValidationError("You cannot update this booking within 30 minutes of start time.")
+            raise ValidationError(
+                "You cannot update this booking within 30 minutes of start time."
+            )
 
         validated_data.pop("teacher_id", None)
         validated_data.pop("duration_hours", None)

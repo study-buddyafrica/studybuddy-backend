@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from apps.core.models import User
 
 
@@ -23,7 +24,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_profile_id(self, obj):
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_profile_id(self, obj) -> str | None:
         if hasattr(obj, "teacher_profile"):
             return str(obj.teacher_profile.id)
         if hasattr(obj, "parent_profile"):

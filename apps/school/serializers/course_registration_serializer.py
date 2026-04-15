@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from djmoney.contrib.django_rest_framework import MoneyField
 
 from apps.school.models import Course, Topic, Subtopic
@@ -9,7 +10,9 @@ class CourseSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
     sanitize_fields = ["title", "description"]
     subject_name = serializers.CharField(source="subject.name", read_only=True)
     grade_name = serializers.CharField(source="grade.name", read_only=True)
-    education_level_name = serializers.CharField(source="education_level.name", read_only=True)
+    education_level_name = serializers.CharField(
+        source="education_level.name", read_only=True
+    )
     teacher_name = serializers.CharField(
         source="teacher.user.get_full_name", read_only=True
     )
@@ -99,7 +102,8 @@ class CoursePublicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "education_level",
         ]
 
-    def get_teacher(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_teacher(self, obj) -> dict | None:
         teacher = obj.teacher
         if not teacher:
             return None
@@ -110,17 +114,20 @@ class CoursePublicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "experience_in_years": teacher.experience,
         }
 
-    def get_grade(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_grade(self, obj) -> dict | None:
         if obj.grade:
             return {"level": obj.grade.level}
         return None
 
-    def get_subject(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_subject(self, obj) -> dict | None:
         if obj.subject:
             return {"name": obj.subject.name}
         return None
 
-    def get_education_level(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_education_level(self, obj) -> dict | None:
         if obj.education_level:
             return {"code": obj.education_level.code, "name": obj.education_level.name}
         return None
@@ -150,7 +157,8 @@ class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "topics",
         ]
 
-    def get_teacher(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_teacher(self, obj) -> dict | None:
         teacher = obj.teacher
         if not teacher:
             return None
@@ -161,22 +169,26 @@ class CourseNestedSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
             "experience": teacher.experience,
         }
 
-    def get_grade(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_grade(self, obj) -> dict | None:
         if obj.grade:
             return {"level": obj.grade.level}
         return None
 
-    def get_subject(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_subject(self, obj) -> dict | None:
         if obj.subject:
             return {"name": obj.subject.name}
         return None
 
-    def get_education_level(self, obj):
+    @extend_schema_field(serializers.DictField())
+    def get_education_level(self, obj) -> dict | None:
         if obj.education_level:
             return {"code": obj.education_level.code, "name": obj.education_level.name}
         return None
 
-    def get_topics(self, obj):
+    @extend_schema_field(serializers.ListField())
+    def get_topics(self, obj) -> list[dict]:
         topics = obj.topics.prefetch_related("subtopics").all()
         return [
             {
@@ -232,7 +244,8 @@ class TopicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
                 )
         return value
 
-    def get_content_file_url(self, obj):
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_content_file_url(self, obj) -> str | None:
         if obj.content_file:
             request = self.context.get("request")
             if request:
@@ -274,7 +287,8 @@ class SubtopicSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
 
         return attrs
 
-    def get_content_file_url(self, obj):
+    @extend_schema_field(serializers.URLField(allow_null=True))
+    def get_content_file_url(self, obj) -> str | None:
         if obj.content_file:
             request = self.context.get("request")
             if request:

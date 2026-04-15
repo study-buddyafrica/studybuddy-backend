@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from apps.school.models import CourseEnrollment
 from apps.users.models import StudentLead
@@ -10,16 +11,25 @@ class StudentLeadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentLead
-        fields = ["id", "course", "course_title", "student_profile", "student_name", "is_a_lead"]
+        fields = [
+            "id",
+            "course",
+            "course_title",
+            "student_profile",
+            "student_name",
+            "is_a_lead",
+        ]
         read_only_fields = ["id", "student_name", "course_title"]
 
-    def get_student_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_student_name(self, obj) -> str:
         """Return full student name for display"""
         if obj.student_profile and obj.student_profile.user:
             return f"{obj.student_profile.user.first_name} {obj.student_profile.user.last_name}"
         return str(obj.student_profile.id)
 
-    def get_course_title(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_course_title(self, obj) -> str:
         """Return course title for display"""
         return obj.course.title if obj.course else ""
 
