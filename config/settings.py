@@ -21,7 +21,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "wathi.tail433a8c.ts.net",
     "34.234.64.73",
-    'api-staging.studybuddy.africa',
+    "api-staging.studybuddy.africa",
 ]
 
 INSTALLED_APPS = [
@@ -89,7 +89,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://0.0.0.0:8000",
-    'https://studybuddy-frotend-staging.vercel.app',
+    "https://studybuddy-frotend-staging.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -109,6 +109,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://34.234.64.73:8000",
+    "https://studybuddy-frotend-staging.vercel.app",
 ]
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -330,5 +331,5 @@ INTASEND_WEBHOOK_CHALLENGE = "studyyddubbuddy"
 
 
 # If we are developing locally, print emails to the terminal instead of actually sending them.
-#if DEBUG and MAIL_DEBUG_CONSOLE:
- #   EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# if DEBUG and MAIL_DEBUG_CONSOLE:
+#   EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
