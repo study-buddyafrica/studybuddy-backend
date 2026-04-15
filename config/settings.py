@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "wathi.tail433a8c.ts.net",
     "34.234.64.73",
+    'api-staging.studybuddy.africa',
 ]
 
 INSTALLED_APPS = [
