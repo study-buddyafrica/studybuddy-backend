@@ -89,6 +89,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://0.0.0.0:8000",
+    'https://studybuddy-frotend-staging.vercel.app',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
