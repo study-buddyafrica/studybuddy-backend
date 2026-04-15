@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from rest_framework import status
 import logging
 from apps.transactions.serializers.withdrawal_service import WithdrawalService
+from apps.core.permissions import IsVerified
 
 logger = logging.getLogger(__name__)
 
 class WithdrawAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request):
         amount = Decimal(request.data.get("amount", 0))

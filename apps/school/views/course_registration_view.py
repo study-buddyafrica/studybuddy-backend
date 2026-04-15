@@ -30,6 +30,11 @@ class CourseCreateListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        mine = str(self.request.query_params.get("mine", "")).lower() in {
+            "1",
+            "true",
+            "yes",
+        }
 
         qs = Course.objects.select_related(
             "subject", "grade", "teacher__user"
@@ -44,9 +49,9 @@ class CourseCreateListView(generics.ListCreateAPIView):
             return qs.order_by("title")
 
         if hasattr(user, "teacher_profile"):
-            return qs.filter(
-                teacher=user.teacher_profile
-            ).order_by("title")
+            if mine:
+                return qs.filter(teacher=user.teacher_profile).order_by("title")
+            return qs.order_by("title")
         
         if hasattr(user, "student_profile"):
             student_country = user.country

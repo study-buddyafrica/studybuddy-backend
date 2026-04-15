@@ -5,10 +5,23 @@ from apps.users.models import StudentLead
 
 
 class StudentLeadSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    course_title = serializers.SerializerMethodField()
+
     class Meta:
         model = StudentLead
-        fields = ["id", "course", "student_profile", "is_a_lead"]
-        read_only_fields = ["id"]
+        fields = ["id", "course", "course_title", "student_profile", "student_name", "is_a_lead"]
+        read_only_fields = ["id", "student_name", "course_title"]
+
+    def get_student_name(self, obj):
+        """Return full student name for display"""
+        if obj.student_profile and obj.student_profile.user:
+            return f"{obj.student_profile.user.first_name} {obj.student_profile.user.last_name}"
+        return str(obj.student_profile.id)
+
+    def get_course_title(self, obj):
+        """Return course title for display"""
+        return obj.course.title if obj.course else ""
 
     def validate(self, attrs):
         request = self.context["request"]

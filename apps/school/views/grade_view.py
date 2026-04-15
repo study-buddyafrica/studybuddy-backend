@@ -28,12 +28,17 @@ class GradeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Teachers: list Grade they are linked with.
-        Admin/Students/Anonymous: list all Grade.
+        Default: list all grades for frontend dropdown compatibility.
+        Optional: teachers can request only their linked grades via ?mine=true.
         """
         user = self.request.user
+        mine = str(self.request.query_params.get("mine", "")).lower() in {
+            "1",
+            "true",
+            "yes",
+        }
 
-        if not user.is_authenticated or not hasattr(user, "teacher_profile"):
+        if not mine or not user.is_authenticated or not hasattr(user, "teacher_profile"):
             return Grade.objects.all().order_by("level")
 
         return Grade.objects.filter(teacher_grades=user.teacher_profile).order_by(

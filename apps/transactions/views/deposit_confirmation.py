@@ -1,5 +1,7 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.conf import settings
+import secrets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,7 +12,25 @@ from decimal import Decimal
 
 @method_decorator(csrf_exempt, name='dispatch')
 class IntaSendDepositWebhookView(APIView):
+    def _is_valid_webhook(self, request):
+        expected = getattr(settings, "INTASEND_WEBHOOK_CHALLENGE", None)
+        if not expected:
+            return False
+
+        provided = (
+            request.headers.get("X-IntaSend-Challenge")
+            or request.headers.get("X-Webhook-Challenge")
+            or request.data.get("challenge")
+        )
+        if not provided:
+            return False
+
+        return secrets.compare_digest(str(provided), str(expected))
+
     def post(self, request, *args, **kwargs):
+        if not self._is_valid_webhook(request):
+            return Response({"error": "invalid webhook signature"}, status=status.HTTP_403_FORBIDDEN)
+
         data = request.data
         state = data.get("state")
         api_ref = data.get("api_ref")

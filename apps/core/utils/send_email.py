@@ -5,13 +5,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def send_email(
-        to_email, subject, 
-        text_body=None, 
-        html_body=None, 
-        context=None, 
-        template_name=None
-    ):
+    to_email, subject, text_body=None, html_body=None, context=None, template_name=None
+):
     """
     Send email using Django's EmailMultiAlternatives.
     Supports plain text, HTML, and template-based rendering.
@@ -22,6 +19,12 @@ def send_email(
 
     if not text_body and not html_body and not template_name:
         raise ValueError("Email content (text, html, or template) must be provided.")
+
+    from django.conf import settings
+    from_email = settings.EMAIL_HOST_USER # This pulls 'studybuddyafrica@gmail.com' automatically
+    host_user = getattr(settings, "EMAIL_HOST_USER", None)
+    if "@" not in str(from_email) and host_user:
+        from_email = f"{from_email} <{host_user}>"
 
     if template_name and context:
         html_body = render_to_string(template_name, context)
@@ -41,7 +44,7 @@ def send_email(
         msg = EmailMultiAlternatives(
             subject=subject,
             body=text_body or "",
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER),
+            from_email=from_email,
             to=[to_email],
             connection=connection,
         )
@@ -55,4 +58,3 @@ def send_email(
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}", exc_info=True)
         raise e
- 

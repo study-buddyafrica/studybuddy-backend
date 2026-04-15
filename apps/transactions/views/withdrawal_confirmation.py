@@ -1,4 +1,5 @@
 import logging
+import secrets
 from decimal import Decimal
 from django.db import transaction as db_transaction
 from django.utils.decorators import method_decorator
@@ -7,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from djmoney.money import Money
+from django.conf import settings
 from apps.transactions.models import Transaction, Wallet
 
 logger = logging.getLogger(__name__)
@@ -31,7 +33,27 @@ STATE_MAP = {
 
 @method_decorator(csrf_exempt, name="dispatch")
 class IntaSendWebhookView(APIView):
+    def _is_valid_webhook(self, request):
+        """Validate shared-secret challenge for webhook authenticity."""
+        expected = getattr(settings, "INTASEND_WEBHOOK_CHALLENGE", None)
+        if not expected:
+            return False
+
+        provided = (
+            request.headers.get("X-IntaSend-Challenge")
+            or request.headers.get("X-Webhook-Challenge")
+            or request.data.get("challenge")
+        )
+        if not provided:
+            return False
+
+        return secrets.compare_digest(str(provided), str(expected))
+
     def post(self, request, *args, **kwargs):
+        if not self._is_valid_webhook(request):
+            logger.warning("Rejected webhook: invalid challenge")
+            return Response({"error": "invalid webhook signature"}, status=status.HTTP_403_FORBIDDEN)
+
         data = request.data
 
         tx = None

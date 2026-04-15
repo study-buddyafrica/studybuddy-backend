@@ -1,19 +1,18 @@
 from rest_framework import serializers
 
 from apps.school.models import AssessmentType
-from apps.school.models import (
-    RevisionMaterial, 
-    Assessment, Question, 
-    Choice
-)
+from apps.school.models import RevisionMaterial, Assessment, Question, Choice
+from apps.core.serializers import SanitizeHTMLMixin
 
-class RevisionMaterialSerializer(serializers.ModelSerializer):
+
+class RevisionMaterialSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
     file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = RevisionMaterial
         fields = ["id", "title", "description", "file", "file_url", "course"]
-    
+
     def get_file_url(self, obj):
         if obj.file:
             request = self.context.get("request")
@@ -32,14 +31,17 @@ class RevisionMaterialSerializer(serializers.ModelSerializer):
         return value
 
 
-class ChoiceSerializer(serializers.ModelSerializer):
+class ChoiceSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["text"]
     id = serializers.UUIDField(required=False)
 
     class Meta:
         model = Choice
         fields = ["id", "text", "is_correct"]
 
-class QuestionSerializer(serializers.ModelSerializer):
+
+class QuestionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["text"]
     id = serializers.UUIDField(required=False)
     choices = ChoiceSerializer(many=True)
 
@@ -47,7 +49,9 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ["id", "text", "order", "points", "choices"]
 
-class AssessmentSerializer(serializers.ModelSerializer):
+
+class AssessmentSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
     questions = QuestionSerializer(many=True)
 
     class Meta:
@@ -63,6 +67,12 @@ class AssessmentSerializer(serializers.ModelSerializer):
             "questions",
         ]
 
+    def validate_assessment_type(self, value):
+        """Compatibility: map legacy assessment type aliases to supported choices."""
+        if value == "essay":
+            return AssessmentType.FILE
+        return value
+
     def validate_course(self, value):
         user = self.context["request"].user
         if hasattr(user, "teacher_profile") and not user.is_staff:
@@ -76,16 +86,25 @@ class AssessmentSerializer(serializers.ModelSerializer):
         assessment_type = attrs.get("assessment_type")
         questions = attrs.get("questions", [])
 
-        if assessment_type in [AssessmentType.MCQ, AssessmentType.MIXED] and not questions:
-            raise serializers.ValidationError("At least one question is required for MCQ or Mixed assessments.")
+        if (
+            assessment_type in [AssessmentType.MCQ, AssessmentType.MIXED]
+            and not questions
+        ):
+            raise serializers.ValidationError(
+                "At least one question is required for MCQ or Mixed assessments."
+            )
 
         if assessment_type == AssessmentType.FILE and questions:
-            raise serializers.ValidationError("File-upload assessments should not have questions.")
+            raise serializers.ValidationError(
+                "File-upload assessments should not have questions."
+            )
 
         if assessment_type == AssessmentType.MIXED:
             for q in questions:
                 if "choices" not in q or not q["choices"]:
-                    raise serializers.ValidationError("All MCQs in Mixed assessments must have choices.")
+                    raise serializers.ValidationError(
+                        "All MCQs in Mixed assessments must have choices."
+                    )
 
         return attrs
 
@@ -106,7 +125,9 @@ class AssessmentSerializer(serializers.ModelSerializer):
         instance.title = validated_data.get("title", instance.title)
         instance.description = validated_data.get("description", instance.description)
         instance.course = validated_data.get("course", instance.course)
-        instance.assessment_type = validated_data.get("assessment_type", instance.assessment_type)
+        instance.assessment_type = validated_data.get(
+            "assessment_type", instance.assessment_type
+        )
         instance.due_date = validated_data.get("due_date", instance.due_date)
         instance.max_score = validated_data.get("max_score", instance.max_score)
         instance.save()
@@ -136,7 +157,6 @@ class AssessmentSerializer(serializers.ModelSerializer):
                         Choice.objects.create(question=question, **c_data)
 
             else:
-        
                 question = Question.objects.create(assessment=instance, **q_data)
                 for c_data in choices_data:
                     Choice.objects.create(question=question, **c_data)

@@ -1,6 +1,9 @@
 from rest_framework import generics, permissions
 from apps.users.models import TeacherProfile
 from apps.users.serializers.list_teachers_serializer import TeacherProfileListSerializer
+# from django.utils.decorators import method_decorator
+# from django.views.decorators.cache import cache_page
+# from django.views.decorators.vary import vary_on_cookie
 
 
 class TeacherListView(generics.ListAPIView):
@@ -10,8 +13,12 @@ class TeacherListView(generics.ListAPIView):
     - Returns only verified teachers by default
     - Supports filtering by subject, hourly rate range, and verification status
     """
+
     serializer_class = TeacherProfileListSerializer
-    permission_classes = [permissions.AllowAny]  
+    permission_classes = [permissions.AllowAny]
+
+    # @method_decorator(cache_page(60 * 60 * 2))
+    # @method_decorator(vary_on_cookie)
     def get_queryset(self):
         queryset = (
             TeacherProfile.objects.select_related("user")

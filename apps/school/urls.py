@@ -7,40 +7,48 @@ from apps.school.views.subject_view import SubjectViewSet
 from apps.school.views.grade_view import GradeViewSet
 from apps.school.views.join_session_view import StudentJoinLiveSessionView
 from apps.school.views.course_registration_view import (
-    CourseCreateListView,TopicCreateListView,
-    SubtopicCreateListView
+    CourseCreateListView,
+    TopicCreateListView,
+    SubtopicCreateListView,
 )
 from apps.school.views.session_booking_view import (
     SessionBookingCreateUpdateView,
     SessionBookingListView,
 )
 from apps.school.views.livesession_view import (
-    LiveSessionCreateView,LiveSessionUpdateView,
-    LiveSessionListView
+    LiveSessionCreateView,
+    LiveSessionUpdateView,
+    LiveSessionListView,
 )
+from apps.school.views.teacher_live_lessons_view import TeacherLiveLessonsView
 from apps.school.views.assessments_views import (
     AssessmentCreateListView,
     RevisionMaterialCreateListView,
-    AssessmentRetrieveUpdateView
+    AssessmentRetrieveUpdateView,
 )
 from apps.school.views.course_enrollment_view import (
     CourseEnrollmentView,
     RetrieveEnrolledCourseView,
     ListEnrolledCourseView,
-    ListEnrolledStudentsView
+    ListEnrolledStudentsView,
 )
 from apps.school.views.course_sessions_views import (
     CourseLiveSessionCreateView,
-    StudentCourseLiveSessionListView
+    StudentCourseLiveSessionListView,
 )
+from apps.school.views.lessons_view import (
+    LessonsListView,
+    LessonsDetailView,
+    CourseTopicsListView,
+    TopicSubtopicsListView,
+)
+from apps.school.views.teacher_videos_view import TeacherVideosView
 
 school_router = DefaultRouter()
-school_router.register(r'subjects', SubjectViewSet)
-school_router.register(r'grades', GradeViewSet)
+school_router.register(r"subjects", SubjectViewSet)
+school_router.register(r"grades", GradeViewSet)
 school_router.register(
-    r"peer-to-peer-sessions",
-    PeerLiveSessionViewSet, 
-    basename="peer-live-session"
+    r"peer-to-peer-sessions", PeerLiveSessionViewSet, basename="peer-live-session"
 )
 
 urlpatterns = [
@@ -66,6 +74,17 @@ urlpatterns = [
         SessionBookingCreateUpdateView.as_view(),
         name="session-booking-update",
     ),
+    # Legacy frontend compatibility for undefined booking ids
+    path(
+        "student/session-bookings/undefined/",
+        SessionBookingCreateUpdateView.as_view(),
+        name="session-booking-update-undefined",
+    ),
+    path(
+        "student/session-bookings/undefined",
+        SessionBookingCreateUpdateView.as_view(),
+        name="session-booking-update-undefined-no-slash",
+    ),
     path(
         "teacher/live-session/",
         LiveSessionCreateView.as_view(),
@@ -75,6 +94,11 @@ urlpatterns = [
         "teacher/live-session/update/<uuid:pk>/",
         LiveSessionUpdateView.as_view(),
         name="live-session-update",
+    ),
+    path(
+        "teacher/live-lessons/",
+        TeacherLiveLessonsView.as_view(),
+        name="teacher-live-lessons",
     ),
     path("topics/", TopicCreateListView.as_view(), name="topic-list-create"),
     path("subtopics/", SubtopicCreateListView.as_view(), name="subtopic-list-create"),
@@ -125,5 +149,32 @@ urlpatterns = [
         ListEnrolledStudentsView.as_view(),
         name="course-enrolled-students",
     ),
+    # Lessons API Endpoints
+    path(
+        "lessons/",
+        LessonsListView.as_view(),
+        name="lessons-list",
+    ),
+    path(
+        "lessons/<uuid:id>/",
+        LessonsDetailView.as_view(),
+        name="lessons-detail",
+    ),
+    path(
+        "courses/<uuid:course_id>/topics/",
+        CourseTopicsListView.as_view(),
+        name="course-topics",
+    ),
+    path(
+        "topics/<uuid:topic_id>/subtopics/",
+        TopicSubtopicsListView.as_view(),
+        name="topic-subtopics",
+    ),
+    # Teacher Videos Endpoint
+    path(
+        "lessons/api/videos/teacher/<uuid:teacher_id>/",
+        TeacherVideosView.as_view(),
+        name="teacher-videos",
+    ),
 ]
-urlpatterns +=school_router.urls
+urlpatterns += school_router.urls

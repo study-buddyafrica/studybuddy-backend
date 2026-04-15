@@ -7,17 +7,21 @@ from dotenv import load_dotenv
 
 from apps.school.models import LiveSession, SessionBooking
 from apps.core.utils.dailyco import DailyCoAPI
+from apps.core.serializers import SanitizeHTMLMixin
 
 load_dotenv()
 
 
-DEFAULT_WHITEBOARD_LINK = os.getenv('DEFAULT_WHITEBOARD_LINK')
+DEFAULT_WHITEBOARD_LINK = os.getenv("DEFAULT_WHITEBOARD_LINK")
 
-class LiveSessionSerializer(serializers.ModelSerializer):
+
+class LiveSessionSerializer(SanitizeHTMLMixin, serializers.ModelSerializer):
+    sanitize_fields = ["title", "description"]
     session_booking_id = serializers.UUIDField(write_only=True)
     teacher_meeting_link = serializers.CharField(read_only=True)
     student_meeting_link = serializers.CharField(read_only=True)
     whiteboard_link = serializers.URLField(read_only=True)
+    education_level_name = serializers.CharField(source="education_level.name", read_only=True)
 
     class Meta:
         model = LiveSession
@@ -31,6 +35,8 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             "ended_at",
             "title",
             "description",
+            "education_level",
+            "education_level_name",
         ]
         read_only_fields = [
             "id",
@@ -49,12 +55,16 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         description = validated_data.get("description")
 
         try:
-            booking = SessionBooking.objects.select_related("teacher__user", "student__user").get(id=session_booking_id)
+            booking = SessionBooking.objects.select_related(
+                "teacher__user", "student__user"
+            ).get(id=session_booking_id)
         except SessionBooking.DoesNotExist:
             raise ValidationError("Invalid session booking.")
 
         if not booking.is_allowed:
-            raise ValidationError("This booking is not allowed. Check wallet or approval status.")
+            raise ValidationError(
+                "This booking is not allowed. Check wallet or approval status."
+            )
 
         if LiveSession.objects.filter(session=booking).exists():
             raise ValidationError("A live session for this booking already exists.")
@@ -76,18 +86,18 @@ class LiveSessionSerializer(serializers.ModelSerializer):
                 "enable_network_ui": True,
                 "enable_pip_ui": True,
                 "enable_emoji_reactions": True,
-            }
+            },
         )
 
         teacher_token = daily_api.create_owner_token(
             room_name=room_name,
             user_id=str(booking.teacher.id),
-            user_name=f"{booking.teacher.user.first_name} {booking.teacher.user.last_name}"
+            user_name=f"{booking.teacher.user.first_name} {booking.teacher.user.last_name}",
         )
         student_token = daily_api.create_participant_token(
             room_name=room_name,
             user_id=str(booking.student.id),
-            user_name=f"{booking.student.user.first_name} {booking.student.user.last_name}"
+            user_name=f"{booking.student.user.first_name} {booking.student.user.last_name}",
         )
 
         live_session = LiveSession.objects.create(
@@ -99,13 +109,14 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             started_at=timezone.now(),
             ended_at=booking.scheduled_end,
             title=title,
-            description=description
+            description=description,
+            education_level=booking.education_level or getattr(booking.course, "education_level", None),
         )
         booking.status = "accepted"
         booking.save(update_fields=["status"])
 
         return live_session
-    
+
     def update(self, instance, validated_data):
         instance.ended_at = timezone.now()
         instance.save(update_fields=["ended_at"])

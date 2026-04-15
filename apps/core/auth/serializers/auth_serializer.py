@@ -1,4 +1,7 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework import serializers
+from apps.core.models import User
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -30,16 +33,38 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
 
-        profile_id = self.get_profile_id(self.user)
+        # stop returning user object in API call
+        # profile_id = self.get_profile_id(self.user)
 
-        user_data = {
-            "id": self.user.id,
-            "email": self.user.email,
-            "first_name": self.user.first_name,
-            "role": getattr(self.user, "role", None),
-            "is_superuser": self.user.is_superuser,
-            "profile_id": profile_id,
-        }
+        # user_data = {
+        #     "id": self.user.id,
+        #     "email": self.user.email,
+        #     "first_name": self.user.first_name,
+        #     "role": getattr(self.user, "role", None),
+        #     "is_superuser": self.user.is_superuser,
+        #     "profile_id": profile_id,
+        # }
 
-        data.update({"user": user_data})
+        # data.update({"user": data})
         return data
+
+
+class CheckUserSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return value.lower().strip()
+
+    def save(self):
+        email = self.validated_data["email"]
+        user = User.objects.filter(email=email).first()
+
+        if not user:
+            return {"exists": False}
+
+        return {
+            "exists": True,
+            "role": user.role,
+            "account_confirmed": user.account_confirmed,
+            "is_active": user.is_active,
+        }

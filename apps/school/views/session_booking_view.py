@@ -24,6 +24,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
     """
     serializer_class = SessionBookingSerializer
     permission_classes = [permissions.IsAuthenticated,IsVerified]
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         return SessionBooking.objects.select_related("student__user", "teacher__user")
@@ -44,6 +45,47 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                 "initiated_by": wallet.user.email if wallet.user else "system",
             },
         )
+
+    def get(self, request, pk=None, *args, **kwargs):
+        """
+        GET compatibility handler:
+        - /student/session-bookings/           -> list bookings for current user
+        - /student/session-bookings/<uuid>/    -> retrieve one booking if owned/allowed
+        - /student/session-bookings/undefined/ -> list bookings (legacy frontend fallback)
+        """
+        user = request.user
+        qs = self.get_queryset()
+
+        # Legacy frontend compatibility: treat undefined id as list request.
+        if pk in (None, "", "undefined", "null"):
+            if user.is_superuser:
+                filtered = qs.order_by("-scheduled_start")
+            else:
+                student_qs = qs.filter(student__user=user)
+                teacher_qs = qs.filter(teacher__user=user)
+                filtered = (student_qs | teacher_qs).distinct().order_by("-scheduled_start")
+
+            page = self.paginate_queryset(filtered)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(filtered, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        try:
+            booking = qs.get(pk=pk)
+        except SessionBooking.DoesNotExist:
+            return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.is_superuser:
+            is_owner = booking.student and booking.student.user_id == user.id
+            is_teacher = booking.teacher and booking.teacher.user_id == user.id
+            if not (is_owner or is_teacher):
+                return Response({"detail": "Not permitted."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(booking)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         """
@@ -74,6 +116,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             teacher_id = serializer.validated_data.get("teacher_id")
             duration_hours = serializer.validated_data.get("duration_hours")
             scheduled_start = serializer.validated_data.get("scheduled_start")
+            course = serializer.validated_data.get("course")
 
             teacher = TeacherProfile.objects.get(id=teacher_id)
             teacher_rate = float(teacher.hourly_rate)
@@ -123,6 +166,7 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     scheduled_end=scheduled_end,
                     cost=total_cost,
                     is_allowed=True,
+                    course=course,
                 )
 
         else:
@@ -155,30 +199,30 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                     )
 
                 teacher_wallet = booking.teacher.user.wallet
-                amount = booking.cost
+                amount_money = Money(booking.cost, "KES")
 
                 with transaction.atomic():
-                    if system_wallet.balance < amount:
+                    if system_wallet.balance < amount_money:
                         return Response(
                             {"detail": "System wallet has insufficient funds."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         )
 
-                    system_wallet.balance -= amount
-                    teacher_wallet.balance += amount
+                    system_wallet.balance -= amount_money
+                    teacher_wallet.balance += amount_money
 
                     system_wallet.save()
                     teacher_wallet.save()
 
                     teacher_tx = self._log_transaction(
                         teacher_wallet,
-                        amount.amount,
+                        amount_money.amount,
                         "credit",
                         f"Payment for attended session with student {booking.student.user.username}",
                     )
                     self._log_transaction(
                         system_wallet,
-                        -amount.amount,
+                        -amount_money.amount,
                         "debit",
                         f"System payout to {booking.teacher.user.username}",
                         related_tx=teacher_tx,
@@ -217,20 +261,21 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
             teacher_rate = float(teacher.hourly_rate.amount)
 
             with transaction.atomic():
-                if system_wallet.balance < booking.cost:
+                booking_cost_money = Money(booking.cost, "KES")
+                if system_wallet.balance < booking_cost_money:
                     return Response(
                         {"detail": "System wallet has insufficient funds for refund."},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                system_wallet.balance -= booking.cost
-                student_wallet.balance += booking.cost
+                system_wallet.balance -= booking_cost_money
+                student_wallet.balance += booking_cost_money
                 system_wallet.save()
                 student_wallet.save()
 
                 self._log_transaction(
                     student_wallet,
-                    booking.cost.amount,
+                    booking_cost_money.amount,
                     "refund",
                     f"Refund for rescheduled session with {teacher.user.username}",
                 )
@@ -239,28 +284,29 @@ class SessionBookingCreateUpdateView(generics.GenericAPIView):
                 duration_hours = float(booking.duration_hours)
                 new_end = new_start_dt + timedelta(hours=duration_hours)
                 total_cost = Decimal(duration_hours * teacher_rate)
+                total_cost_money = Money(total_cost, "KES")
 
-                if student_wallet.balance < total_cost:
+                if student_wallet.balance < total_cost_money:
                     transaction.set_rollback(True)
                     return Response(
                         {"detail": "Insufficient wallet balance to reschedule."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                student_wallet.balance -= total_cost
-                system_wallet.balance += total_cost
+                student_wallet.balance -= total_cost_money
+                system_wallet.balance += total_cost_money
                 student_wallet.save()
                 system_wallet.save()
 
                 self._log_transaction(
                     student_wallet,
-                    -total_cost,
+                    -total_cost_money.amount,
                     "payment",
                     f"Payment for rescheduled session with {teacher.user.username}",
                 )
                 self._log_transaction(
                     system_wallet,
-                    total_cost,
+                    total_cost_money.amount,
                     "hold",
                     f"System hold for rescheduled session {booking.id}",
                 )

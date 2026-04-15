@@ -41,12 +41,19 @@ class LiveSessionUpdateView(generics.UpdateAPIView):
         except LiveSession.DoesNotExist:
             return Response({"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if session.attended:
+        # Check if related session booking is already marked attended
+        if session.session and session.session.attended:
             return Response({"detail": "Session already marked as attended."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Mark the related SessionBooking as attended, not LiveSession
+        if session.session:
+            session.session.attended = True
+            session.session.save(update_fields=["attended"])
+        
+        # Update LiveSession end time
         serializer = self.get_serializer(
             session,
-            data={"attended": True},
+            data={},
             partial=True,
             context={"request": request}
         )

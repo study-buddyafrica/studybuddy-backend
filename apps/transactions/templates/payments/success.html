@@ -1,36 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
+  <head>
     <title>Payment Successful</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 50px;
+      }
 
-        .success {
-            color: green;
-            font-size: 24px;
-        }
+      .success {
+        color: green;
+        font-size: 24px;
+      }
 
-        .info {
-            margin: 20px 0;
-        }
+      .info {
+        margin: 20px 0;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <div class="success">✅ Payment Successful!</div>
+  <body>
+    <div class="success">Payment Successful!</div>
     <div class="info">
-        <p>Your payment has been completed successfully.</p>
-        <p>Your wallet balance will be updated shortly.</p>
-        {% if tracking_id %}
-        <p><small>Tracking ID: {{ tracking_id }}</small></p>
-        {% endif %}
+      <p>Your payment has been completed successfully.</p>
+      <p>Your wallet balance will be updated shortly.</p>
+      {% if tracking_id %}
+      <p><small>Tracking ID: {{ tracking_id }}</small></p>
+      {% endif %}
     </div>
     <a href="/">Return to Home</a>
-</body>
-
+  </body>
 </html>

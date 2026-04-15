@@ -58,6 +58,34 @@ class Subject(Core):
         ordering = ["name"] 
         indexes = [ models.Index(fields=["name"]),]
 
+
+class EducationLevel(Core):
+    class AudienceTier(models.TextChoices):
+        K12 = "k12", "K-12"
+        UNIVERSITY = "university", "University"
+        CONTINUOUS = "continuous", "Continuous Learning"
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        choices=AudienceTier.choices,
+        db_index=True,
+    )
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = "education_levels"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
 class Grade(Core):
     """
     Represents academic or professional levels.
@@ -131,6 +159,13 @@ class Course(Core):
         Grade, on_delete=models.SET_NULL, 
         null=True, blank=True, 
         related_name="courses"
+    )
+    education_level = models.ForeignKey(
+        EducationLevel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
     )
     title = models.CharField(
         max_length=150, 
@@ -320,6 +355,13 @@ class SessionBooking(Core):
     blank=True, 
     related_name="session_bookings"   
     )
+    education_level = models.ForeignKey(
+        EducationLevel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="session_bookings",
+    )
 
 
     class Meta:
@@ -359,6 +401,13 @@ class LiveSession(Core):
         blank=True,
         related_name="live_lessons",
         on_delete=models.CASCADE,
+    )
+    education_level = models.ForeignKey(
+        EducationLevel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="live_sessions",
     )
     teacher = models.ForeignKey(
         'users.TeacherProfile', 
