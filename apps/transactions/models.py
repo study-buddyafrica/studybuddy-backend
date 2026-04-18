@@ -3,6 +3,9 @@ from django.core.exceptions import ValidationError
 from djmoney.models.fields import MoneyField
 from djmoney.money import Money
 import uuid
+from django.conf import settings
+
+
 
 from apps.core.models import Core, User
 
