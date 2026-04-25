@@ -1,8 +1,7 @@
 """Profile retrieval and management endpoints"""
 
-from rest_framework import generics, permissions, viewsets, status
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 
 from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
@@ -10,10 +9,47 @@ from apps.users.serializers.update_user_profile_serializer import (
     TeacherProfileUpdateSerializer,
     StudentProfileUpdateSerializer,
     ParentProfileUpdateSerializer,
+    ParentChildSummarySerializer,
     ParentFullProfileSerializer,
 )
 from apps.users.serializers.user_profile_serializer import StudentRegistrationSerializer
 from apps.core.permissions import IsVerified
+
+
+def _resolve_parent_profile(identifier=None, user=None):
+    """Resolve a parent profile from a profile PK, user UUID, or current user."""
+
+    if identifier not in (None, "undefined", "null", ""):
+        parent = (
+            ParentProfile.objects.select_related("user")
+            .filter(user__id=identifier)
+            .first()
+        )
+        if parent:
+            return parent
+
+        try:
+            parent_pk = int(identifier)
+        except (TypeError, ValueError):
+            parent_pk = None
+
+        if parent_pk is not None:
+            parent = (
+                ParentProfile.objects.select_related("user")
+                .filter(pk=parent_pk)
+                .first()
+            )
+            if parent:
+                return parent
+
+    if (
+        user
+        and getattr(user, "is_authenticated", False)
+        and hasattr(user, "parent_profile")
+    ):
+        return user.parent_profile
+
+    return None
 
 
 class TeacherProfileView(generics.RetrieveUpdateAPIView):
@@ -127,24 +163,17 @@ class ParentChildrenView(generics.ListAPIView):
 
     def get_queryset(self):
         """Get children for current parent"""
-        parent_id = self.kwargs.get("parent_id") or self.request.query_params.get(
-            "parent_id"
-        )
+        query_params = getattr(self.request, "query_params", self.request.GET)
+        parent_id = self.kwargs.get("parent_id") or query_params.get("parent_id")
 
-        if parent_id and parent_id not in ("undefined", "null", ""):
-            parent = ParentProfile.objects.filter(id=parent_id).first()
-            if parent:
-                return parent.children.all()
-
-        if getattr(self.request.user, "is_authenticated", False) and hasattr(
-            self.request.user, "parent_profile"
-        ):
-            return self.request.user.parent_profile.children.all()
+        parent = _resolve_parent_profile(parent_id, self.request.user)
+        if parent:
+            return parent.children.select_related("user", "grade", "school")
 
         return StudentProfile.objects.none()
 
     def get_serializer_class(self):
-        return StudentProfileUpdateSerializer
+        return ParentChildSummarySerializer
 
 
 class ParentRegisterStudentView(generics.CreateAPIView):
@@ -157,18 +186,10 @@ class ParentRegisterStudentView(generics.CreateAPIView):
     serializer_class = StudentRegistrationSerializer
 
     def _resolve_parent_profile(self):
-        parent_id = self.kwargs.get("parent_id") or self.request.data.get("parent_id")
+        request_data = getattr(self.request, "data", {})
+        parent_id = self.kwargs.get("parent_id") or request_data.get("parent_id")
 
-        if parent_id and parent_id not in ("undefined", "null", ""):
-            try:
-                return ParentProfile.objects.get(id=parent_id)
-            except ParentProfile.DoesNotExist:
-                pass
-
-        if hasattr(self.request.user, "parent_profile"):
-            return self.request.user.parent_profile
-
-        return None
+        return _resolve_parent_profile(parent_id, self.request.user)
 
     def post(self, request, *args, **kwargs):
         """Register/create a student and link to current parent"""

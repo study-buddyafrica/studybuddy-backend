@@ -44,6 +44,14 @@ from apps.school.views.lessons_view import (
     TopicSubtopicsListView,
 )
 from apps.school.views.teacher_videos_view import TeacherVideosView
+from apps.school.views.assessment_submission_views import (
+    AssessmentAccessCheckView,
+    AssessmentSubmitView,
+    AssessmentSubmissionListView,
+    AssessmentSubmissionDetailView,
+    AssessmentGradeView,
+    StudentAssessmentListView,
+)
 
 school_router = DefaultRouter()
 school_router.register(r"subjects", SubjectViewSet)
@@ -179,6 +187,37 @@ urlpatterns = [
         "lessons/api/videos/teacher/<uuid:teacher_id>/",
         TeacherVideosView.as_view(),
         name="teacher-videos",
+    ),
+    # Assessment Submission Endpoints
+    path(
+        "assessments/<uuid:assessment_id>/access-check/",
+        AssessmentAccessCheckView.as_view(),
+        name="assessment-access-check",
+    ),
+    path(
+        "assessments/<uuid:assessment_id>/submit/",
+        AssessmentSubmitView.as_view(),
+        name="assessment-submit",
+    ),
+    path(
+        "assessment-submissions/",
+        AssessmentSubmissionListView.as_view(),
+        name="assessment-submission-list",
+    ),
+    path(
+        "assessment-submissions/<uuid:id>/",
+        AssessmentSubmissionDetailView.as_view(),
+        name="assessment-submission-detail",
+    ),
+    path(
+        "assessment-submissions/<uuid:id>/grade/",
+        AssessmentGradeView.as_view(),
+        name="assessment-grade",
+    ),
+    path(
+        "student/available-assessments/",
+        StudentAssessmentListView.as_view(),
+        name="student-available-assessments",
     ),
 ]
 urlpatterns += school_router.urls

@@ -132,6 +132,12 @@ class TeacherProfile(models.Model):
         choices=VERIFICATION_STATUS_CHOICES,
         default="ongoing",
     )
+    paystack_recipient_code = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Paystack recipient code for transfers (e.g. RCP_xxxxx)",
+    )
     school = models.ForeignKey(
         "school.School",
         on_delete=models.SET_NULL,

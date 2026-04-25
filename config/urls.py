@@ -51,6 +51,7 @@ urlpatterns = [
     path("api/", include("apps.users.urls")),
     path("api/", include("apps.school.urls")),
     path("api/", include("apps.transactions.urls")),
+    path("api/", include("apps.calendar.urls")),
     # Auth compatibility routes
     path(
         "auth/forgot-password",
