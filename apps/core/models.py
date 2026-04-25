@@ -69,6 +69,11 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
     def __str__(self):
         return f"{self.email}"
 
+    def get_full_name(self) -> str:
+        """Return the user's full name."""
+        full_name = f"{self.first_name or ''} {self.last_name or ''}".strip()
+        return full_name or self.email
+
 
 class EmailVerificationCode(Core):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
