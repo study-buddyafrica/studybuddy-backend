@@ -136,7 +136,7 @@ SIMPLE_JWT = {
     "AUTH_COOKIE": "refresh_token",
     "AUTH_COOKIE_SECURE": not DEBUG,  # True in Production (requires HTTPS)
     "AUTH_COOKIE_HTTP_ONLY": True,  # Blocks XSS attacks from reading it
-    "AUTH_COOKIE_SAMESITE": "Lax",  # Protects against CSRF attacks
+    "AUTH_COOKIE_SAMESITE": "None",  # Protects against CSRF attacks
 }
 
 """spectacular settings:"""

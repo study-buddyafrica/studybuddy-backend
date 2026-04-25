@@ -48,6 +48,7 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
             "national_identity_number",
             "national_identity_card",
             "hourly_rate",
+            "profile_picture",
         ]
         missing = [field for field in required_fields if not attrs.get(field)]
         if missing:
@@ -59,3 +60,20 @@ class TeacherProfileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = self.context["request"].user
         return TeacherProfile.objects.create(user=user, **validated_data)
+
+    def validate_hourly_rate(self, value):
+        """Ensure teachers aren't setting a zero or negative rate."""
+        # Because we used djmoney, 'value' is a Money object, so we check .amount
+        if value.amount <= 0:
+            raise serializers.ValidationError("Hourly rate must be greater than zero.")
+        return value
+
+    def validate_phone(self, value):
+        """Ensure the React frontend is sending the clean E.164 format."""
+        if not value.startswith('+'):
+            raise serializers.ValidationError("Phone number must include country code (e.g., +254).")
+        return value
+    def validate_profile_picture(self, value):
+        if not value or value.name == 'profiles/default_avatar.png':
+            raise serializers.ValidationError("A professional profile photo is strictly required.")
+        return value
