@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.school",
     "apps.transactions",
+    "apps.calendar",
 ]
 
 
@@ -328,6 +329,16 @@ INTASEND_PUBLISHABLE_KEY = os.getenv("INTASEND_PUBLISHABLE_KEY")
 INTASEND_SECRET_KEY = os.getenv("INTASEND_TOKEN")
 INTASEND_ENV = ("sandbox",)
 INTASEND_WEBHOOK_CHALLENGE = "studyyddubbuddy"
+
+# Paystack
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "")
+
+# Platform fee percentage deducted from escrow before teacher payout
+PLATFORM_FEE_PERCENT = float(os.getenv("PLATFORM_FEE_PERCENT", "10"))
+
+# Base URL for generated session meeting links
+BASE_URL = os.getenv("BASE_URL", "https://meet.studybuddy.africa")
+SESSION_BASE_URL = os.getenv("SESSION_BASE_URL", f"{BASE_URL}/sessions")
 
 
 # If we are developing locally, print emails to the terminal instead of actually sending them.

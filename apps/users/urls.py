@@ -50,7 +50,7 @@ urlpatterns = [
     path("user/delete/<uuid:pk>/", UserDeleteView.as_view(), name="user-delete"),
     path("teachers/list", TeacherListView.as_view(), name="teacher-list"),
     path(
-        "parent/profile/update/<uuid:id>/",
+        "parent/profile/update/<str:id>/",
         ParentProfileUpdateView.as_view(),
         name="parent-profile-update",
     ),

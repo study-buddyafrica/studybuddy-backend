@@ -3,6 +3,9 @@ from django.core.exceptions import ValidationError
 from djmoney.models.fields import MoneyField
 from djmoney.money import Money
 import uuid
+from django.conf import settings
+
+
 
 from apps.core.models import Core, User
 
@@ -108,6 +111,10 @@ class Transaction(Core):
         ("payment", "Payment"),
         ("refund", "Refund"),
         ("transfer", "Transfer"),
+        ("course_payment", "Course Payment"),
+        ("session_payment", "Session Payment"),
+        ("escrow_hold", "Escrow Hold"),
+        ("escrow_release", "Escrow Release"),
     ]
 
     PAYMENT_METHOD_CHOICES = [
@@ -117,6 +124,7 @@ class Transaction(Core):
         ("intasend", "IntaSend"),
         ("paypal", "PayPal"),
         ("wallet", "Wallet"),
+        ("paystack", "Paystack"),
     ]
 
     STATUS_CHOICES = [
@@ -282,3 +290,53 @@ class PaymentWebhookLog(Core):
         if response_data:
             self.response_data = response_data
         self.save()
+
+
+class EscrowWallet(Core):
+    """Holds session payment funds between booking and session completion."""
+
+    STATE_CHOICES = [
+        ("held", "Held"),
+        ("released", "Released"),
+        ("failed", "Failed"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    session_booking = models.OneToOneField(
+        "school.SessionBooking",
+        on_delete=models.CASCADE,
+        related_name="escrow_wallet",
+    )
+
+    amount = MoneyField(max_digits=14, decimal_places=2, default_currency="KES")
+
+    state = models.CharField(
+        max_length=20, choices=STATE_CHOICES, default="held", db_index=True
+    )
+
+    held_transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="escrow_holds",
+    )
+
+    release_transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="escrow_releases",
+    )
+
+    class Meta:
+        db_table = "escrow_wallets"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["state"]),
+        ]
+
+    def __str__(self):
+        return f"Escrow {self.session_booking_id} — {self.state} ({self.amount})"

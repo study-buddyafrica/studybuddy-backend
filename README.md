@@ -94,3 +94,7 @@ Known issues:
 'default': connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
  Is the server running on that host and accepting TCP/IP connections?
 ```
+
+Staging: <https://api-staging.studybuddy.africa/>
+
+<https://studybuddy-frotend-staging.vercel.app/>

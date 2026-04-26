@@ -4,6 +4,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from apps.core.models import User, Core
+from djmoney.models.fields import MoneyField
 
 
 def certificate_upload_path(instance, filename):
@@ -63,6 +64,7 @@ class ParentProfile(models.Model):
 
 
 class TeacherProfile(models.Model):
+
     VERIFICATION_STATUS_CHOICES = [
         ("ongoing", "Ongoing"),
         ("approved", "Approved"),
@@ -110,7 +112,8 @@ class TeacherProfile(models.Model):
         blank=True,
         related_name="teacher_profiles",
     )
-    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
+    profile_picture = models.ImageField(upload_to="profiles/", null=False, blank=False)
+    phone = models.CharField(max_length=50, null=False, blank=False)
     birth_date = models.DateField(null=True, blank=True)
     google_access_token = models.TextField(null=True, blank=True)
     google_refresh_token = models.TextField(null=True, blank=True)
@@ -132,6 +135,12 @@ class TeacherProfile(models.Model):
         choices=VERIFICATION_STATUS_CHOICES,
         default="ongoing",
     )
+    paystack_recipient_code = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Paystack recipient code for transfers (e.g. RCP_xxxxx)",
+    )
     school = models.ForeignKey(
         "school.School",
         on_delete=models.SET_NULL,
@@ -146,8 +155,17 @@ class TeacherProfile(models.Model):
 
     def __str__(self):
         return f"Teacher: {self.user.first_name}"
-
-
+    
+    
+    
+    
+    hourly_rate = MoneyField(
+        max_digits=10, 
+        decimal_places=2, 
+        default_currency='KES',
+        null=False, 
+        blank=False
+    )
 class StudentProfile(Core):
     """Represents a student's profile and academic relationships."""
 

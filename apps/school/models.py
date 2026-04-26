@@ -558,6 +558,55 @@ class AssessmentSubmission(models.Model):
         )
 
 
+class PeerSession(Core):
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    initiator = models.ForeignKey(
+        "users.StudentProfile",
+        on_delete=models.CASCADE,
+        related_name="initiated_peer_sessions",
+    )
+    peer = models.ForeignKey(
+        "users.StudentProfile",
+        on_delete=models.CASCADE,
+        related_name="received_peer_sessions",
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="peer_sessions",
+    )
+
+    meeting_link = models.URLField(max_length=1000, null=True, blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="active",
+        db_index=True,
+    )
+
+    completed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "peer_sessions"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["initiator", "peer", "course"]),
+        ]
+
+    def __str__(self):
+        return f"P2P {self.initiator} ↔ {self.peer} ({self.course.title})"
+
+
 class SubtopicProgress(models.Model):
     student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
     subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)

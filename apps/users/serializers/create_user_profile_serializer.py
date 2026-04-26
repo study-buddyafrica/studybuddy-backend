@@ -96,7 +96,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         role = user.role
         if role == "teacher":
-            TeacherProfile.objects.create(user=user)
+            TeacherProfile.objects.create(user=user, hourly_rate=0.00)
         elif role == "student":
             education_level = None
             if education_level_id:
