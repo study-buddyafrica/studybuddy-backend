@@ -15,13 +15,7 @@ SECRET_KEY = (
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = [
-    "backend.studybuddy.africa",
-    "54.225.241.26",
-    "127.0.0.1",
-    "localhost",
-    "wathi.tail433a8c.ts.net",
-    "34.234.64.73",
-    "api-staging.studybuddy.africa",
+    "*"
 ]
 
 INSTALLED_APPS = [
@@ -91,6 +85,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.studybuddy.africa",
     "http://0.0.0.0:8000",
     "https://studybuddy-frotend-staging.vercel.app",
+    "https://studybuddy-backend-6vya.onrender.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -111,6 +106,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.studybuddy.africa",
     "http://34.234.64.73:8000",
     "https://studybuddy-frotend-staging.vercel.app",
+    "https://studybuddy-backend-6vya.onrender.com",
 ]
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
