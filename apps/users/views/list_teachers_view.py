@@ -1,10 +1,6 @@
 from rest_framework import generics, permissions
 from apps.users.models import TeacherProfile
 from apps.users.serializers.list_teachers_serializer import TeacherProfileListSerializer
-# from django.utils.decorators import method_decorator
-# from django.views.decorators.cache import cache_page
-# from django.views.decorators.vary import vary_on_cookie
-
 
 class TeacherListView(generics.ListAPIView):
     """
@@ -17,8 +13,6 @@ class TeacherListView(generics.ListAPIView):
     serializer_class = TeacherProfileListSerializer
     permission_classes = [permissions.AllowAny]
 
-    # @method_decorator(cache_page(60 * 60 * 2))
-    # @method_decorator(vary_on_cookie)
     def get_queryset(self):
         queryset = (
             TeacherProfile.objects.select_related("user")
@@ -27,6 +21,7 @@ class TeacherListView(generics.ListAPIView):
                 "id",
                 "bio",
                 "hourly_rate",
+                "hourly_rate_currency",  # Fixed: Added to prevent djmoney KeyError
                 "is_verified",
                 "user__first_name",
                 "user__last_name",
