@@ -279,6 +279,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+HLS_STORAGE_ROOT = os.getenv("HLS_STORAGE_ROOT", os.path.join(MEDIA_ROOT, "hls"))
+HLS_URL_TTL_SECONDS = int(os.getenv("HLS_URL_TTL_SECONDS", "900"))
+HLS_ENABLE_ENCRYPTION = os.getenv("HLS_ENABLE_ENCRYPTION", "true").lower() in (
+    "true",
+    "1",
+    "yes",
+)
+FFMPEG_BINARY = os.getenv("FFMPEG_BINARY", "ffmpeg")
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -328,6 +336,11 @@ PLATFORM_FEE_PERCENT = float(os.getenv("PLATFORM_FEE_PERCENT", "10"))
 # Base URL for generated session meeting links
 BASE_URL = os.getenv("BASE_URL", "https://meet.studybuddy.africa")
 SESSION_BASE_URL = os.getenv("SESSION_BASE_URL", f"{BASE_URL}/sessions")
+ZOOM_SDK_KEY = os.getenv("ZOOM_SDK_KEY", "")
+ZOOM_SDK_SECRET = os.getenv("ZOOM_SDK_SECRET", "")
+ZOOM_SDK_TOKEN_TTL_SECONDS = int(os.getenv("ZOOM_SDK_TOKEN_TTL_SECONDS", "120"))
+PEER_SESSION_BASE_URL = os.getenv("PEER_SESSION_BASE_URL", f"{BASE_URL}/peer-sessions")
+PEER_SESSION_TOKEN_TTL_SECONDS = int(os.getenv("PEER_SESSION_TOKEN_TTL_SECONDS", "900"))
 
 
 # If we are developing locally, print emails to the terminal instead of actually sending them.

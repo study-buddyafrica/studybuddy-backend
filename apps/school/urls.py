@@ -44,6 +44,13 @@ from apps.school.views.lessons_view import (
     TopicSubtopicsListView,
 )
 from apps.school.views.teacher_videos_view import TeacherVideosView
+from apps.school.views.media_and_communication_views import (
+    HlsTranscodeView,
+    HlsOfflineTokenView,
+    HlsDownloadView,
+    ZoomSDKTokenView,
+    PeerSessionSignalView,
+)
 from apps.school.views.assessment_submission_views import (
     AssessmentAccessCheckView,
     AssessmentSubmitView,
@@ -187,6 +194,23 @@ urlpatterns = [
         "lessons/api/videos/teacher/<uuid:teacher_id>/",
         TeacherVideosView.as_view(),
         name="teacher-videos",
+    ),
+    path("media/hls/transcode/", HlsTranscodeView.as_view(), name="hls-transcode"),
+    path(
+        "media/hls/offline-token/",
+        HlsOfflineTokenView.as_view(),
+        name="hls-offline-token",
+    ),
+    path("media/hls/download/", HlsDownloadView.as_view(), name="hls-media-download"),
+    path(
+        "live-sessions/zoom/sdk-token/",
+        ZoomSDKTokenView.as_view(),
+        name="zoom-sdk-token",
+    ),
+    path(
+        "peer-sessions/signal/",
+        PeerSessionSignalView.as_view(),
+        name="peer-session-signal",
     ),
     # Assessment Submission Endpoints
     path(

@@ -40,18 +40,19 @@ class WithdrawAPIView(APIView):
                 {
                     "success": True,
                     "message": "Withdrawal initiated successfully",
+                    "payment_gateway": "paystack",
                     "transaction_id": str(tx.id),
                     "withdrawal_id": tx.transaction_identifier,
                     "status": tx.status,
-                    "requested_amount": float(data.get("initial_amount", 0)),
+                    "requested_amount": float(data.get("requested_amount", 0)),
                     "system_cut": float(data.get("system_cut", 0)),
-                    "intasend_fee": float(data.get("intasend_fee", 0)),
+                    "paystack_fee": float(data.get("paystack_fee", 0)),
                     "payout_amount": float(data.get("payout_amount", 0)),
                     "total_system_wallet_credit": float(
-                        data.get("system_cut", 0) + data.get("intasend_fee", 0)
+                        data.get("system_cut", 0) + data.get("paystack_fee", 0)
                     ),
-                    "intasend_total_deduction": float(
-                        data.get("payout_amount", 0) + data.get("intasend_fee", 0)
+                    "payout_total_deduction": float(
+                        data.get("payout_amount", 0) + data.get("paystack_fee", 0)
                     ),
                     "payout_response": data.get("payout_response", {}),
                 },

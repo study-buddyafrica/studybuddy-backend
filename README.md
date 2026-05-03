@@ -80,6 +80,26 @@ X-Frame-Options: SAMEORIGIN
 
 Swagger UI: <http://127.0.0.1:8000/api/swagger/>
 
+Environment keys used by the payment, media, and live-session features:
+
+```bash
+PAYSTACK_SECRET_KEY=
+WITHDRAWAL_PLATFORM_FEE_PERCENT=30
+PAYSTACK_TRANSFER_FEE_PERCENT=0
+PAYSTACK_FX_FEE_PERCENT=0
+FFMPEG_BINARY=ffmpeg
+HLS_STORAGE_ROOT=
+HLS_URL_TTL_SECONDS=900
+HLS_ENABLE_ENCRYPTION=true
+ZOOM_SDK_KEY=
+ZOOM_SDK_SECRET=
+ZOOM_SDK_TOKEN_TTL_SECONDS=120
+PEER_SESSION_BASE_URL=
+PEER_SESSION_TOKEN_TTL_SECONDS=900
+```
+
+`INTASEND_*` values are still read by legacy compatibility paths until those are fully removed.
+
 To check for outdated packages:
 
 ```bash
