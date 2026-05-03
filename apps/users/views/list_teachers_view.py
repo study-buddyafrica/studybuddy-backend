@@ -2,6 +2,7 @@ from rest_framework import generics, permissions
 from apps.users.models import TeacherProfile
 from apps.users.serializers.list_teachers_serializer import TeacherProfileListSerializer
 
+
 class TeacherListView(generics.ListAPIView):
     """
     Public endpoint for listing teachers.
@@ -14,18 +15,8 @@ class TeacherListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = (
-            TeacherProfile.objects.select_related("user")
-            .prefetch_related("subjects")
-            .only(
-                "id",
-                "bio",
-                "hourly_rate",
-                "hourly_rate_currency",  # Fixed: Added to prevent djmoney KeyError
-                "is_verified",
-                "user__first_name",
-                "user__last_name",
-            )
+        queryset = TeacherProfile.objects.select_related("user").prefetch_related(
+            "subjects"
         )
 
         subject = self.request.query_params.get("subject")

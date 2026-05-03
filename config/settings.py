@@ -1,8 +1,9 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from dotenv import load_dotenv
+
 import dj_database_url
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -14,9 +15,7 @@ SECRET_KEY = (
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = [
-    "*"
-]
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -223,7 +222,7 @@ if DATABASE_URL == "":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "myproject_db"),
+            "NAME": os.getenv("DB_NAME", "studybuddy_db"),
             "USER": os.getenv("DB_USER", "your_postgres_user"),
             "PASSWORD": os.getenv("DB_PASSWORD", "your_password"),
             "HOST": os.getenv("DB_HOST", "localhost"),
@@ -308,9 +307,9 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'studybuddy-bridge-cache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "studybuddy-bridge-cache",
     }
 }
 
