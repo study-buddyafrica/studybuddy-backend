@@ -330,6 +330,16 @@ PLATFORM_FEE_PERCENT = float(os.getenv("PLATFORM_FEE_PERCENT", "10"))
 BASE_URL = os.getenv("BASE_URL", "https://meet.studybuddy.africa")
 SESSION_BASE_URL = os.getenv("SESSION_BASE_URL", f"{BASE_URL}/sessions")
 
+# Jitsu analytics API
+JITSU_API_KEY = os.getenv("JITSU_API_KEY", "")
+JITSU_API_URL = os.getenv("JITSU_API_URL", "")
+
+# Excalidraw whiteboard API
+EXCALIDRAW_API_KEY = os.getenv("EXCALIDRAW_API_KEY", "")
+EXCALIDRAW_API_URL = os.getenv("EXCALIDRAW_API_URL", "https://api.excalidraw.com")
+EXCALIDRAW_APP_URL = os.getenv("EXCALIDRAW_APP_URL", "https://excalidraw.com/")
+DEFAULT_WHITEBOARD_LINK = os.getenv("DEFAULT_WHITEBOARD_LINK", EXCALIDRAW_APP_URL)
+
 
 # If we are developing locally, print emails to the terminal instead of actually sending them.
 # if DEBUG and MAIL_DEBUG_CONSOLE:
