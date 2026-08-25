@@ -342,5 +342,5 @@ DEFAULT_WHITEBOARD_LINK = os.getenv("DEFAULT_WHITEBOARD_LINK", EXCALIDRAW_APP_UR
 
 
 # If we are developing locally, print emails to the terminal instead of actually sending them.
-# if DEBUG and MAIL_DEBUG_CONSOLE:
-#   EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+if DEBUG and MAIL_DEBUG_CONSOLE:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
