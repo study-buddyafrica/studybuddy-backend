@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 
 from apps.transactions.models import Transaction, Wallet, PaymentWebhookLog, EscrowWallet
 
@@ -24,6 +25,14 @@ class PaystackWebhookView(APIView):
     authentication_classes = []
     permission_classes = []
 
+    @extend_schema(
+        summary="Receive Paystack webhook events",
+        request=dict,
+        responses={
+            200: OpenApiResponse(description="Webhook accepted"),
+            400: OpenApiResponse(description="Invalid signature or payload"),
+        },
+    )
     def post(self, request):
         payload_bytes = request.body
         signature = request.headers.get("X-Paystack-Signature", "")
