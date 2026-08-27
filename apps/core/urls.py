@@ -13,6 +13,8 @@ from apps.core.auth.views.reset_password_view import (
     ConfirmPasswordResetView,
 )
 from apps.core.views.health_check_view import DatabaseHealthCheckView
+from apps.core.views.jitsi_room_link_view import jitsi_room_link
+from apps.core.views.whiteboard_link_view import whiteboard_link
 from apps.core.views.admin_views import (
     admin_dashboard_stats,
     admin_get_classes,
@@ -59,6 +61,8 @@ urlpatterns = [
         name="password-reset-verify",
     ),
     path("health/", DatabaseHealthCheckView.as_view(), name="database-health-check"),
+    path("jitsi/", jitsi_room_link, name="jitsi-link"),
+    path("whiteboard/", whiteboard_link, name="whiteboard-link"),
     # Admin Dashboard Endpoints
     path("admin/dashboard-stats/", admin_dashboard_stats, name="admin-dashboard-stats"),
     path("admin/get-classes/", admin_get_classes, name="admin-get-classes"),
