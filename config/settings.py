@@ -291,15 +291,32 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "core.User"
 
+def get_email_backend() -> str:
+    """Prefer SMTP when credentials exist; otherwise fall back to console in local debug mode."""
+    mail_username = os.getenv("MAIL_USERNAME", "").strip()
+    mail_password = os.getenv("MAIL_PASSWORD", "").strip()
+    mail_debug_console = os.getenv("MAIL_DEBUG_CONSOLE", "true").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+
+    if mail_username and mail_password:
+        return "django.core.mail.backends.smtp.EmailBackend"
+    if DEBUG and mail_debug_console:
+        return "django.core.mail.backends.console.EmailBackend"
+    return "django.core.mail.backends.smtp.EmailBackend"
+
+
 # Email configuration
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = get_email_backend()
 EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = os.getenv("MAIL_PORT")
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv("MAIL_USERNAME")
-EMAIL_HOST_PASSWORD = os.getenv("MAIL_PASSWORD")
-DEFAULT_FROM_EMAIL = os.getenv("MAIL_DEFAULT_SENDER", EMAIL_HOST_USER)
-EMAIL_USE_SSL = False
+EMAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
+EMAIL_HOST_USER = os.getenv("MAIL_USERNAME", "").strip() or None
+EMAIL_HOST_PASSWORD = os.getenv("MAIL_PASSWORD", "").strip() or None
+DEFAULT_FROM_EMAIL = os.getenv("MAIL_DEFAULT_SENDER", EMAIL_HOST_USER or "noreply@studybuddy.africa")
+EMAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
 MAIL_DEBUG_CONSOLE = os.getenv("MAIL_DEBUG_CONSOLE", "true").lower() in (
     "true",
     "1",
@@ -345,6 +362,6 @@ EXCALIDRAW_APP_URL = os.getenv("EXCALIDRAW_APP_URL", "https://excalidraw.com/")
 DEFAULT_WHITEBOARD_LINK = os.getenv("DEFAULT_WHITEBOARD_LINK", EXCALIDRAW_APP_URL)
 
 
-# If we are developing locally, print emails to the terminal instead of actually sending them.
-if DEBUG and MAIL_DEBUG_CONSOLE:
+# If we are developing locally without SMTP credentials, print emails to the terminal instead.
+if DEBUG and MAIL_DEBUG_CONSOLE and not EMAIL_HOST_USER and not EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
