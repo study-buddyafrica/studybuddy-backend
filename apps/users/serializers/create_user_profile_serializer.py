@@ -46,18 +46,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A user with this email already exists.")
 
         # =====================================================================
-        # BYPASS: Temporarily disabling email verification check
-        # TODO: Uncomment this block once AWS App Passwords are configured
+        # Email verification enforcement: verify before allowing registration
         # =====================================================================
-        # verified = EmailVerificationCode.objects.filter(
-        #     email=email,
-        #     user__isnull=True
-        # ).filter(verified_at__isnull=False).exists()
-        # if not verified:
-        #     raise serializers.ValidationError(
-        #         "Please verify your email before " \
-        #         "completing registration."
-        #     )
+        verified = EmailVerificationCode.objects.filter(
+            email=email,
+            user__isnull=True
+        ).filter(verified_at__isnull=False).exists()
+        if not verified:
+            raise serializers.ValidationError(
+                "Please verify your email before completing registration."
+            )
         # =====================================================================
 
         return email

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
     "drf_standardized_errors",
@@ -129,6 +130,8 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=4),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
     "UPDATE_LAST_LOGIN": True,
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "refresh_token",
     "AUTH_COOKIE_SECURE": not DEBUG,  # True in Production (requires HTTPS)
     "AUTH_COOKIE_HTTP_ONLY": True,  # Blocks XSS attacks from reading it
@@ -177,7 +180,8 @@ REST_FRAMEWORK = {
         "anon": "20/m",
         "user": "2000/h",
         "auth": "5/m",
-        "burst": "30/m",
+        "burst": "10/m",
+        "login": "5/m",
     },
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}

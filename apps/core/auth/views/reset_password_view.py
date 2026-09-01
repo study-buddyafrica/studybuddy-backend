@@ -1,6 +1,7 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.core.auth.serializers.reset_password_serializer import (
     RequestPasswordResetSerializer,
@@ -9,9 +10,15 @@ from apps.core.auth.serializers.reset_password_serializer import (
 )
 
 
+class PasswordResetThrottle(AnonRateThrottle):
+    """Rate limit password reset endpoints to 10 attempts per minute."""
+    scope = "burst"
+
+
 class RequestPasswordResetView(generics.GenericAPIView):
     serializer_class = RequestPasswordResetSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -27,6 +34,7 @@ class RequestPasswordResetView(generics.GenericAPIView):
 class ConfirmPasswordResetView(generics.GenericAPIView):
     serializer_class = ConfirmPasswordResetSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -41,6 +49,7 @@ class ConfirmPasswordResetView(generics.GenericAPIView):
 class VerifyPasswordResetCodeView(generics.GenericAPIView):
     serializer_class = VerifyPasswordResetCodeSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -58,6 +67,7 @@ class ResetPasswordCompatibilityView(generics.GenericAPIView):
 
     permission_classes = [AllowAny]
     serializer_class = RequestPasswordResetSerializer
+    throttle_classes = [PasswordResetThrottle]
 
     def get_serializer_class(self):
         request = getattr(self, "request", None)

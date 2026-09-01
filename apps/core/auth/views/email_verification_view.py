@@ -2,15 +2,23 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.core.auth.serializers.email_verification_serializer import (
     VerifyPreRegistrationSerializer,
     PreRegisterEmailSerializer
 )
 
+
+class EmailVerificationThrottle(AnonRateThrottle):
+    """Rate limit email verification endpoints to 10 attempts per minute."""
+    scope = "burst"
+
+
 class RequestRegistrationVerificationCode(generics.GenericAPIView):
     serializer_class = PreRegisterEmailSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [EmailVerificationThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -21,6 +29,7 @@ class RequestRegistrationVerificationCode(generics.GenericAPIView):
 class VerifyRegistrationEmailView(generics.GenericAPIView):
     serializer_class = VerifyPreRegistrationSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [EmailVerificationThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
