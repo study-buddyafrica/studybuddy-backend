@@ -360,8 +360,3 @@ EXCALIDRAW_API_KEY = os.getenv("EXCALIDRAW_API_KEY", "")
 EXCALIDRAW_API_URL = os.getenv("EXCALIDRAW_API_URL", "https://api.excalidraw.com")
 EXCALIDRAW_APP_URL = os.getenv("EXCALIDRAW_APP_URL", "https://excalidraw.com/")
 DEFAULT_WHITEBOARD_LINK = os.getenv("DEFAULT_WHITEBOARD_LINK", EXCALIDRAW_APP_URL)
-
-
-# If we are developing locally without SMTP credentials, print emails to the terminal instead.
-if DEBUG and MAIL_DEBUG_CONSOLE and not EMAIL_HOST_USER and not EMAIL_HOST_PASSWORD:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
