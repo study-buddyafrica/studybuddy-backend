@@ -1,4 +1,4 @@
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -14,15 +14,24 @@ class AuthThrottle(AnonRateThrottle):
     scope = "login"
 
 
+class TokenRefreshThrottle(AnonRateThrottle):
+    scope = "auth"
+
+
 class CustomObtainTokenPairView(TokenObtainPairView):
     permission_classes = (AllowAny,)
     serializer_class = CustomTokenObtainPairSerializer
     throttle_classes = [AuthThrottle]
 
 
+class CustomTokenRefreshView(TokenRefreshView):
+    throttle_classes = [TokenRefreshThrottle]
+
+
 class CheckUserView(generics.GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = CheckUserSerializer
+    throttle_classes = [AuthThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

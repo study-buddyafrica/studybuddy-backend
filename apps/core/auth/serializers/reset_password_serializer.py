@@ -54,7 +54,7 @@ class VerifyPasswordResetCodeSerializer(serializers.Serializer):
 class ConfirmPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField()
-    new_password = serializers.CharField(min_length=6)
+    new_password = serializers.CharField(min_length=8)
     confirm_password = serializers.CharField()
 
     def validate(self, data):

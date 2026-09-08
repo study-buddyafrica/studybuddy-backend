@@ -112,8 +112,8 @@ CSRF_TRUSTED_ORIGINS = [
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 """ swagger settings"""
@@ -182,6 +182,7 @@ REST_FRAMEWORK = {
         "auth": "5/m",
         "burst": "10/m",
         "login": "5/m",
+        "public": "60/m",
     },
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}
