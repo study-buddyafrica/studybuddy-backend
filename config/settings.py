@@ -174,6 +174,7 @@ REST_FRAMEWORK = {
         "auth": "5/m", # Authenticated users are limited to 5 requests per minute
         "burst": "10/m", # Burst requests are limited to 10 per minute
         "login": "5/m", # Login requests are limited to 5 per minute
+        "public": "60/m", # Public endpoints are limited to 60 requests per minute
     },
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}

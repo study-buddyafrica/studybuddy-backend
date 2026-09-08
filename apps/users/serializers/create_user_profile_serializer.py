@@ -10,7 +10,7 @@ from apps.users.models import TeacherProfile, StudentProfile, ParentProfile
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True, min_length=8)
     confirm_password = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(choices=User.ROLE_CHOICES, required=True)
     education_level_id = serializers.UUIDField(
