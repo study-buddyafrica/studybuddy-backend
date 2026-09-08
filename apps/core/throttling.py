@@ -1,7 +1,7 @@
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import AnonRateThrottle
 
 
-class PublicEndpointThrottle(SimpleRateThrottle):
+class PublicEndpointThrottle(AnonRateThrottle):
     scope = "public"
 
     def get_cache_key(self, request, view):

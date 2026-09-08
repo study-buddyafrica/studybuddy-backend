@@ -23,6 +23,10 @@ class TokenRefreshThrottle(SimpleRateThrottle):
         return f"{self.scope}:{self.get_ident(request)}"
 
 
+class TokenRefreshThrottle(AnonRateThrottle):
+    scope = "auth"
+
+
 class CustomObtainTokenPairView(TokenObtainPairView):
     permission_classes = (AllowAny,)
     serializer_class = CustomTokenObtainPairSerializer
