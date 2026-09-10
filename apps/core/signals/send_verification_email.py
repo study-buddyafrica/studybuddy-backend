@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@receiver(post_save, sender=EmailVerificationCode)
+@receiver(post_save, sender=EmailVerificationCode, dispatch_uid="send_verification_email_on_code_created")
 def send_verification_email_on_code_created(
     sender, instance, created, **kwargs
 ):
