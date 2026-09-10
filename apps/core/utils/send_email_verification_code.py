@@ -11,6 +11,7 @@ def send_verification_email_to_address(email: str, code: str):
         context={"code": code, "email": email},
         text_body=text_body,
         html_body=html_body,
+        fail_silently=True,
     )
 
 

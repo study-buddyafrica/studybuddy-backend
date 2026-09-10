@@ -1,0 +1,40 @@
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from apps.core.models import EmailVerificationCode
+from apps.core.utils.send_email_verification_code import send_verification_email_to_address
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@receiver(post_save, sender=EmailVerificationCode)
+def send_verification_email_on_code_created(
+    sender, instance, created, **kwargs
+):
+    """
+    Decoupled OTP email dispatch via post_save signal.
+    SMTP failures are caught and logged — they never abort the request
+    that created the verification code.
+    """
+    if not created:
+        return
+
+    if not instance.email:
+        return
+
+    try:
+        send_verification_email_to_address(instance.email, instance.code)
+        logger.info(
+            "Verification code email dispatched to %s (code id=%s)",
+            instance.email,
+            instance.id,
+        )
+    except Exception as exc:
+        logger.error(
+            "Failed to send verification code email to %s: %s",
+            instance.email,
+            exc,
+            exc_info=True,
+        )
+        # Do NOT re-raise — the code record exists; user can retry
