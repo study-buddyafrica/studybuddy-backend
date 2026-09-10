@@ -15,10 +15,10 @@ class PreRegisterEmailSerializer(serializers.Serializer):
     def save(self):
         email = self.validated_data["email"].lower().strip()
         EmailVerificationCode.objects.filter(email=email, user__isnull=True).delete()
-        record = EmailVerificationCode.create_for_email(email=email, user=None)     
+        EmailVerificationCode.create_for_email(email=email, user=None)
         # OTP email dispatch is handled by the post_save signal on EmailVerificationCode.
         # This keeps the request cycle decoupled from SMTP so failures never crash signup.
-        return {"message": "Verification code sent."}
+        return {"message": "Verification code requested."}
 
 
 class VerifyPreRegistrationSerializer(serializers.Serializer):

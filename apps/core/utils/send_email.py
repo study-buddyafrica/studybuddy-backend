@@ -66,4 +66,4 @@ def send_email(
         logger.error(f"Failed to send email to {to_email}: {e}", exc_info=True)
         if fail_silently:
             return False
-        raise e
+        raise

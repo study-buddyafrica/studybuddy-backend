@@ -16,6 +16,8 @@ def send_verification_email_on_code_created(
     Decoupled OTP email dispatch via post_save signal.
     SMTP failures are caught and logged — they never abort the request
     that created the verification code.
+    Note: This runs synchronously in the signal handler, but is decoupled
+    from the request cycle so that email failures do not cause HTTP 500.
     """
     if not created:
         return
@@ -24,12 +26,19 @@ def send_verification_email_on_code_created(
         return
 
     try:
-        send_verification_email_to_address(instance.email, instance.code)
-        logger.info(
-            "Verification code email dispatched to %s (code id=%s)",
-            instance.email,
-            instance.id,
-        )
+        sent = send_verification_email_to_address(instance.email, instance.code)
+        if sent:
+            logger.info(
+                "Verification code email dispatched to %s (code id=%s)",
+                instance.email,
+                instance.id,
+            )
+        else:
+            logger.warning(
+                "Verification code email dispatch failed (silent) to %s (code id=%s)",
+                instance.email,
+                instance.id,
+            )
     except Exception as exc:
         logger.error(
             "Failed to send verification code email to %s: %s",
