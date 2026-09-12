@@ -1,6 +1,8 @@
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.core.models import EmailVerificationCode
 from apps.school.models import EducationLevel
 from apps.users.models import StudentProfile
 
@@ -22,6 +24,13 @@ class UserRegistrationEducationLevelTests(APITestCase):
             },
         )
 
+    def mark_email_verified(self, email):
+        EmailVerificationCode.objects.create(
+            email=email,
+            code="123456",
+            verified_at=timezone.now(),
+        )
+
     def test_student_registration_accepts_education_level_id(self):
         payload = {
             "email": "student@example.com",
@@ -35,6 +44,7 @@ class UserRegistrationEducationLevelTests(APITestCase):
             "education_level_id": str(self.university.id),
         }
 
+        self.mark_email_verified(payload["email"])
         response = self.client.post("/api/users/register/", payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -55,6 +65,7 @@ class UserRegistrationEducationLevelTests(APITestCase):
             "country": "Kenya",
         }
 
+        self.mark_email_verified(payload["email"])
         response = self.client.post("/api/users/register/", payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

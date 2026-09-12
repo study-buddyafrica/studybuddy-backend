@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
 
-from apps.core.utils.send_email_verification_code import send_verification_email_to_address   
 from apps.core.models import EmailVerificationCode, User
 
 
@@ -15,10 +14,10 @@ class PreRegisterEmailSerializer(serializers.Serializer):
 
     def save(self):
         email = self.validated_data["email"].lower().strip()
-        EmailVerificationCode.objects.filter(email=email, user__isnull=True).delete()
-        record = EmailVerificationCode.create_for_email(email=email, user=None)
-        send_verification_email_to_address(email, record.code)
-        return {"message": "Verification code sent."}
+        EmailVerificationCode.create_for_email(email=email, user=None)
+        # OTP email dispatch is handled by the post_save signal on EmailVerificationCode.
+        # This keeps the request cycle decoupled from SMTP so failures never crash signup.
+        return {"message": "Verification code requested."}
 
 
 class VerifyPreRegistrationSerializer(serializers.Serializer):

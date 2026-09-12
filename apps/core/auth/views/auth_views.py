@@ -23,6 +23,7 @@ class CustomObtainTokenPairView(TokenObtainPairView):
 class CheckUserView(generics.GenericAPIView):
     permission_classes = (AllowAny,)
     serializer_class = CheckUserSerializer
+    throttle_classes = [AuthThrottle]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

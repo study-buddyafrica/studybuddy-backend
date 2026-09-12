@@ -7,4 +7,4 @@ class CoreConfig(AppConfig):
     label = 'core'
 
     def ready(self):
-        from .signals import sanitize_pre_save  # noqa: F401
+        from . import signals  # noqa: F401

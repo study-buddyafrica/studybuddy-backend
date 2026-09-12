@@ -7,11 +7,18 @@ logger = logging.getLogger(__name__)
 
 
 def send_email(
-    to_email, subject, text_body=None, html_body=None, context=None, template_name=None
+    to_email, 
+    subject, 
+    text_body=None, 
+    html_body=None, 
+    context=None, 
+    template_name=None, 
+    fail_silently=False,
 ):
     """
     Send email using Django's EmailMultiAlternatives.
     Supports plain text, HTML, and template-based rendering.
+    Returns True if email was sent successfully, False if fail_silently=True and sending failed.
     """
 
     if not to_email:
@@ -20,7 +27,6 @@ def send_email(
     if not text_body and not html_body and not template_name:
         raise ValueError("Email content (text, html, or template) must be provided.")
 
-    from django.conf import settings
     from_email = settings.DEFAULT_FROM_EMAIL or "noreply@studybuddy.africa"
     host_user = getattr(settings, "EMAIL_HOST_USER", None)
     if "@" not in str(from_email) and host_user:
@@ -38,7 +44,8 @@ def send_email(
             username=getattr(settings, "EMAIL_HOST_USER", None),
             password=getattr(settings, "EMAIL_HOST_PASSWORD", None),
             use_tls=getattr(settings, "EMAIL_USE_TLS", True),
-            fail_silently=False,
+            use_ssl=getattr(settings, "EMAIL_USE_SSL", False),
+            fail_silently=fail_silently,
         )
 
         msg = EmailMultiAlternatives(
@@ -54,7 +61,10 @@ def send_email(
 
         msg.send()
         logger.info(f"Email sent successfully to {to_email}")
+        return True
 
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}", exc_info=True)
-        raise e
+        if fail_silently:
+            return False
+        raise
