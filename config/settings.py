@@ -42,22 +42,15 @@ INSTALLED_APPS = [
     "apps.calendar",
 ]
 
-
-SECURE_CONTENT_TYPE_NOSNIFF = True
-
-
-SECURE_REFERRER_POLICY = "same-origin"
-
-SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
-
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-
+"""Security Headers"""
+SECURE_CONTENT_TYPE_NOSNIFF = True # (good)
+SECURE_REFERRER_POLICY = "same-origin" # (good)
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin" # (good)
+SECURE_HSTS_SECONDS = 31536000 # 1 year (good)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True # (good)
+SECURE_HSTS_PRELOAD = True # (good)
 if not DEBUG:
     SECURE_SSL_REDIRECT = True  # force HTTPS
-
-SECURE_CONTENT_TYPE_NOSNIFF = True
 
 """# Content Security Policy settings"""
 CSP_DEFAULT_SRC = ("'none'",)
@@ -112,12 +105,12 @@ CSRF_TRUSTED_ORIGINS = [
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-""" swagger settings"""
 
+"""Swagger Settings"""
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {
         "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
@@ -125,14 +118,13 @@ SWAGGER_SETTINGS = {
 }
 
 """JWT settings"""
-
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=4),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
-    "UPDATE_LAST_LOGIN": True,
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_COOKIE": "refresh_token",
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=4), # Access tokens are valid for 4 hours
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14), # Refresh tokens are valid for 14 days
+    "UPDATE_LAST_LOGIN": True, # Update the last login time when a user logs in
+    "ROTATE_REFRESH_TOKENS": True, # Rotate refresh tokens when they are used
+    "BLACKLIST_AFTER_ROTATION": True, # Blacklist refresh tokens after they are used
+    "AUTH_COOKIE": "refresh_token", # The name of the cookie to store the refresh token
     "AUTH_COOKIE_SECURE": not DEBUG,  # True in Production (requires HTTPS)
     "AUTH_COOKIE_HTTP_ONLY": True,  # Blocks XSS attacks from reading it
     "AUTH_COOKIE_SAMESITE": "None",  # Protects against CSRF attacks
@@ -177,11 +169,11 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "20/m",
-        "user": "2000/h",
-        "auth": "5/m",
-        "burst": "10/m",
-        "login": "5/m",
+        "anon": "20/m", # Anon users are limited to 20 requests per minute
+        "user": "2000/h", # Authenticated users are limited to 2000 requests per hour
+        "auth": "5/m", # Authenticated users are limited to 5 requests per minute
+        "burst": "10/m", # Burst requests are limited to 10 per minute
+        "login": "5/m", # Login requests are limited to 5 per minute
     },
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}
@@ -291,37 +283,52 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "core.User"
 
+def _env_first(*names: str, default: str = "") -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and value.strip():
+            return value
+    return default
+
+
+def _env_first_stripped(*names: str, default: str = "") -> str | None:
+    value = _env_first(*names, default=default).strip()
+    return value or None
+
+
+def _env_bool(*names: str, default: str = "false") -> bool:
+    return _env_first(*names, default=default).lower() in ("true", "1", "yes")
+
+
 def get_email_backend() -> str:
     """Prefer SMTP when credentials exist; otherwise fall back to console in local debug mode."""
-    mail_username = os.getenv("MAIL_USERNAME", "").strip()
-    mail_password = os.getenv("MAIL_PASSWORD", "").strip()
-    mail_debug_console = os.getenv("MAIL_DEBUG_CONSOLE", "true").lower() in (
-        "true",
-        "1",
-        "yes",
+    email_address = _env_first_stripped("EMAIL_HOST_USER", "MAIL_USERNAME")
+    email_password = _env_first_stripped("EMAIL_HOST_PASSWORD", "MAIL_PASSWORD")
+    email_debug_console = _env_bool(
+        "EMAIL_DEBUG_CONSOLE", "MAIL_DEBUG_CONSOLE", default="true"
     )
 
-    if mail_username and mail_password:
+    if email_address and email_password:
         return "django.core.mail.backends.smtp.EmailBackend"
-    if DEBUG and mail_debug_console:
+    if DEBUG and email_debug_console:
         return "django.core.mail.backends.console.EmailBackend"
     return "django.core.mail.backends.smtp.EmailBackend"
 
 
-# Email configuration
+# Email Configuration
 EMAIL_BACKEND = get_email_backend()
 EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() in ("true", "1", "yes")
-EMAIL_HOST_USER = os.getenv("MAIL_USERNAME", "").strip() or None
-EMAIL_HOST_PASSWORD = os.getenv("MAIL_PASSWORD", "").strip() or None
-DEFAULT_FROM_EMAIL = os.getenv("MAIL_DEFAULT_SENDER", EMAIL_HOST_USER or "noreply@studybuddy.africa")
-EMAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
-MAIL_DEBUG_CONSOLE = os.getenv("MAIL_DEBUG_CONSOLE", "true").lower() in (
-    "true",
-    "1",
-    "yes",
+EMAIL_HOST_USER = _env_first_stripped("EMAIL_HOST_USER", "MAIL_USERNAME")
+EMAIL_HOST_PASSWORD = _env_first_stripped("EMAIL_HOST_PASSWORD", "MAIL_PASSWORD")
+EMAIL_PORT = int(_env_first("EMAIL_PORT", "MAIL_PORT", default="587"))
+EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", "MAIL_USE_TLS", default="true")
+DEFAULT_FROM_EMAIL = _env_first(
+    "EMAIL_DEFAULT_SENDER",
+    "MAIL_DEFAULT_SENDER",
+    default="noreply@studybuddy.africa",
 )
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
+EMAIL_DEBUG_CONSOLE = _env_bool("EMAIL_DEBUG_CONSOLE", "MAIL_DEBUG_CONSOLE", default="true")
 
 # google auth
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
