@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from apps.core.throttling import PublicEndpointThrottle
 from apps.users.models import TeacherProfile
 from apps.users.serializers.list_teachers_serializer import TeacherProfileListSerializer
 
@@ -12,6 +13,7 @@ class TeacherListView(generics.ListAPIView):
 
     serializer_class = TeacherProfileListSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [PublicEndpointThrottle]
 
     def get_queryset(self):
         queryset = (

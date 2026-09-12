@@ -1,7 +1,9 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-
-from apps.core.auth.views.auth_views import CustomObtainTokenPairView, CheckUserView
+from apps.core.auth.views.auth_views import (
+    CheckUserView,
+    CustomObtainTokenPairView,
+    CustomTokenRefreshView,
+)
 from apps.core.auth.views.google_auth_view import GoogleOAuthConnectView
 from apps.core.auth.views.email_verification_view import (
     RequestRegistrationVerificationCode,
@@ -29,7 +31,7 @@ from apps.core.views.admin_views import (
 urlpatterns = [
     path("login/", CustomObtainTokenPairView.as_view(), name="token_obtain_pair"),
     path("auth/check_user/", CheckUserView.as_view(), name="auth-check-user"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path(
         "verify-email/request/",
         RequestRegistrationVerificationCode.as_view(),

@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()
 
@@ -174,6 +175,7 @@ REST_FRAMEWORK = {
         "auth": "5/m", # Authenticated users are limited to 5 requests per minute
         "burst": "10/m", # Burst requests are limited to 10 per minute
         "login": "5/m", # Login requests are limited to 5 per minute
+        "public": "60/m", # Public endpoints are limited to 60 requests per minute
     },
 }
 DRF_STANDARDIZED_ERRORS = {"ENABLE_IN_DEBUG_FOR_UNHANDLED_EXCEPTIONS": False}
@@ -335,12 +337,34 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'studybuddy-bridge-cache',
+# Redis Configuration
+REDIS_URL = os.getenv("REDIS_URL")
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
     }
-}
+elif REDIS_HOST:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
+        }
+    }
+else:
+    if not DEBUG:
+        raise ImproperlyConfigured("Production requires a shared cache (REDIS_URL or REDIS_HOST) for throttling to work correctly.")
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "studybuddy-bridge-cache",
+        }
+    }
 
 # intasend
 INTASEND_PUBLISHABLE_KEY = os.getenv("INTASEND_PUBLISHABLE_KEY")
