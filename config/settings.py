@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()
 
@@ -356,6 +357,8 @@ elif REDIS_HOST:
         }
     }
 else:
+    if not DEBUG:
+        raise ImproperlyConfigured("Production requires a shared cache (REDIS_URL or REDIS_HOST) for throttling to work correctly.")
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
