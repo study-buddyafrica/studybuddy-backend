@@ -13,14 +13,14 @@ class AuthThrottle(SimpleRateThrottle):
     scope = "login"
 
     def get_cache_key(self, request, view):
-        return self.get_ident(request)
+        return f"{self.scope}:{self.get_ident(request)}"
 
 
 class TokenRefreshThrottle(SimpleRateThrottle):
     scope = "auth"
 
     def get_cache_key(self, request, view):
-        return self.get_ident(request)
+        return f"{self.scope}:{self.get_ident(request)}"
 
 
 class CustomObtainTokenPairView(TokenObtainPairView):
