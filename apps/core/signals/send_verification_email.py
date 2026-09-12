@@ -14,16 +14,20 @@ def send_verification_email_on_code_created(
     sender, instance, created, **kwargs
 ):
     """
-    Decoupled OTP email dispatch via post_save signal.
+    OTP email dispatch scheduled via post_save signal.
     SMTP failures are caught and logged — they never abort the request
     that created the verification code.
-    Note: This runs synchronously in the signal handler, but is decoupled
-    from the request cycle so that email failures do not cause HTTP 500.
+    The email is sent after the database transaction is committed via
+    transaction.on_commit() to avoid sending OTPs for rolled-back transactions.
     """
     if not created:
         return
 
     if not instance.email:
+        return
+
+    # Skip if the email is already verified (e.g., admin-created or pre-verified)
+    if instance.verified_at is not None:
         return
 
     email = instance.email
