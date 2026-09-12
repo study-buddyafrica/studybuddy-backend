@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from apps.core.models import EmailVerificationCode
@@ -25,25 +26,32 @@ def send_verification_email_on_code_created(
     if not instance.email:
         return
 
-    try:
-        sent = send_verification_email_to_address(instance.email, instance.code)
-        if sent:
-            logger.info(
-                "Verification code email dispatched to %s (code id=%s)",
-                instance.email,
-                instance.id,
+    email = instance.email
+    code = instance.code
+    code_id = instance.id
+
+    def dispatch_email():
+        try:
+            sent = send_verification_email_to_address(email, code)
+            if sent:
+                logger.info(
+                    "Verification code email dispatched to %s (code id=%s)",
+                    email,
+                    code_id,
+                )
+            else:
+                logger.warning(
+                    "Verification code email dispatch failed (silent) to %s (code id=%s)",
+                    email,
+                    code_id,
+                )
+        except Exception as exc:
+            logger.error(
+                "Failed to send verification code email to %s: %s",
+                email,
+                exc,
+                exc_info=True,
             )
-        else:
-            logger.warning(
-                "Verification code email dispatch failed (silent) to %s (code id=%s)",
-                instance.email,
-                instance.id,
-            )
-    except Exception as exc:
-        logger.error(
-            "Failed to send verification code email to %s: %s",
-            instance.email,
-            exc,
-            exc_info=True,
-        )
-        # Do NOT re-raise — the code record exists; user can retry
+            # Do NOT re-raise — the code record exists; user can retry
+
+    transaction.on_commit(dispatch_email)
