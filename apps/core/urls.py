@@ -30,38 +30,15 @@ from apps.core.views.admin_views import (
 
 urlpatterns = [
     path("login/", CustomObtainTokenPairView.as_view(), name="token_obtain_pair"),
+    path("token/request/", CustomObtainTokenPairView.as_view(), name="token_obtain_pair_compat"),
     path("auth/check_user/", CheckUserView.as_view(), name="auth-check-user"),
     path("token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
-    path(
-        "verify-email/request/",
-        RequestRegistrationVerificationCode.as_view(),
-        name="email-verification-request",
-    ),
-    path(
-        "verify-email/confirm/",
-        VerifyRegistrationEmailView.as_view(),
-        name="email-verification-confirm",
-    ),
-    path(
-        "teacher/google/connect/",
-        GoogleOAuthConnectView.as_view(),
-        name="teacher-google-connect",
-    ),
-    path(
-        "password/reset/request/",
-        RequestPasswordResetView.as_view(),
-        name="password-reset-request",
-    ),
-    path(
-        "password/reset/confirm/",
-        ConfirmPasswordResetView.as_view(),
-        name="password-reset-confirm",
-    ),
-    path(
-        "password/reset/verify/",
-        VerifyPasswordResetCodeView.as_view(),
-        name="password-reset-verify",
-    ),
+    path("verify-email/request/", RequestRegistrationVerificationCode.as_view(), name="email-verification-request"),
+    path("verify-email/confirm/", VerifyRegistrationEmailView.as_view(), name="email-verification-confirm"),
+    path("teacher/google/connect/", GoogleOAuthConnectView.as_view(), name="teacher-google-connect"),
+    path("password/reset/request/", RequestPasswordResetView.as_view(), name="password-reset-request"),
+    path("password/reset/confirm/", ConfirmPasswordResetView.as_view(), name="password-reset-confirm"),
+    path("password/reset/verify/", VerifyPasswordResetCodeView.as_view(), name="password-reset-verify"),
     path("health/", DatabaseHealthCheckView.as_view(), name="database-health-check"),
     path("jitsi/", jitsi_room_link, name="jitsi-link"),
     path("whiteboard/", whiteboard_link, name="whiteboard-link"),
