@@ -339,19 +339,20 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
 
-# Redis Configuration
+# Redis / Cache Configuration
 REDIS_URL = os.getenv("REDIS_URL")
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 
-if REDIS_URL:
+# Use Redis only when an external URL or valid remote host is provided
+if REDIS_URL and not any(h in REDIS_URL for h in ("127.0.0.1", "localhost")):
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
             "LOCATION": REDIS_URL,
         }
     }
-elif REDIS_HOST:
+elif REDIS_HOST and REDIS_HOST not in ("127.0.0.1", "localhost", "0.0.0.0"):
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -359,8 +360,7 @@ elif REDIS_HOST:
         }
     }
 else:
-    if not DEBUG:
-        raise ImproperlyConfigured("Production requires a shared cache (REDIS_URL or REDIS_HOST) for throttling to work correctly.")
+    # Graceful in-memory cache fallback for single-container production and local development
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
