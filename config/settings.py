@@ -79,6 +79,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://0.0.0.0:8000",
+    "https://studybuddy-frotend.vercel.app",
     "https://studybuddy-frotend-staging.vercel.app",
     "https://studybuddy-backend-6vya.onrender.com",
 ]
@@ -100,6 +101,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://studybuddy.africa",
     "https://www.studybuddy.africa",
     "http://34.234.64.73:8000",
+    "https://studybuddy-frotend.vercel.app",
     "https://studybuddy-frotend-staging.vercel.app",
     "https://studybuddy-backend-6vya.onrender.com",
 ]
