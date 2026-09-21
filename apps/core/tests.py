@@ -175,3 +175,56 @@ class AuthRegressionTests(APITestCase):
             format="json",
         )
         self.assertEqual(reused_response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch(
+        "apps.core.signals.send_verification_email.send_verification_email_to_address",
+        return_value=True,
+    )
+    def test_expose_verification_code_when_setting_enabled(self, send_email):
+        with self.settings(EXPOSE_VERIFICATION_CODE=True):
+            response = self.client.post(
+                "/api/verify-email/request/",
+                {"email": "code-exposed@example.com"},
+                format="json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertIn("code", response.data)
+            self.assertEqual(len(response.data["code"]), 6)
+
+
+class SendEmailHttpApiTests(SimpleTestCase):
+    @patch("apps.core.utils.send_email.requests.post")
+    def test_send_email_via_resend(self, mock_post):
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.raise_for_status.return_value = None
+
+        with self.settings(RESEND_API_KEY="re_test_12345"):
+            from apps.core.utils.send_email import send_email
+            result = send_email(
+                to_email="test@example.com",
+                subject="Test Resend",
+                text_body="Hello Resend",
+            )
+            self.assertTrue(result)
+            mock_post.assert_called_once()
+            args, kwargs = mock_post.call_args
+            self.assertEqual(args[0], "https://api.resend.com/emails")
+            self.assertIn("Bearer re_test_12345", kwargs["headers"]["Authorization"])
+
+    @patch("apps.core.utils.send_email.requests.post")
+    def test_send_email_via_brevo(self, mock_post):
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.raise_for_status.return_value = None
+
+        with self.settings(RESEND_API_KEY=None, BREVO_API_KEY="xkeysib-test-12345"):
+            from apps.core.utils.send_email import send_email
+            result = send_email(
+                to_email="test@example.com",
+                subject="Test Brevo",
+                text_body="Hello Brevo",
+            )
+            self.assertTrue(result)
+            mock_post.assert_called_once()
+            args, kwargs = mock_post.call_args
+            self.assertEqual(args[0], "https://api.brevo.com/v3/smtp/email")
+            self.assertEqual(kwargs["headers"]["api-key"], "xkeysib-test-12345")

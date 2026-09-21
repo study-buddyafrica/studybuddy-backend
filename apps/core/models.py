@@ -108,7 +108,7 @@ class EmailVerificationCode(Core):
         return f"{random.randint(100000, 999999)}"
 
     def is_expired(self):
-        return timezone.now() > self.created_at + timedelta(minutes=2)
+        return timezone.now() > self.created_at + timedelta(minutes=15)
 
     def __str__(self):
         return f"{self.email} - {self.code}"

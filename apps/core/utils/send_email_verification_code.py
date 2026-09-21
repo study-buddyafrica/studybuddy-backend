@@ -2,8 +2,8 @@ from apps.core.utils.send_email import send_email
  
 def send_verification_email_to_address(email: str, code: str):
     subject = "Verify Your StudyBuddy Email"
-    text_body = f"Your verification code is {code}. It expires in 2 minutes."
-    html_body = f"<p>Your verification code is <strong>{code}</strong>. It expires in 2 minutes.</p>"
+    text_body = f"Your verification code is {code}. It expires in 15 minutes."
+    html_body = f"<p>Your verification code is <strong>{code}</strong>. It expires in 15 minutes.</p>"
 
     return send_email(
         to_email=email,

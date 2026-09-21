@@ -305,7 +305,10 @@ def _env_bool(*names: str, default: str = "false") -> bool:
 
 
 def get_email_backend() -> str:
-    """Prefer SMTP when credentials exist; otherwise fall back to console in local debug mode."""
+    """Prefer explicit env override, then SMTP when credentials exist; otherwise fall back to console in local debug mode."""
+    explicit_backend = _env_first("EMAIL_BACKEND", default=None)
+    if explicit_backend:
+        return explicit_backend
     email_address = _env_first_stripped("EMAIL_HOST_USER", "MAIL_USERNAME")
     email_password = _env_first_stripped("EMAIL_HOST_PASSWORD", "MAIL_PASSWORD")
     email_debug_console = _env_bool(
@@ -321,7 +324,7 @@ def get_email_backend() -> str:
 
 # Email Configuration
 EMAIL_BACKEND = get_email_backend()
-EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST = _env_first("EMAIL_HOST", "MAIL_HOST", default="smtp.gmail.com")
 EMAIL_HOST_USER = _env_first_stripped("EMAIL_HOST_USER", "MAIL_USERNAME")
 EMAIL_HOST_PASSWORD = _env_first_stripped("EMAIL_HOST_PASSWORD", "MAIL_PASSWORD")
 EMAIL_PORT = int(_env_first("EMAIL_PORT", "MAIL_PORT", default="587"))
@@ -333,6 +336,10 @@ DEFAULT_FROM_EMAIL = _env_first(
 )
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").lower() in ("true", "1", "yes")
 EMAIL_DEBUG_CONSOLE = _env_bool("EMAIL_DEBUG_CONSOLE", "MAIL_DEBUG_CONSOLE", default="true")
+EMAIL_TIMEOUT = int(_env_first("EMAIL_TIMEOUT", default="5"))
+EXPOSE_VERIFICATION_CODE = _env_bool("EXPOSE_VERIFICATION_CODE", default="false")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 # google auth
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
