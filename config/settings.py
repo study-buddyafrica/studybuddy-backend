@@ -84,6 +84,11 @@ CORS_ALLOWED_ORIGINS = [
     "https://studybuddy-backend-6vya.onrender.com",
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+    r"^https:\/\/.*\.studybuddy\.africa$",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
     "GET",
@@ -104,6 +109,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://studybuddy-frotend.vercel.app",
     "https://studybuddy-frotend-staging.vercel.app",
     "https://studybuddy-backend-6vya.onrender.com",
+    "https://*.vercel.app",
 ]
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -150,7 +156,6 @@ SPECTACULAR_SETTINGS = {
 }
 
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -217,9 +222,18 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 POSTGRES_LOCALLY = os.getenv("POSTGRES_LOCALLY", default=False)
 
 
-# if not DEBUG or POSTGRES_LOCALLY:
-# if DEBUG:
-if DATABASE_URL == "":
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+    if DEBUG:
+        db_host = DATABASES["default"].get("HOST", "unknown")
+        print(f"Connected to database host: {db_host}")
+else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -230,23 +244,6 @@ if DATABASE_URL == "":
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
-elif DATABASE_URL != "" and DEBUG:
-    DATABASES = {
-        "default": dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-    print(f"Using datbase: {DATABASE_URL}")
-# else:
-#     DATABASES = {
-#         "default": {
-#             "ENGINE": "django.db.backends.sqlite3",
-#             "NAME": BASE_DIR / "db.sqlite3",
-#         }
-#     }
-#     print("using sqlite locally")
 
 APPEND_SLASH = True
 
