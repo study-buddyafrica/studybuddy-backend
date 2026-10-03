@@ -17,6 +17,7 @@ from apps.school.views.session_booking_view import (
     SessionBookingListView,
 )
 from apps.school.views.livesession_view import (
+    DailyTokenView,
     LiveSessionCreateView,
     LiveSessionUpdateView,
     LiveSessionListView,
@@ -71,6 +72,11 @@ urlpatterns = [
         name="join-livesession",
     ),
     path("live-sessions/", LiveSessionListView.as_view(), name="livesession-list-view"),
+    path(
+        "live-sessions/<uuid:pk>/daily-token/",
+        DailyTokenView.as_view(),
+        name="livesession-daily-token",
+    ),
     path(
         "booked-sessions/",
         SessionBookingListView.as_view(),
