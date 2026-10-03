@@ -35,6 +35,7 @@ from apps.users.views.onboarding_views import (
     OnboardingCompleteView,
     OnboardingStatusView,
 )
+from apps.users.views.paystack_recipient_view import PaystackRecipientView
 
 user_router = DefaultRouter()
 user_router.register("teachers", TeacherProfileViewSet, basename="teacher")
@@ -101,6 +102,11 @@ urlpatterns = [
     path("teacher/profile/", TeacherProfileView.as_view(), name="teacher-profile"),
     path("student/profile/", StudentProfileView.as_view(), name="student-profile"),
     path("parent/profile/", ParentProfileView.as_view(), name="parent-profile"),
+    path(
+        "teacher/paystack-recipient/",
+        PaystackRecipientView.as_view(),
+        name="teacher-paystack-recipient",
+    ),
     path(
         "parent/profile/full/",
         ParentFullProfileView.as_view(),
