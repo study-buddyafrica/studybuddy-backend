@@ -228,3 +228,5 @@ omx/
 .codex/skills/.system/**
 !.codex/prompts/
 !.codex/prompts/**
+
+*.DS_Store

@@ -9,6 +9,8 @@ from apps.transactions.views.deposit_view import DepositAPIView
 from apps.transactions.views.wallet_view import WalletViewSet
 from apps.transactions.views.transactions_view import TransactionViewSet
 from apps.transactions.views.withdrawal_view import WithdrawAPIView
+from apps.transactions.views.paystack_withdrawal_view import PaystackWithdrawalView
+from apps.users.views.paystack_recipient_view import PaystackRecipientView
 
 transaction_router = DefaultRouter()
 transaction_router.register(
@@ -22,13 +24,13 @@ transaction_router.register(
 
 urlpatterns = [
     path(
-        "wallet/deposit/", 
-        DepositAPIView.as_view(), 
+        "wallet/deposit/",
+        DepositAPIView.as_view(),
         name="wallet-deposit"
     ),
     path(
-        'transactions/webhook', 
-        PaystackWebhookView.as_view(), 
+        'transactions/webhook',
+        PaystackWebhookView.as_view(),
         name='paystack-webhook'
     ),
     path(
@@ -37,14 +39,24 @@ urlpatterns = [
         name='paystack-initiate'
     ),
     path(
-        'deposit/success/', 
-        deposit_success_view, 
+        'deposit/success/',
+        deposit_success_view,
         name='deposit-success'
     ),
     path(
-        'withdraw/', 
-        WithdrawAPIView.as_view(), 
+        'withdraw/',
+        WithdrawAPIView.as_view(),
         name='withdraw'
     ),
-    
+    path(
+        'wallet/withdraw/',
+        PaystackWithdrawalView.as_view(),
+        name='paystack-withdraw'
+    ),
+    path(
+        'wallet/payout-recipient/',
+        PaystackRecipientView.as_view(),
+        name='payout-recipient'
+    ),
+
 ]+transaction_router.urls

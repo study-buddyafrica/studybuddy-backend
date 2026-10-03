@@ -17,13 +17,27 @@ class PaystackRecipientService:
         *,
         name: str,
         account_number: str,
-        bank_code: str,
+        bank_code: str = "MPESA",
         currency: str = "KES",
-        recipient_type: str = "nuban",
+        recipient_type: str = "mobile_money",
     ) -> str:
         secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "")
         if not secret_key:
             raise PaystackRecipientError("Paystack is not configured.")
+
+        # Validate account_number format for Kenya M-PESA (phone number: 254XXXXXXXXX)
+        if not account_number.startswith("254"):
+            raise PaystackRecipientError("Account number must be in Kenyan format: 254XXXXXXXXX")
+        if len(account_number) != 12:
+            raise PaystackRecipientError("Account number must be 12 digits (254XXXXXXXXX).")
+
+        # Enforce mobile_money type for Kenya M-PESA
+        if recipient_type != "mobile_money":
+            raise PaystackRecipientError("Recipient type must be 'mobile_money' for Kenya M-PESA.")
+        if bank_code != "MPESA":
+            raise PaystackRecipientError("Bank code must be 'MPESA' for Kenyan mobile money.")
+        if currency != "KES":
+            raise PaystackRecipientError("Currency must be 'KES' for Kenya.")
 
         payload = {
             "type": recipient_type,

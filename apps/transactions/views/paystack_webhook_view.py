@@ -7,6 +7,7 @@ import json
 import logging
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import transaction as db_transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -64,6 +65,20 @@ class PaystackWebhookView(APIView):
         log_entry.payload = data
         log_entry.save(update_fields=["event_type", "payload"])
 
+        # Redis idempotency guard for charge.success events
+        if event == "charge.success":
+            event_id = str(data.get("data", {}).get("id", ""))
+            if event_id:
+                cache_key = f"paystack:webhook:{event_id}"
+                # Returns True if key was newly set (not duplicate), False if already processed
+                is_new = cache.set(cache_key, True, timeout=86400, nx=True)
+                if not is_new:
+                    logger.info("Paystack webhook: duplicate charge.success event_id=%s", event_id)
+                    log_entry.remarks = "duplicate event ignored"
+                    log_entry.status_code = 200
+                    log_entry.save(update_fields=["remarks", "status_code"])
+                    return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
         try:
             if event == "charge.success":
                 self._handle_charge_success(data.get("data", {}))
@@ -106,7 +121,7 @@ class PaystackWebhookView(APIView):
                 logger.warning("charge.success: no transaction for ref=%s", reference)
                 return
 
-            # Idempotency guard
+            # Idempotency guard (database level)
             if tx.status == "success":
                 logger.info("charge.success: already processed ref=%s", reference)
                 return

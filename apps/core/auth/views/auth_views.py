@@ -2,13 +2,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import AnonRateThrottle
+
 from apps.core.auth.serializers.auth_serializer import (
     CustomTokenObtainPairSerializer,
     CheckUserSerializer,
 )
 
-class AuthThrottle(SimpleRateThrottle):
+class AuthThrottle(AnonRateThrottle):
     """Rate limit authentication endpoints to 5 attempts per minute."""
     scope = "login"
 
@@ -16,15 +17,11 @@ class AuthThrottle(SimpleRateThrottle):
         return f"{self.scope}:{self.get_ident(request)}"
 
 
-class TokenRefreshThrottle(SimpleRateThrottle):
+class TokenRefreshThrottle(AnonRateThrottle):
     scope = "auth"
 
     def get_cache_key(self, request, view):
         return f"{self.scope}:{self.get_ident(request)}"
-
-
-class TokenRefreshThrottle(AnonRateThrottle):
-    scope = "auth"
 
 
 class CustomObtainTokenPairView(TokenObtainPairView):
