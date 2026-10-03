@@ -2,6 +2,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, permissions
+from rest_framework.throttling import AnonRateThrottle
 from urllib.parse import urlparse
 
 from apps.core.auth.views.pagination_view import StandardResultsSetPagination
@@ -9,6 +10,11 @@ from apps.school.models import LiveSession
 from apps.school.serializers.livesession_serializer import LiveSessionSerializer
 from apps.core.permissions import IsVerified, IsTeacherOrAdmin
 from apps.core.utils.dailyco import DailyCoAPI
+import logging
+
+
+class DailyTokenThrottle(AnonRateThrottle):
+    scope = "burst"
 
 
 class LiveSessionCreateView(generics.GenericAPIView):
@@ -115,6 +121,7 @@ class DailyTokenView(generics.GenericAPIView):
     """Issue a fresh Daily token to an authorized live-session participant."""
 
     permission_classes = [permissions.IsAuthenticated, IsVerified]
+    throttle_classes = [DailyTokenThrottle]
 
     def get(self, request, pk):
         try:
@@ -154,7 +161,13 @@ class DailyTokenView(generics.GenericAPIView):
             )
 
         display_name = f"{user.first_name} {user.last_name}".strip() or user.username
-        token = DailyCoAPI().create_token(
+        daily_api = DailyCoAPI()
+        
+        # Warn if mock mode is active (no DAILY_API_KEY configured)
+        if daily_api.mock_mode:
+            logging.warning("Daily.co API running in MOCK MODE - no DAILY_API_KEY configured. Tokens are not secure.")
+        
+        token = daily_api.create_token(
             room_name=room_name,
             user_id=str(user.id),
             user_name=display_name,

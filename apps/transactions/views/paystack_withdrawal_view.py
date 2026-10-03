@@ -25,7 +25,7 @@ PAYSTACK_TRANSFER_URL = "https://api.paystack.co/transfer"
 
 
 class PaystackWithdrawalSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value="0.01")
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
 
 
 class PaystackWithdrawalView(APIView):
