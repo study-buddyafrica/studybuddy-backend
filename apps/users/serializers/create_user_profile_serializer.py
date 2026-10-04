@@ -89,7 +89,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         email = validated_data["email"].lower().strip()
         user = User.objects.create_user(**validated_data)
         user.account_confirmed = True
-        user.save(update_fields=["account_confirmed"])
+        user.onboarding_step = "step_2_profile"
+        user.save(update_fields=["account_confirmed", "onboarding_step"])
         EmailVerificationCode.objects.filter(email=email, user__isnull=True).delete()
 
         role = user.role
@@ -118,5 +119,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 "first_name": instance.first_name,
                 "last_name": instance.last_name,
                 "role": instance.role,
+                "onboarding_step": instance.onboarding_step,
             },
         }

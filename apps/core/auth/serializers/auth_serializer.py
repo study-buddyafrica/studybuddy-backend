@@ -13,6 +13,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["first_name"] = user.first_name
         token["role"] = getattr(user, "role", None)
         token["profile_id"] = cls.get_profile_id(user)
+        onboarding_step = getattr(user, "onboarding_step", "pending_otp")
+        token["onboarding_step"] = onboarding_step
+        token["is_onboarded"] = onboarding_step == "completed"
 
         return token
 
@@ -32,20 +35,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
+        profile_id = self.get_profile_id(self.user)
+        onboarding_step = getattr(self.user, "onboarding_step", "pending_otp")
+        role = getattr(self.user, "role", None)
 
-        # stop returning user object in API call
-        # profile_id = self.get_profile_id(self.user)
-
-        # user_data = {
-        #     "id": self.user.id,
-        #     "email": self.user.email,
-        #     "first_name": self.user.first_name,
-        #     "role": getattr(self.user, "role", None),
-        #     "is_superuser": self.user.is_superuser,
-        #     "profile_id": profile_id,
-        # }
-
-        # data.update({"user": data})
+        data["onboarding_step"] = onboarding_step
+        data["role"] = role
+        data["user"] = {
+            "id": str(self.user.id),
+            "email": self.user.email,
+            "first_name": self.user.first_name,
+            "last_name": getattr(self.user, "last_name", ""),
+            "role": role,
+            "onboarding_step": onboarding_step,
+            "is_onboarded": onboarding_step == "completed",
+            "account_confirmed": getattr(self.user, "account_confirmed", False),
+            "is_superuser": self.user.is_superuser,
+            "profile_id": profile_id,
+        }
         return data
 
 

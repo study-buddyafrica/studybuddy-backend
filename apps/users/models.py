@@ -21,11 +21,19 @@ def validate_pdf(value):
 
 
 class ParentChild(Core):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("active", "Active"),
+        ("revoked", "Revoked"),
+    ]
     parent = models.ForeignKey(
         "ParentProfile", on_delete=models.CASCADE, related_name="parent_children"
     )
     child = models.ForeignKey(
         "StudentProfile", on_delete=models.CASCADE, related_name="child_parents"
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="active"
     )
 
     class Meta:
@@ -37,12 +45,26 @@ class ParentChild(Core):
 
 
 class ParentProfile(models.Model):
+    RELATIONSHIP_CHOICES = [
+        ("Father", "Father"),
+        ("Mother", "Mother"),
+        ("Guardian", "Guardian"),
+        ("Sponsor", "Sponsor"),
+    ]
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="parent_profile"
     )
     children = models.ManyToManyField(
         "StudentProfile", through=ParentChild, related_name="parent_profiles"
     )
+    relationship_type = models.CharField(
+        max_length=50, choices=RELATIONSHIP_CHOICES, null=True, blank=True
+    )
+    mpesa_billing_phone = models.CharField(max_length=50, null=True, blank=True)
+    weekly_spend_limit_kes = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, default=5000.00
+    )
+    notification_preferences = models.JSONField(default=dict, blank=True)
     profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=50, null=True, blank=True)
@@ -85,6 +107,19 @@ class TeacherProfile(models.Model):
         blank=True,
         db_index=True,
     )
+    tsc_number = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Teachers Service Commission (TSC) number",
+    )
+    highest_qualification = models.CharField(
+        max_length=100, null=True, blank=True
+    )
+    institution_attended = models.CharField(
+        max_length=255, null=True, blank=True
+    )
+    curriculums_taught = models.JSONField(default=list, blank=True)
     teacher_license_certificate = models.FileField(
         upload_to=certificate_upload_path,
         validators=[validate_pdf],
@@ -194,6 +229,26 @@ class StudentProfile(Core):
         null=True,
         blank=True,
         related_name="students",
+    )
+    CURRICULUM_CHOICES = [
+        ("CBC", "CBC"),
+        ("8_4_4", "8-4-4"),
+        ("IGCSE", "IGCSE"),
+        ("OTHER", "Other"),
+    ]
+    curriculum_type = models.CharField(
+        max_length=20,
+        choices=CURRICULUM_CHOICES,
+        default="CBC",
+        null=True,
+        blank=True,
+    )
+    target_subjects = models.JSONField(default=list, blank=True)
+    primary_learning_goal = models.CharField(
+        max_length=255, null=True, blank=True
+    )
+    parent_phone_number = models.CharField(
+        max_length=50, null=True, blank=True
     )
     profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)

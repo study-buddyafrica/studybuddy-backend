@@ -36,6 +36,14 @@ class UserManager(BaseUserManager):
         return self.create_user(email, first_name, password, **extra_fields)
 
 
+class OnboardingStep(models.TextChoices):
+    PENDING_OTP = "pending_otp", "Pending OTP"
+    STEP_2_PROFILE = "step_2_profile", "Step 2 Profile"
+    STEP_3_ACADEMIC_KYC = "step_3_academic_kyc", "Step 3 Academic / KYC"
+    STEP_4_LAUNCH = "step_4_launch", "Step 4 Launch"
+    COMPLETED = "completed", "Completed"
+
+
 class User(AbstractBaseUser, PermissionsMixin, Core):
     ROLE_CHOICES = [
         ("student", "Student"),
@@ -51,6 +59,12 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
     email = models.EmailField(unique=True, max_length=100)
     username = models.CharField(unique=True, max_length=30)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)
+    onboarding_step = models.CharField(
+        max_length=30,
+        choices=OnboardingStep.choices,
+        default=OnboardingStep.PENDING_OTP,
+        db_index=True,
+    )
     country = models.CharField(
         max_length=50,
         choices=AfricanCountry.choices,

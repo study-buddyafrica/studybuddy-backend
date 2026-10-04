@@ -29,6 +29,12 @@ from apps.users.views.profile_views import (
     ParentChildrenView,
     ParentRegisterStudentView,
 )
+from apps.users.views.onboarding_views import (
+    OnboardingStep2View,
+    OnboardingStep3View,
+    OnboardingCompleteView,
+    OnboardingStatusView,
+)
 
 user_router = DefaultRouter()
 user_router.register("teachers", TeacherProfileViewSet, basename="teacher")
@@ -120,5 +126,86 @@ urlpatterns = [
         "parent/<uuid:parent_id>/register-student",
         ParentRegisterStudentView.as_view(),
         name="parent-register-student-by-id-no-slash",
+    ),
+    # Onboarding State Engine Endpoints (SAD §7)
+    path(
+        "v1/onboarding/step-2/",
+        OnboardingStep2View.as_view(),
+        name="v1-onboarding-step-2",
+    ),
+    path(
+        "v1/onboarding/step-2",
+        OnboardingStep2View.as_view(),
+        name="v1-onboarding-step-2-no-slash",
+    ),
+    path(
+        "v1/onboarding/step-3/",
+        OnboardingStep3View.as_view(),
+        name="v1-onboarding-step-3",
+    ),
+    path(
+        "v1/onboarding/step-3",
+        OnboardingStep3View.as_view(),
+        name="v1-onboarding-step-3-no-slash",
+    ),
+    path(
+        "v1/onboarding/complete/",
+        OnboardingCompleteView.as_view(),
+        name="v1-onboarding-complete",
+    ),
+    path(
+        "v1/onboarding/complete",
+        OnboardingCompleteView.as_view(),
+        name="v1-onboarding-complete-no-slash",
+    ),
+    path(
+        "v1/onboarding/status/",
+        OnboardingStatusView.as_view(),
+        name="v1-onboarding-status",
+    ),
+    path(
+        "v1/onboarding/status",
+        OnboardingStatusView.as_view(),
+        name="v1-onboarding-status-no-slash",
+    ),
+    path(
+        "onboarding/step-2/",
+        OnboardingStep2View.as_view(),
+        name="onboarding-step-2",
+    ),
+    path(
+        "onboarding/step-2",
+        OnboardingStep2View.as_view(),
+        name="onboarding-step-2-no-slash",
+    ),
+    path(
+        "onboarding/step-3/",
+        OnboardingStep3View.as_view(),
+        name="onboarding-step-3",
+    ),
+    path(
+        "onboarding/step-3",
+        OnboardingStep3View.as_view(),
+        name="onboarding-step-3-no-slash",
+    ),
+    path(
+        "onboarding/complete/",
+        OnboardingCompleteView.as_view(),
+        name="onboarding-complete",
+    ),
+    path(
+        "onboarding/complete",
+        OnboardingCompleteView.as_view(),
+        name="onboarding-complete-no-slash",
+    ),
+    path(
+        "onboarding/status/",
+        OnboardingStatusView.as_view(),
+        name="onboarding-status",
+    ),
+    path(
+        "onboarding/status",
+        OnboardingStatusView.as_view(),
+        name="onboarding-status-no-slash",
     ),
 ] + user_router.urls
