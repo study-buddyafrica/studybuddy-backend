@@ -118,3 +118,41 @@ def validate_hourly_rate(hourly_rate):
 
     if hourly_rate > 999999.99:
         raise ValidationError("Hourly rate is unreasonably high.")
+
+
+def validate_kyc_document(file):
+    """
+    Validate KYC uploaded document:
+    1. Size must not exceed 5MB (<= 5 * 1024 * 1024 bytes).
+    2. File header magic bytes must match PDF or JPEG/PNG.
+    """
+    if not file:
+        return file
+
+    max_size = 5 * 1024 * 1024  # 5MB
+    file_size = getattr(file, "size", None)
+    if file_size is not None and file_size > max_size:
+        raise ValidationError(
+            f"File size exceeds maximum allowed limit of 5MB ({file_size} bytes)."
+        )
+
+    initial_pos = file.tell() if hasattr(file, "tell") else 0
+    try:
+        header = file.read(8)
+    finally:
+        if hasattr(file, "seek"):
+            file.seek(initial_pos)
+
+    if not header:
+        raise ValidationError("Uploaded file is empty.")
+
+    is_pdf = header.startswith(b"%PDF")
+    is_jpg = header.startswith(b"\xff\xd8\xff")
+    is_png = header.startswith(b"\x89PNG\r\n\x1a\n")
+
+    if not (is_pdf or is_jpg or is_png):
+        raise ValidationError(
+            "Invalid file format. Only PDF, JPG, and PNG documents are accepted."
+        )
+
+    return file
