@@ -7,7 +7,11 @@ from rest_framework.exceptions import ValidationError
 from drf_spectacular.utils import OpenApiResponse, inline_serializer, extend_schema
 from rest_framework import serializers
 
-from apps.transactions.services.payment_service import PaymentService, PaystackAPIError
+from apps.transactions.services.payment_service import (
+    PaymentService,
+    PaystackAPIError,
+    PaystackConfigurationError,
+)
 
 
 class PaystackPaymentView(APIView):
@@ -50,6 +54,11 @@ class PaystackPaymentView(APIView):
             )
         except ValidationError:
             raise
+        except PaystackConfigurationError as exc:
+            return Response(
+                {"error": "Payment configuration error", "detail": str(exc)},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         except PaystackAPIError as exc:
             return Response(
                 {"error": "Payment gateway error", "detail": str(exc)},

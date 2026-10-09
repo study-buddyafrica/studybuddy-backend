@@ -17,6 +17,10 @@ class PaystackAPIError(Exception):
     """Raised when the Paystack API returns an error response."""
 
 
+class PaystackConfigurationError(PaystackAPIError):
+    """Raised when the Paystack integration has not been configured."""
+
+
 class PaymentService:
     PAYSTACK_INIT_URL = "https://api.paystack.co/transaction/initialize"
 
@@ -50,6 +54,11 @@ class PaymentService:
         reference = f"SB_{uuid.uuid4().hex}"
 
         secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "")
+        if not secret_key.strip():
+            raise PaystackConfigurationError(
+                "Paystack is not configured. Set PAYSTACK_SECRET_KEY on the backend."
+            )
+
         headers = {
             "Authorization": f"Bearer {secret_key}",
             "Content-Type": "application/json",
@@ -93,9 +102,17 @@ class PaymentService:
         )
 
         return {
+            "message": "Deposit initiated successfully.",
             "checkout_url": checkout_url,
             "transaction_id": pending_tx.id,
             "reference": reference,
+            "amount_details": {
+                "original_amount": amount_value,
+                "fee_amount": 0,
+                "total_checkout_amount": amount_value,
+                "you_pay": amount_value,
+                "you_get": amount_value,
+            },
         }
 
     @staticmethod
