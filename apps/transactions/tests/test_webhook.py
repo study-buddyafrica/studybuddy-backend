@@ -188,3 +188,120 @@ def test_property_6_duplicate_charge_success_idempotent():
         assert response.status_code == 200
         # save should NOT have been called again
         mock_tx.save.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Property 7: transfer.failed and transfer.reversed atomically refund wallet
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("event_name", ["transfer.failed", "transfer.reversed"])
+def test_transfer_failure_refunds_wallet_atomically(event_name):
+    """
+    On transfer.failed or transfer.reversed, debited wallet balance is refunded
+    atomically and transaction status is set to failed.
+    """
+    transfer_code = "TRF_test_code_999"
+    reference = "WD_test_ref_999"
+    data = {
+        "event": event_name,
+        "data": {
+            "transfer_code": transfer_code,
+            "reference": reference,
+            "amount": 500000,
+            "reason": "Recipient phone number inactive",
+        },
+    }
+    body = json.dumps(data).encode()
+    sig = _valid_sig(body)
+    request = _make_request(body, sig)
+
+    mock_tx = MagicMock()
+    mock_tx.id = "tx-uuid-999"
+    mock_tx.status = "pending"
+    mock_tx.amount = 5000
+    mock_tx.wallet_id = "wallet-uuid-999"
+    mock_wallet = MagicMock()
+    mock_tx.wallet = mock_wallet
+    mock_tx.metadata_info = {"transfer_code": transfer_code}
+
+    view = PaystackWebhookView()
+
+    with patch("apps.transactions.views.paystack_webhook_view.PaymentWebhookLog") as mock_log, \
+         patch("apps.transactions.views.paystack_webhook_view.Transaction") as mock_tx_model, \
+         patch("apps.transactions.views.paystack_webhook_view.Wallet") as mock_wallet_model, \
+         patch("apps.transactions.views.paystack_webhook_view.settings") as mock_settings, \
+         patch("apps.transactions.views.paystack_webhook_view.db_transaction") as mock_dbtx, \
+         patch("apps.transactions.views.paystack_webhook_view.EscrowWallet"):
+
+        mock_settings.PAYSTACK_SECRET_KEY = "test-secret"
+        mock_log.objects.create.return_value = MagicMock()
+        mock_dbtx.atomic.return_value.__enter__ = lambda s: s
+        mock_dbtx.atomic.return_value.__exit__ = MagicMock(return_value=False)
+
+        qs_mock = MagicMock()
+        qs_mock.filter.return_value.select_for_update.return_value.first.return_value = mock_tx
+        mock_tx_model.objects = qs_mock
+
+        wallet_qs_mock = MagicMock()
+        wallet_qs_mock.select_for_update.return_value.get.return_value = mock_wallet
+        mock_wallet_model.objects = wallet_qs_mock
+
+        response = view.post(request)
+        assert response.status_code == 200
+
+        # Assert transaction status changed to failed
+        assert mock_tx.status == "failed"
+        mock_tx.save.assert_called_once_with(update_fields=["status", "metadata_info"])
+
+        # Assert wallet deposit was called to refund
+        mock_wallet.deposit.assert_called_once_with(mock_tx.amount)
+
+
+def test_transfer_failed_idempotent_if_already_failed():
+    """
+    If transaction is already marked failed, subsequent webhook calls do not
+    double-refund the wallet.
+    """
+    transfer_code = "TRF_already_failed"
+    data = {
+        "event": "transfer.failed",
+        "data": {
+            "transfer_code": transfer_code,
+            "reason": "Duplicate failed notice",
+        },
+    }
+    body = json.dumps(data).encode()
+    sig = _valid_sig(body)
+    request = _make_request(body, sig)
+
+    mock_tx = MagicMock()
+    mock_tx.id = "tx-uuid-failed"
+    mock_tx.status = "failed"
+    mock_wallet = MagicMock()
+    mock_tx.wallet = mock_wallet
+
+    view = PaystackWebhookView()
+
+    with patch("apps.transactions.views.paystack_webhook_view.PaymentWebhookLog") as mock_log, \
+         patch("apps.transactions.views.paystack_webhook_view.Transaction") as mock_tx_model, \
+         patch("apps.transactions.views.paystack_webhook_view.Wallet") as mock_wallet_model, \
+         patch("apps.transactions.views.paystack_webhook_view.settings") as mock_settings, \
+         patch("apps.transactions.views.paystack_webhook_view.db_transaction") as mock_dbtx, \
+         patch("apps.transactions.views.paystack_webhook_view.EscrowWallet"):
+
+        mock_settings.PAYSTACK_SECRET_KEY = "test-secret"
+        mock_log.objects.create.return_value = MagicMock()
+        mock_dbtx.atomic.return_value.__enter__ = lambda s: s
+        mock_dbtx.atomic.return_value.__exit__ = MagicMock(return_value=False)
+
+        qs_mock = MagicMock()
+        qs_mock.filter.return_value.select_for_update.return_value.first.return_value = mock_tx
+        mock_tx_model.objects = qs_mock
+
+        response = view.post(request)
+        assert response.status_code == 200
+
+        # Must NOT refund or save again
+        mock_wallet.deposit.assert_not_called()
+        mock_tx.save.assert_not_called()
+

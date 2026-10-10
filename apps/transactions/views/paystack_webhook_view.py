@@ -84,6 +84,8 @@ class PaystackWebhookView(APIView):
                 self._handle_charge_success(data.get("data", {}))
             elif event == "transfer.success":
                 self._handle_transfer_success(data.get("data", {}))
+            elif event in ("transfer.failed", "transfer.reversed"):
+                self._handle_transfer_failed(data.get("data", {}))
         except Exception as exc:
             logger.exception("Paystack webhook processing error: %s", exc)
             log_entry.remarks = f"error: {exc}"
@@ -165,15 +167,37 @@ class PaystackWebhookView(APIView):
     @staticmethod
     def _handle_transfer_success(data: dict) -> None:
         transfer_code = data.get("transfer_code")
-        if not transfer_code:
+        reference = data.get("reference")
+        if not transfer_code and not reference:
             return
 
         with db_transaction.atomic():
-            tx = Transaction.objects.filter(
-                metadata_info__transfer_code=transfer_code
-            ).select_for_update().first()
+            tx = None
+            if transfer_code:
+                tx = (
+                    Transaction.objects.filter(
+                        metadata_info__transfer_code=transfer_code
+                    )
+                    .select_for_update()
+                    .first()
+                )
+            if not tx and reference:
+                tx = (
+                    Transaction.objects.filter(transaction_identifier=reference)
+                    .select_for_update()
+                    .first()
+                )
+
             if not tx:
-                logger.warning("transfer.success: no transaction for code=%s", transfer_code)
+                logger.warning(
+                    "transfer.success: no transaction for code=%s reference=%s",
+                    transfer_code,
+                    reference,
+                )
+                return
+
+            if tx.status == "success":
+                logger.info("transfer.success: tx %s already processed", tx.id)
                 return
 
             tx.status = "success"
@@ -186,3 +210,78 @@ class PaystackWebhookView(APIView):
             if escrow:
                 escrow.state = "released"
                 escrow.save(update_fields=["state"])
+
+    @staticmethod
+    def _handle_transfer_failed(data: dict) -> None:
+        transfer_code = data.get("transfer_code")
+        reference = data.get("reference")
+        reason = (
+            data.get("reason")
+            or data.get("complete_message")
+            or data.get("message")
+            or "Transfer failed or reversed by provider"
+        )
+
+        if not transfer_code and not reference:
+            logger.warning("transfer.failed/reversed: missing both transfer_code and reference")
+            return
+
+        with db_transaction.atomic():
+            tx = None
+            if transfer_code:
+                tx = (
+                    Transaction.objects.filter(
+                        metadata_info__transfer_code=transfer_code
+                    )
+                    .select_for_update()
+                    .first()
+                )
+            if not tx and reference:
+                tx = (
+                    Transaction.objects.filter(transaction_identifier=reference)
+                    .select_for_update()
+                    .first()
+                )
+
+            if not tx:
+                logger.warning(
+                    "transfer.failed/reversed: no transaction for code=%s reference=%s",
+                    transfer_code,
+                    reference,
+                )
+                return
+
+            if tx.status == "failed":
+                logger.info("transfer.failed/reversed: tx %s already marked failed", tx.id)
+                return
+
+            # Update transaction status and metadata
+            tx.status = "failed"
+            metadata = dict(tx.metadata_info or {})
+            metadata["failure_reason"] = reason
+            if transfer_code and "transfer_code" not in metadata:
+                metadata["transfer_code"] = transfer_code
+            tx.metadata_info = metadata
+            tx.save(update_fields=["status", "metadata_info"])
+
+            # Atomically refund debited funds back to the user's wallet
+            if tx.wallet:
+                wallet = Wallet.objects.select_for_update().get(id=tx.wallet_id)
+                wallet.deposit(tx.amount)
+                logger.info(
+                    "Refunded %s to wallet %s for failed transfer tx=%s",
+                    tx.amount,
+                    wallet.id,
+                    tx.id,
+                )
+
+            # Update EscrowWallet if this transfer was linked to escrow release
+            escrow = (
+                EscrowWallet.objects.filter(release_transaction=tx)
+                .select_for_update()
+                .first()
+            )
+            if escrow:
+                escrow.state = "failed"
+                escrow.save(update_fields=["state"])
+                logger.warning("Escrow %s marked failed following transfer failure", escrow.id)

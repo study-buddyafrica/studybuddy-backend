@@ -40,7 +40,9 @@ class PaystackPaymentView(APIView):
         data = request.data
         amount = data.get("amount")
         currency = data.get("currency", "KES")
-        transaction_type = data.get("transaction_type", "course_payment")
+        transaction_type = data.get("transaction_type")
+        if not transaction_type:
+            transaction_type = "deposit" if "deposit" in request.path else "course_payment"
         reference_id = data.get("reference_id", "")
 
         service = PaymentService()

@@ -51,8 +51,10 @@ def test_property_1_initiation_creates_pending_transaction(amount):
     service = PaymentService()
 
     with patch("apps.transactions.services.payment_service.requests.post") as mock_post, \
-         patch.object(PaymentService, "_create_pending_transaction") as mock_create:
+         patch.object(PaymentService, "_create_pending_transaction") as mock_create, \
+         patch("apps.transactions.services.payment_service.settings") as mock_settings:
 
+        mock_settings.PAYSTACK_SECRET_KEY = "sk_test_mock123"
         mock_response = MagicMock()
         mock_response.json.return_value = PAYSTACK_OK_RESPONSE
         mock_post.return_value = mock_response
