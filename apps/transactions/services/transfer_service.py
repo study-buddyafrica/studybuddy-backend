@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from decimal import Decimal
 
 import requests
 from django.conf import settings
@@ -117,7 +118,7 @@ class TransferService:
     @staticmethod
     def _calculate_payout(gross_amount: Money) -> Money:
         """gross_amount * (1 - PLATFORM_FEE_PERCENT / 100)"""
-        fee_percent = getattr(settings, "PLATFORM_FEE_PERCENT", 10)
-        multiplier = 1 - (float(fee_percent) / 100)
+        fee_percent = getattr(settings, "PLATFORM_FEE_PERCENT", 30)
+        multiplier = Decimal("1") - (Decimal(str(fee_percent)) / Decimal("100"))
         net = gross_amount.amount * multiplier
         return Money(round(net, 2), gross_amount.currency)

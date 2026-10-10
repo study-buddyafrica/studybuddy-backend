@@ -381,8 +381,8 @@ INTASEND_WEBHOOK_CHALLENGE = "studyyddubbuddy"
 # Paystack
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "")
 
-# Platform fee percentage deducted from escrow before teacher payout
-PLATFORM_FEE_PERCENT = float(os.getenv("PLATFORM_FEE_PERCENT", "10"))
+# Platform fee percentage deducted from escrow before teacher payout (30% platform fee, 70% teacher payout per SAD §1.2.1 / §8.2)
+PLATFORM_FEE_PERCENT = float(os.getenv("PLATFORM_FEE_PERCENT", "30"))
 
 # Base URL for generated session meeting links
 BASE_URL = os.getenv("BASE_URL", "https://meet.studybuddy.africa")
