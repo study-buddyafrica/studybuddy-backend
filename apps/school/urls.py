@@ -65,13 +65,21 @@ school_router.register(
 )
 
 urlpatterns = [
-    path("schools/", SchoolListCreateView.as_view(), name="school-list-create"),
+    path(
+        "schools/",
+        SchoolListCreateView.as_view(),
+        name="school-list-create"
+    ),
     path(
         "student/live-session/<uuid:session_booking_id>/join/",
         StudentJoinLiveSessionView.as_view(),
         name="join-livesession",
     ),
-    path("live-sessions/", LiveSessionListView.as_view(), name="livesession-list-view"),
+    path(
+        "live-sessions/",
+        LiveSessionListView.as_view(),
+        name="livesession-list-view"
+    ),
     path(
         "live-sessions/<uuid:pk>/daily-token/",
         DailyTokenView.as_view(),
@@ -118,14 +126,26 @@ urlpatterns = [
         TeacherLiveLessonsView.as_view(),
         name="teacher-live-lessons",
     ),
-    path("topics/", TopicCreateListView.as_view(), name="topic-list-create"),
-    path("subtopics/", SubtopicCreateListView.as_view(), name="subtopic-list-create"),
+    path(
+        "topics/",
+        TopicCreateListView.as_view(),
+        name="topic-list-create"
+    ),
+    path(
+        "subtopics/",
+        SubtopicCreateListView.as_view(),
+        name="subtopic-list-create"
+    ),
     path(
         "revision-materials/",
         RevisionMaterialCreateListView.as_view(),
         name="revision-materials",
     ),
-    path("assessments/", AssessmentCreateListView.as_view(), name="assessments"),
+    path(
+        "assessments/",
+        AssessmentCreateListView.as_view(),
+        name="assessments"
+    ),
     path(
         "assessments/",
         AssessmentCreateListView.as_view(),
@@ -136,7 +156,11 @@ urlpatterns = [
         AssessmentRetrieveUpdateView.as_view(),
         name="assessments-detail-update",
     ),
-    path("courses/", CourseCreateListView.as_view(), name="course-list-create"),
+    path(
+        "courses/",
+        CourseCreateListView.as_view(),
+        name="course-list-create"
+    ),
     path(
         "courses/enrollments/",
         CourseEnrollmentView.as_view(),

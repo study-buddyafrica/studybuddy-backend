@@ -27,13 +27,19 @@ class ParentChild(Core):
         ("revoked", "Revoked"),
     ]
     parent = models.ForeignKey(
-        "ParentProfile", on_delete=models.CASCADE, related_name="parent_children"
+        "ParentProfile",
+        on_delete=models.CASCADE,
+        related_name="parent_children"
     )
     child = models.ForeignKey(
-        "StudentProfile", on_delete=models.CASCADE, related_name="child_parents"
+        "StudentProfile",
+        on_delete=models.CASCADE,
+        related_name="child_parents"
     )
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="active"
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="active"
     )
 
     class Meta:
@@ -52,22 +58,51 @@ class ParentProfile(models.Model):
         ("Sponsor", "Sponsor"),
     ]
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="parent_profile"
+        User,
+        on_delete=models.CASCADE,
+        related_name="parent_profile"
     )
     children = models.ManyToManyField(
-        "StudentProfile", through=ParentChild, related_name="parent_profiles"
+        "StudentProfile",
+        through=ParentChild,
+        related_name="parent_profiles"
     )
     relationship_type = models.CharField(
-        max_length=50, choices=RELATIONSHIP_CHOICES, null=True, blank=True
+        max_length=50,
+        choices=RELATIONSHIP_CHOICES,
+        null=True,
+        blank=True
     )
-    mpesa_billing_phone = models.CharField(max_length=50, null=True, blank=True)
+    mpesa_billing_phone = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
     weekly_spend_limit_kes = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True, default=5000.00
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=5000.00
     )
-    notification_preferences = models.JSONField(default=dict, blank=True)
-    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=50, null=True, blank=True)
+    notification_preferences = models.JSONField(
+        default=dict,
+        blank=True
+    )
+    profile_picture = models.ImageField(
+        upload_to="profiles/",
+        null=True,
+        blank=True
+    )
+    birth_date = models.DateField(
+        null=True,
+        blank=True
+    )
+    gender = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
     national_identity_number = models.CharField(
         max_length=15,
         null=True,
@@ -92,9 +127,17 @@ class TeacherProfile(models.Model):
         ("approved", "Approved"),
         ("rejected", "Rejected"),
     ]
-    is_verified = models.BooleanField(default=False)
-    experience = models.PositiveSmallIntegerField(default=0)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    is_verified = models.BooleanField(
+        default=False
+    )
+    experience = models.PositiveSmallIntegerField(
+        default=0
+    )
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -114,12 +157,19 @@ class TeacherProfile(models.Model):
         help_text="Teachers Service Commission (TSC) number",
     )
     highest_qualification = models.CharField(
-        max_length=100, null=True, blank=True
+        max_length=100,
+        null=True,
+        blank=True
     )
     institution_attended = models.CharField(
-        max_length=255, null=True, blank=True
+        max_length=255,
+        null=True,
+        blank=True
     )
-    curriculums_taught = models.JSONField(default=list, blank=True)
+    curriculums_taught = models.JSONField(
+        default=list,
+        blank=True
+    )
     teacher_license_certificate = models.FileField(
         upload_to=certificate_upload_path,
         validators=[validate_pdf],
@@ -132,13 +182,25 @@ class TeacherProfile(models.Model):
         null=True,
         blank=True,
     )
-    bio = models.TextField(null=True, blank=True)
-    phone = models.CharField(max_length=50, null=True, blank=True)
+    bio = models.TextField(
+        null=True,
+        blank=True
+    )
+    phone = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
     hourly_rate = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
     )
     grade = models.ManyToManyField(
-        "school.Grade", related_name="teacher_grades", blank=True
+        "school.Grade",
+        related_name="teacher_grades",
+        blank=True
     )
     education_level = models.ForeignKey(
         "school.EducationLevel",
@@ -147,13 +209,37 @@ class TeacherProfile(models.Model):
         blank=True,
         related_name="teacher_profiles",
     )
-    profile_picture = models.ImageField(upload_to="profiles/", null=False, blank=False)
-    phone = models.CharField(max_length=50, null=False, blank=False)
-    birth_date = models.DateField(null=True, blank=True)
-    google_access_token = models.TextField(null=True, blank=True)
-    google_refresh_token = models.TextField(null=True, blank=True)
-    google_token_expiry = models.DateTimeField(null=True, blank=True)
-    gender = models.CharField(max_length=50, null=True, blank=True)
+    profile_picture = models.ImageField(
+        upload_to="profiles/",
+        null=False,
+        blank=False
+    )
+    phone = models.CharField(
+        max_length=50,
+        null=False,
+        blank=False
+    )
+    birth_date = models.DateField(
+        null=True,
+        blank=True
+    )
+    google_access_token = models.TextField(
+        null=True,
+        blank=True
+    )
+    google_refresh_token = models.TextField(
+        null=True,
+        blank=True
+    )
+    google_token_expiry = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+    gender = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
     national_identity_number = models.CharField(
         max_length=15,
         null=True,
@@ -163,8 +249,15 @@ class TeacherProfile(models.Model):
     national_identity_card = models.FileField(
         upload_to="identity_cards/", null=True, blank=True
     )
-    cv = models.FileField(upload_to="cvs/", null=True, blank=True)
-    subjects = models.ManyToManyField("school.Subject", related_name="teacher_profiles")
+    cv = models.FileField(
+        upload_to="cvs/",
+        null=True,
+        blank=True
+    )
+    subjects = models.ManyToManyField(
+        "school.Subject",
+        related_name="teacher_profiles"
+    )
     verification_status = models.CharField(
         max_length=20,
         choices=VERIFICATION_STATUS_CHOICES,
@@ -206,7 +299,9 @@ class StudentProfile(Core):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="student_profile"
+        User,
+        on_delete=models.CASCADE,
+        related_name="student_profile"
     )
     grade = models.ForeignKey(
         "school.Grade",
@@ -243,20 +338,52 @@ class StudentProfile(Core):
         null=True,
         blank=True,
     )
-    target_subjects = models.JSONField(default=list, blank=True)
+    target_subjects = models.JSONField(
+        default=list,
+        blank=True
+    )
     primary_learning_goal = models.CharField(
-        max_length=255, null=True, blank=True
+        max_length=255,
+        null=True,
+        blank=True
     )
     parent_phone_number = models.CharField(
-        max_length=50, null=True, blank=True
+        max_length=50,
+        null=True,
+        blank=True
     )
-    profile_picture = models.ImageField(upload_to="profiles/", null=True, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
-    contact_name = models.CharField(max_length=255, null=True, blank=True)
-    guardian_contact = models.CharField(max_length=50, null=True, blank=True)
-    enrollment_date = models.DateTimeField(auto_now_add=True)
-    gender = models.CharField(max_length=50, null=True, blank=True)
-    id_number = models.CharField(max_length=15, null=True, blank=True)
+    profile_picture = models.ImageField(
+        upload_to="profiles/",
+        null=True,
+        blank=True
+    )
+    birth_date = models.DateField(
+        null=True,
+        blank=True
+    )
+    contact_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+    guardian_contact = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
+    enrollment_date = models.DateTimeField(
+        auto_now_add=True
+    )
+    gender = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
+    id_number = models.CharField(
+        max_length=15,
+        null=True,
+        blank=True
+    )
     parents = models.ManyToManyField(
         "ParentProfile",
         through=ParentChild,
@@ -278,15 +405,24 @@ class StudentProfile(Core):
 class Availability(models.Model):
     """Teacher recurring availability or single slots"""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     teacher = models.ForeignKey(
         TeacherProfile,
         on_delete=models.CASCADE,
         related_name="availability",
     )
     date = models.DateTimeField()
-    end_date = models.DateTimeField(null=True, blank=True)
-    is_blocked = models.BooleanField(default=False)
+    end_date = models.DateTimeField(
+        null=True, 
+        blank=True
+    )
+    is_blocked = models.BooleanField(
+        default=False
+    )
 
     class Meta:
         db_table = "availability"
@@ -301,7 +437,11 @@ class Availability(models.Model):
 
 
 class TeacherRating(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     teacher = models.ForeignKey(
         TeacherProfile,
         on_delete=models.CASCADE,
@@ -329,7 +469,11 @@ class TeacherRating(models.Model):
 
 
 class StudentLead(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     course = models.ForeignKey(
         "school.Course",
         on_delete=models.CASCADE,

@@ -12,8 +12,12 @@ from django.contrib.auth.models import (
 
 
 class Core(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
 
     class Meta:
         abstract = True
@@ -50,15 +54,40 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
         ("parent", "Parent"),
         ("teacher", "Teacher"),
     ]
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    account_confirmed = models.BooleanField(default=False)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField(unique=True, max_length=100)
-    username = models.CharField(unique=True, max_length=30)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, null=True, blank=True)
+    first_name = models.CharField(
+        max_length=100
+    )
+    last_name = models.CharField(
+        max_length=100
+    )
+    is_active = models.BooleanField(
+        default=True
+    )
+    is_staff = models.BooleanField(
+        default=False
+    )
+    account_confirmed = models.BooleanField(
+        default=False
+    )
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    email = models.EmailField(
+        unique=True,
+        max_length=100
+    )
+    username = models.CharField(
+        unique=True,
+        max_length=30
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        null=True,
+        blank=True
+    )
     onboarding_step = models.CharField(
         max_length=30,
         choices=OnboardingStep.choices,
@@ -90,7 +119,11 @@ class User(AbstractBaseUser, PermissionsMixin, Core):
 
 
 class EmailVerificationCode(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -98,9 +131,19 @@ class EmailVerificationCode(Core):
         null=True,
         blank=True,
     )
-    code = models.CharField(max_length=6, db_index=True)
-    email = models.EmailField(null=True, blank=True, db_index=True)
-    verified_at = models.DateTimeField(null=True, blank=True)
+    code = models.CharField(
+        max_length=6,
+        db_index=True
+    )
+    email = models.EmailField(
+        null=True,
+        blank=True,
+        db_index=True
+    )
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     class Meta:
         indexes = [
@@ -129,10 +172,18 @@ class EmailVerificationCode(Core):
 
 
 class ResetPasswordCode(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     email = models.EmailField()
-    code = models.CharField(max_length=6)
-    verified = models.BooleanField(default=False)
+    code = models.CharField(
+        max_length=6
+    )
+    verified = models.BooleanField(
+        default=False
+    )
 
     class Meta:
         indexes = [

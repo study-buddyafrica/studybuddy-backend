@@ -29,10 +29,26 @@ from apps.core.views.admin_views import (
 )
 
 urlpatterns = [
-    path("login/", CustomObtainTokenPairView.as_view(), name="token_obtain_pair"),
-    path("token/request/", CustomObtainTokenPairView.as_view(), name="token_obtain_pair_compat"),
-    path("auth/check_user/", CheckUserView.as_view(), name="auth-check-user"),
-    path("token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
+    path(
+        "login/",
+        CustomObtainTokenPairView.as_view(),
+        name="token_obtain_pair"
+    ),
+    path(
+        "token/request/",
+        CustomObtainTokenPairView.as_view(),
+        name="token_obtain_pair_compat"
+    ),
+    path(
+        "auth/check_user/",
+        CheckUserView.as_view(),
+        name="auth-check-user"
+    ),
+    path(
+        "token/refresh/",
+        CustomTokenRefreshView.as_view(),
+        name="token_refresh"
+    ),
     path(
         "verify-email/request/",
         RequestRegistrationVerificationCode.as_view(),
@@ -63,21 +79,80 @@ urlpatterns = [
         VerifyPasswordResetCodeView.as_view(),
         name="password-reset-verify",
     ),
-    path("health/", DatabaseHealthCheckView.as_view(), name="database-health-check"),
-    path("jitsi/", jitsi_room_link, name="jitsi-link"),
-    path("whiteboard/", whiteboard_link, name="whiteboard-link"),
+    path(
+        "health/", DatabaseHealthCheckView.as_view(),
+        name="database-health-check"
+    ),
+    path(
+        "jitsi/",
+        jitsi_room_link,
+        name="jitsi-link"
+    ),
+    path(
+        "whiteboard/",
+        whiteboard_link,
+        name="whiteboard-link"
+    ),
     # Admin Dashboard Endpoints
-    path("admin/dashboard-stats/", admin_dashboard_stats, name="admin-dashboard-stats"),
-    path("admin/get-classes/", admin_get_classes, name="admin-get-classes"),
-    path("admin/get-classes", admin_get_classes, name="admin-get-classes-no-slash"),
-    path("admin/get-subjects/", admin_get_subjects, name="admin-get-subjects"),
-    path("admin/get-subjects", admin_get_subjects, name="admin-get-subjects-no-slash"),
-    path("admin/users/", admin_list_users, name="admin-list-users"),
-    path("admin/teachers/", admin_list_teachers, name="admin-list-teachers"),
-    path("admin/students/", admin_list_students, name="admin-list-students"),
+    path(
+        "admin/dashboard-stats/",
+        admin_dashboard_stats,
+        name="admin-dashboard-stats"
+    ),
+    path(
+        "admin/get-classes/",
+        admin_get_classes,
+        name="admin-get-classes"
+    ),
+    path(
+        "admin/get-classes",
+        admin_get_classes,
+        name="admin-get-classes-no-slash"
+    ),
+    path(
+        "admin/get-subjects/",
+        admin_get_subjects,
+        name="admin-get-subjects"
+    ),
+    path(
+        "admin/get-subjects",
+        admin_get_subjects,
+        name="admin-get-subjects-no-slash"
+    ),
+    path(
+        "admin/users/",
+        admin_list_users,
+        name="admin-list-users"
+    ),
+    path(
+        "admin/teachers/",
+        admin_list_teachers,
+        name="admin-list-teachers"
+    ),
+    path(
+        "admin/students/",
+        admin_list_students,
+        name="admin-list-students"
+    ),
     # Frontend compatibility endpoints
-    path("get-classes/", get_classes, name="get-classes"),
-    path("get-classes", get_classes, name="get-classes-no-slash"),
-    path("get-subjects/", get_subjects, name="get-subjects"),
-    path("get-subjects", get_subjects, name="get-subjects-no-slash"),
+    path(
+        "get-classes/",
+        get_classes,
+        name="get-classes"
+    ),
+    path(
+        "get-classes",
+        get_classes,
+        name="get-classes-no-slash"
+    ),
+    path(
+        "get-subjects/",
+        get_subjects,
+        name="get-subjects"
+    ),
+    path(
+        "get-subjects",
+        get_subjects,
+        name="get-subjects-no-slash"
+    ),
 ]

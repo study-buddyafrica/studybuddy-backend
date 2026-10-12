@@ -19,22 +19,37 @@ class Wallet(Core):
         ("parent", "Parent"),
         ("system", "System"),
     ]
-    is_active = models.BooleanField(default=True)
-    failed_withdraw_attempts = models.IntegerField(default=0)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    code = models.UUIDField(default=uuid.uuid4, null=True, blank=True)
-
+    is_active = models.BooleanField(
+        default=True
+    )
+    failed_withdraw_attempts = models.IntegerField(
+        default=0
+    )
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    code = models.UUIDField(
+        default=uuid.uuid4,
+        null=True,
+        blank=True
+    )
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name="wallet",
     )
-
     balance = MoneyField(
-        max_digits=14, decimal_places=2, default_currency="KES", default=0.00
+        max_digits=14,
+        decimal_places=2,
+        default_currency="KES",
+        default=0.00
     )
-
-    account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPE_CHOICES)
+    account_type = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_TYPE_CHOICES
+    )
 
     class Meta:
         db_table = "wallets"
@@ -135,8 +150,11 @@ class Transaction(Core):
         ("cancelled", "Cancelled"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     wallet = models.ForeignKey(
         Wallet,
         on_delete=models.SET_NULL,
@@ -144,52 +162,48 @@ class Transaction(Core):
         null=True,
         blank=True,
     )
-
     transaction_identifier = models.CharField(
         max_length=100,
         unique=True,
         db_index=True,
     )
-
-    amount = MoneyField(max_digits=14, decimal_places=2, default_currency="KES")
-
+    amount = MoneyField(
+        max_digits=14,
+        decimal_places=2,
+        default_currency="KES"
+    )
     transaction_type = models.CharField(
         max_length=20,
         choices=TRANSACTION_TYPE_CHOICES,
     )
-
     payment_method = models.CharField(
         max_length=20,
         choices=PAYMENT_METHOD_CHOICES,
         null=True,
         blank=True,
     )
-
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="pending",
     )
-
     account_number = models.CharField(
         max_length=255,
         null=True,
         blank=True,
     )
-
     description = models.CharField(
         max_length=255,
         null=True,
         blank=True,
     )
-
     metadata_info = models.JSONField(
         null=True,
         blank=True,
     )
-
-    timestamp = models.DateTimeField(auto_now_add=True)
-
+    timestamp = models.DateTimeField(
+        auto_now_add=True
+    )
     related_transaction = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
@@ -234,8 +248,11 @@ class Transaction(Core):
 class PaymentWebhookLog(Core):
     """Stores logs for payment webhooks from external payment gateways."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     transaction = models.ForeignKey(
         Transaction,
         on_delete=models.CASCADE,
@@ -243,17 +260,19 @@ class PaymentWebhookLog(Core):
         null=True,
         blank=True,
     )
-
     webhook_ref = models.CharField(
         max_length=150,
         db_index=True,
         null=True,
         blank=True,
     )
-
     payload = models.JSONField()
-    received_at = models.DateTimeField(auto_now_add=True)
-    processed = models.BooleanField(default=False)
+    received_at = models.DateTimeField(
+        auto_now_add=True
+    )
+    processed = models.BooleanField(
+        default=False
+    )
     status_code = models.IntegerField(
         null=True,
         blank=True,
@@ -301,20 +320,22 @@ class EscrowWallet(Core):
         ("failed", "Failed"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     session_booking = models.OneToOneField(
         "school.SessionBooking",
         on_delete=models.CASCADE,
         related_name="escrow_wallet",
     )
-
-    amount = MoneyField(max_digits=14, decimal_places=2, default_currency="KES")
-
+    amount = MoneyField(
+        max_digits=14, decimal_places=2, default_currency="KES"
+    )
     state = models.CharField(
         max_length=20, choices=STATE_CHOICES, default="held", db_index=True
     )
-
     held_transaction = models.ForeignKey(
         Transaction,
         on_delete=models.SET_NULL,
@@ -322,7 +343,6 @@ class EscrowWallet(Core):
         blank=True,
         related_name="escrow_holds",
     )
-
     release_transaction = models.ForeignKey(
         Transaction,
         on_delete=models.SET_NULL,

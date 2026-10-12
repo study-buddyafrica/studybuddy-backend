@@ -16,15 +16,28 @@ class CalendarEvent(Core):
         ("completed", "Completed"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    title = models.CharField(max_length=255)
-    start_datetime = models.DateTimeField(db_index=True)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    title = models.CharField(
+        max_length=255
+    )
+    start_datetime = models.DateTimeField(
+        db_index=True
+    )
     end_datetime = models.DateTimeField()
-
-    event_type = models.CharField(max_length=30, choices=EVENT_TYPE_CHOICES, db_index=True)
+    event_type = models.CharField(
+        max_length=30,
+        choices=EVENT_TYPE_CHOICES,
+        db_index=True
+    )
     status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="scheduled", db_index=True
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="scheduled",
+        db_index=True
     )
 
     reference_id = models.UUIDField(

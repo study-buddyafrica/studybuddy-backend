@@ -43,19 +43,71 @@ user_router.register(r"student-leads", StudentLeadViewSet, basename="student-lea
 user_router.register(r"availability", AvailabilityViewSet, basename="availability")
 
 urlpatterns = [
-    path("users/register/", UserRegistrationView.as_view(), name="user-register"),
-    path("me/", CurrentUserView.as_view(), name="current-user"),
-    path("me", CurrentUserView.as_view(), name="current-user-no-slash"),
-    path("me/teacher/", TeacherMeView.as_view(), name="me-teacher"),
-    path("me/student/", StudentMeView.as_view(), name="me-student"),
-    path("me/parent/", ParentMeView.as_view(), name="me-parent"),
-    path("users/me/", CurrentUserView.as_view(), name="users-current-user"),
-    path("users/me", CurrentUserView.as_view(), name="users-current-user-no-slash"),
-    path("users/users-list/", UserListView.as_view(), name="user-list"),
-    path("user/retrieve/<uuid:pk>/", UserDetailView.as_view(), name="user-detail"),
-    path("user/update/<uuid:pk>/", UserUpdateView.as_view(), name="user-update"),
-    path("user/delete/<uuid:pk>/", UserDeleteView.as_view(), name="user-delete"),
-    path("teachers/list", TeacherListView.as_view(), name="teacher-list"),
+    path(
+        "users/register/",
+        UserRegistrationView.as_view(),
+        name="user-register"
+    ),
+    path(
+        "me/",
+        CurrentUserView.as_view(),
+        name="current-user"
+    ),
+    path(
+        "me",
+        CurrentUserView.as_view(),
+        name="current-user-no-slash"
+    ),
+    path(
+        "me/teacher/",
+        TeacherMeView.as_view(),
+        name="me-teacher"
+    ),
+    path(
+        "me/student/",
+        StudentMeView.as_view(),
+        name="me-student"
+    ),
+    path(
+        "me/parent/",
+        ParentMeView.as_view(),
+        name="me-parent"
+    ),
+    path(
+        "users/me/",
+        CurrentUserView.as_view(),
+        name="users-current-user"
+    ),
+    path(
+        "users/me",
+        CurrentUserView.as_view(),
+        name="users-current-user-no-slash"
+    ),
+    path(
+        "users/users-list/",
+        UserListView.as_view(), 
+        name="user-list"
+    ),
+    path(
+        "user/retrieve/<uuid:pk>/",
+        UserDetailView.as_view(),
+        name="user-detail"
+    ),
+    path(
+        "user/update/<uuid:pk>/",
+        UserUpdateView.as_view(),
+        name="user-update"
+    ),
+    path(
+        "user/delete/<uuid:pk>/",
+        UserDeleteView.as_view(),
+        name="user-delete"
+    ),
+    path(
+        "teachers/list",
+        TeacherListView.as_view(),
+        name="teacher-list"
+    ),
     path(
         "parent/profile/update/<str:id>/",
         ParentProfileUpdateView.as_view(),
@@ -99,9 +151,21 @@ urlpatterns = [
         name="teacher-profile-update",
     ),
     # New RESTful Profile Endpoints
-    path("teacher/profile/", TeacherProfileView.as_view(), name="teacher-profile"),
-    path("student/profile/", StudentProfileView.as_view(), name="student-profile"),
-    path("parent/profile/", ParentProfileView.as_view(), name="parent-profile"),
+    path(
+        "teacher/profile/",
+        TeacherProfileView.as_view(),
+        name="teacher-profile"
+    ),
+    path(
+        "student/profile/",
+        StudentProfileView.as_view(),
+        name="student-profile"
+    ),
+    path(
+        "parent/profile/",
+        ParentProfileView.as_view(),
+        name="parent-profile"
+    ),
     path(
         "teacher/paystack-recipient/",
         PaystackRecipientView.as_view(),
@@ -112,7 +176,11 @@ urlpatterns = [
         ParentFullProfileView.as_view(),
         name="parent-full-profile",
     ),
-    path("parent/children/", ParentChildrenView.as_view(), name="parent-children"),
+    path(
+        "parent/children/",
+        ParentChildrenView.as_view(),
+        name="parent-children"
+    ),
     path(
         "parent/register-student/",
         ParentRegisterStudentView.as_view(),

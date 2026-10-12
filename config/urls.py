@@ -35,7 +35,11 @@ from apps.transactions.views.wallet_view import CurrentWalletView
 
 
 urlpatterns = [
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/schema/",
+        SpectacularAPIView.as_view(),
+        name="schema"
+    ),
     path(
         "api/swagger/",
         SpectacularSwaggerView.as_view(url_name="schema"),
@@ -46,12 +50,30 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
-    path("studybuddy-admin/", admin.site.urls),
-    path("api/", include("apps.core.urls")),
-    path("api/", include("apps.users.urls")),
-    path("api/", include("apps.school.urls")),
-    path("api/", include("apps.transactions.urls")),
-    path("api/", include("apps.calendar.urls")),
+    path(
+        "studybuddy-admin/",
+        admin.site.urls
+    ),
+    path(
+        "api/",
+        include("apps.core.urls")
+    ),
+    path(
+        "api/",
+        include("apps.users.urls")
+    ),
+    path(
+        "api/",
+        include("apps.school.urls")
+    ),
+    path(
+        "api/",
+        include("apps.transactions.urls")
+    ),
+    path(
+        "api/",
+        include("apps.calendar.urls")
+    ),
     # Auth compatibility routes
     path(
         "auth/forgot-password",
@@ -154,10 +176,26 @@ urlpatterns = [
         name="api-auth-reset-password-verify",
     ),
     # Root admin compatibility routes used by frontend
-    path("admin/get-classes", get_classes, name="root-admin-get-classes-no-slash"),
-    path("admin/get-classes/", get_classes, name="root-admin-get-classes"),
-    path("admin/get-subjects", get_subjects, name="root-admin-get-subjects-no-slash"),
-    path("admin/get-subjects/", get_subjects, name="root-admin-get-subjects"),
+    path(
+        "admin/get-classes",
+        get_classes,
+        name="root-admin-get-classes-no-slash"
+    ),
+    path(
+        "admin/get-classes/",
+        get_classes,
+        name="root-admin-get-classes"
+    ),
+    path(
+        "admin/get-subjects",
+        get_subjects,
+        name="root-admin-get-subjects-no-slash"
+    ),
+    path(
+        "admin/get-subjects/",
+        get_subjects,
+        name="root-admin-get-subjects"
+    ),
     path(
         "admin/dashboard-stats",
         admin_dashboard_stats,

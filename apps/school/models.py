@@ -7,21 +7,31 @@ from apps.core.models import Core
 from apps.core.utils.countries import AfricanCountry
 
 class School(Core):
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=50)
-    city = models.CharField(max_length=50)
+    name = models.CharField(
+        max_length=100
+    )
+    address = models.CharField(
+        max_length=50
+    )
+    city = models.CharField(
+        max_length=50
+    )
     country = models.CharField(
         max_length=50,
         choices=AfricanCountry.choices,
         default=AfricanCountry.KENYA,
     )
-    contact = models.CharField(max_length=50)
-    is_approved = models.BooleanField(default=False)
+    contact = models.CharField(
+        max_length=50
+    )
+    is_approved = models.BooleanField(
+        default=False
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
         editable=False
-        )
+    )
     created_by = models.ForeignKey(
         "core.User",
         on_delete=models.SET_NULL,
@@ -42,8 +52,14 @@ class Subject(Core):
     Represents a subject taught in a 
     specific class (e.g., Mathematics, Biology).
     """ 
-    name = models.CharField(max_length=150, db_index=True) 
-    description = models.TextField(blank=True, null=True) 
+    name = models.CharField(
+        max_length=150,
+        db_index=True
+    ) 
+    description = models.TextField(
+        blank=True,
+        null=True
+    ) 
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -76,8 +92,14 @@ class EducationLevel(Core):
         choices=AudienceTier.choices,
         db_index=True,
     )
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+    name = models.CharField(
+        max_length=100,
+        unique=True
+    )
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
 
     class Meta:
         db_table = "education_levels"
@@ -143,8 +165,12 @@ class Course(Core):
     """
     A course created by a teacher (e.g., Mathematics - Grade 9, Life Skills)
     """
-    is_active = models.BooleanField(default=True)
-    is_universal = models.BooleanField(default=False)
+    is_active = models.BooleanField(
+        default=True
+    )
+    is_universal = models.BooleanField(
+        default=False
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -223,15 +249,23 @@ class Course(Core):
 
 
 class CourseEnrollment(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     course = models.ForeignKey(
         "Course", on_delete=models.CASCADE, related_name="enrollments"
     )
     student = models.ForeignKey(
         "users.StudentProfile", on_delete=models.CASCADE, related_name="enrollments"
     )
-    purchased_at = models.DateTimeField(default=timezone.now)
-    is_active = models.BooleanField(default=True)
+    purchased_at = models.DateTimeField(
+        default=timezone.now
+    )
+    is_active = models.BooleanField(
+        default=True
+    )
     transaction = models.ForeignKey(
         "transactions.Transaction", on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -250,9 +284,15 @@ class CourseEnrollment(Core):
 
 class Topic(Core):
     """High-level topic under a specific course."""
-    title = models.CharField(max_length=200)
-    is_locked = models.BooleanField(default=True)
-    order = models.PositiveIntegerField(default=0)
+    title = models.CharField(
+        max_length=200
+    )
+    is_locked = models.BooleanField(
+        default=True
+    )
+    order = models.PositiveIntegerField(
+        default=0
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -287,10 +327,19 @@ class Topic(Core):
 
 class Subtopic(Core):
     """Subtopic or lesson content under a topic."""
-    title = models.CharField(max_length=200)
-    is_locked = models.BooleanField(default=True)
-    order = models.PositiveIntegerField(default=0)
-    content = models.TextField(blank=True, null=True)
+    title = models.CharField(
+        max_length=200
+    )
+    is_locked = models.BooleanField(
+        default=True
+    )
+    order = models.PositiveIntegerField(
+        default=0
+    )
+    content = models.TextField(
+        blank=True, 
+        null=True
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -326,7 +375,11 @@ class Subtopic(Core):
 
 
 class SessionBooking(Core):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
     student = models.ForeignKey(
         'users.StudentProfile', 
         on_delete=models.CASCADE, 
@@ -338,22 +391,33 @@ class SessionBooking(Core):
         default=BookingStatus.PENDING,
         db_index=True,
     )
-    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
     scheduled_start = models.DateTimeField()
-    scheduled_end = models.DateTimeField(null=True, blank=True)
-    is_allowed = models.BooleanField(default=False)
-    attended = models.BooleanField(default=False)
+    scheduled_end = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+    is_allowed = models.BooleanField(
+        default=False
+    )
+    attended = models.BooleanField(
+        default=False
+    )
     teacher = models.ForeignKey(
         'users.TeacherProfile', 
         on_delete=models.CASCADE, 
         related_name="teacher_session_bookings" 
     )
     course = models.ForeignKey(
-    Course, 
-    on_delete=models.SET_NULL, 
-    null=True, 
-    blank=True, 
-    related_name="session_bookings"   
+        Course, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="session_bookings"   
     )
     education_level = models.ForeignKey(
         EducationLevel,
@@ -383,11 +447,28 @@ class LiveSession(Core):
         default=uuid.uuid4, 
         editable=False
     )
-    title = models.CharField(max_length=200)
-    description = models.TextField(null=True, blank=True)
-    student_meeting_link = models.URLField(max_length=1000, null=True, blank=True)
-    teacher_meeting_link = models.URLField(max_length=1000, null=True, blank=True)
-    whiteboard_link = models.URLField(max_length=500, null=True,blank=True)
+    title = models.CharField(
+        max_length=200
+    )
+    description = models.TextField(
+        null=True,
+        blank=True
+    )
+    student_meeting_link = models.URLField(
+        max_length=1000,
+        null=True,
+        blank=True
+    )
+    teacher_meeting_link = models.URLField(
+        max_length=1000,
+        null=True,
+        blank=True
+    )
+    whiteboard_link = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True
+    )
     session = models.OneToOneField(
         SessionBooking,
         null=True,
@@ -422,8 +503,14 @@ class LiveSession(Core):
 
 class RevisionMaterial(Core):
     title = models.CharField(max_length=250)
-    description = models.TextField(blank=True, null=True)
-    file= models.FileField(blank=True, null=True)
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
+    file= models.FileField(
+        blank=True,
+        null=True
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -455,11 +542,24 @@ class AssessmentType(models.TextChoices):
 
 
 class Assessment(Core):
-    title = models.CharField(max_length=250)
-    description = models.TextField(blank=True, null=True)
-    due_date = models.DateTimeField(null=True, blank=True)
-    duration =models.TimeField(null=True, blank=True)
-    max_score = models.PositiveIntegerField(default=100)
+    title = models.CharField(
+        max_length=250
+    )
+    description = models.TextField(
+        blank=True, 
+        null=True
+    )
+    due_date = models.DateTimeField(
+        null=True, 
+        blank=True
+    )
+    duration = models.TimeField(
+        null=True, 
+        blank=True
+    )
+    max_score = models.PositiveIntegerField(
+        default=100
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -492,8 +592,12 @@ class Assessment(Core):
 
 class Question(models.Model):
     text = models.TextField()
-    order = models.PositiveIntegerField(default=0)
-    points = models.PositiveIntegerField(default=1)
+    order = models.PositiveIntegerField(
+        default=0
+    )
+    points = models.PositiveIntegerField(
+        default=1
+    )
     id = models.UUIDField(
         primary_key=True, 
         default=uuid.uuid4, 
@@ -515,10 +619,22 @@ class Question(models.Model):
 
 
 class Choice(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
-    text = models.CharField(max_length=1000)
-    is_correct = models.BooleanField(default=False)
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name="choices"
+    )
+    text = models.CharField(
+        max_length=1000
+    )
+    is_correct = models.BooleanField(
+        default=False
+    )
 
     class Meta:
         db_table = "choices"
@@ -528,14 +644,41 @@ class Choice(models.Model):
 
 
 class AssessmentSubmission(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="submissions")
-    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE, related_name="assessment_submissions") 
-    submitted_at = models.DateTimeField(default=timezone.now)
-    file_url = models.URLField(max_length=500, null=True, blank=True)
-    answers = models.JSONField(null=True, blank=True)
-    grading = models.FloatField(null=True, blank=True)
-    feedback = models.TextField(blank=True, null=True)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
+    assessment = models.ForeignKey(
+        Assessment, 
+        on_delete=models.CASCADE, 
+        related_name="submissions"
+    )
+    student = models.ForeignKey(
+        'users.StudentProfile', 
+        on_delete=models.CASCADE, 
+        related_name="assessment_submissions"
+    )
+    submitted_at = models.DateTimeField(
+        default=timezone.now
+    )
+    file_url = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True
+    )
+    answers = models.JSONField(
+        null=True,
+        blank=True
+    )
+    grading = models.FloatField(
+        null=True,
+        blank=True
+    )
+    feedback = models.TextField(
+        blank=True,
+        null=True
+    )
     status = models.CharField(
         max_length=20,
         choices=[("pending", "Pending"), ("graded", "Graded"), ("late", "Late")],
@@ -565,7 +708,11 @@ class PeerSession(Core):
         ("cancelled", "Cancelled"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(
+        primary_key=True, 
+        default=uuid.uuid4, 
+        editable=False
+    )
 
     initiator = models.ForeignKey(
         "users.StudentProfile",
@@ -582,18 +729,23 @@ class PeerSession(Core):
         on_delete=models.CASCADE,
         related_name="peer_sessions",
     )
-
-    meeting_link = models.URLField(max_length=1000, null=True, blank=True)
-
+    meeting_link = models.URLField(
+        max_length=1000,
+        null=True,
+        blank=True
+    )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="active",
         db_index=True,
     )
-
-    completed_at = models.DateTimeField(null=True, blank=True)
-    cancelled_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(
+        null=True, blank=True
+    )
+    cancelled_at = models.DateTimeField(
+        null=True, blank=True
+    )
 
     class Meta:
         db_table = "peer_sessions"
@@ -608,30 +760,60 @@ class PeerSession(Core):
 
 
 class SubtopicProgress(models.Model):
-    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
-    subtopic = models.ForeignKey(Subtopic, on_delete=models.CASCADE)
-    is_complete = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    student = models.ForeignKey(
+        'users.StudentProfile',
+        on_delete=models.CASCADE
+    )
+    subtopic = models.ForeignKey(
+        Subtopic,
+        on_delete=models.CASCADE
+    )
+    is_complete = models.BooleanField(
+        default=False
+    )
+    completed_at = models.DateTimeField(
+        null=True, blank=True
+    )
 
     class Meta:
         unique_together = ("student", "subtopic")
 
 
 class TopicProgress(models.Model):
-    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
-    is_complete = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    student = models.ForeignKey(
+        'users.StudentProfile',
+        on_delete=models.CASCADE
+    )
+    topic = models.ForeignKey(
+        Topic,
+        on_delete=models.CASCADE
+    )
+    is_complete = models.BooleanField(
+        default=False
+    )
+    completed_at = models.DateTimeField(
+        null=True, blank=True
+    )
 
     class Meta:
         unique_together = ("student", "topic")
 
 
 class CourseProgress(models.Model):
-    student = models.ForeignKey('users.StudentProfile', on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    is_complete = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    student = models.ForeignKey(
+        'users.StudentProfile',
+        on_delete=models.CASCADE
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE
+    )
+    is_complete = models.BooleanField(
+        default=False
+    )
+    completed_at = models.DateTimeField(
+        null=True, blank=True
+    )
 
     class Meta:
         unique_together = ("student", "course")
