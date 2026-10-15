@@ -1,21 +1,52 @@
-from django.core.mail import EmailMultiAlternatives, get_connection
-from django.conf import settings
-from django.template.loader import render_to_string
 import logging
+import re
 import requests
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives, get_connection
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_FROM_EMAIL_SAFE = "StudyBuddy Africa <noreply@studybuddy.africa>"
+# RFC 5322 bracketed address format enforcing verified @studybuddy.africa domain
+RFC_5322_FROM_REGEX = re.compile(
+    r"^([^<>\r\n]+)\s*<([a-zA-Z0-9_.+-]+@studybuddy\.africa)>$"
+)
+
+
+def sanitize_from_email(from_email: str | None = None) -> str:
+    """
+    Sanitize sender email for Resend and transactional email dispatch.
+    Ensures from_email adheres strictly to RFC 5322 format with a verified
+    @studybuddy.africa domain (e.g., 'StudyBuddy Africa <noreply@studybuddy.africa>').
+    Strips accidental outer quotes and falls back safely to DEFAULT_FROM_EMAIL_SAFE
+    if from_email is missing, bare/unbracketed, or uses an unverified domain.
+    """
+    if not from_email:
+        return DEFAULT_FROM_EMAIL_SAFE
+
+    # Strip whitespace and any enclosing outer quotation marks (e.g. '"..."' or "'...'")
+    cleaned = str(from_email).strip().strip("\"'").strip()
+
+    match = RFC_5322_FROM_REGEX.match(cleaned)
+    if not match:
+        return DEFAULT_FROM_EMAIL_SAFE
+
+    display_name = match.group(1).strip().strip("\"'").strip()
+    email_address = match.group(2).strip()
+    return f"{display_name} <{email_address}>"
 
 
 def _send_via_resend(api_key: str, to_email: str, subject: str, text_body: str, html_body: str, from_email: str) -> bool:
     """Send transactional email via Resend HTTP API (Port 443 HTTPS)."""
+    sanitized_from = sanitize_from_email(from_email)
     url = "https://api.resend.com/emails"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
     payload = {
-        "from": from_email,
+        "from": sanitized_from,
         "to": [to_email] if isinstance(to_email, str) else to_email,
         "subject": subject,
         "text": text_body or "",
@@ -63,6 +94,7 @@ def send_email(
     context=None, 
     template_name=None, 
     fail_silently=False,
+    from_email=None,
 ):
     """
     Send email using HTTP API (Resend/Brevo) if configured, or Django's EmailMultiAlternatives (SMTP).
@@ -76,10 +108,13 @@ def send_email(
     if not text_body and not html_body and not template_name:
         raise ValueError("Email content (text, html, or template) must be provided.")
 
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@studybuddy.africa"
-    host_user = getattr(settings, "EMAIL_HOST_USER", None)
-    if "@" not in str(from_email) and host_user:
-        from_email = f"{from_email} <{host_user}>"
+    configured_from = (
+        from_email
+        or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+        or getattr(settings, "EMAIL_DEFAULT_SENDER", None)
+        or getattr(settings, "MAIL_DEFAULT_SENDER", None)
+    )
+    from_email = sanitize_from_email(configured_from)
 
     if template_name and context:
         html_body = render_to_string(template_name, context)

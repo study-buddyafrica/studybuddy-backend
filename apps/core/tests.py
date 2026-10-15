@@ -193,12 +193,46 @@ class AuthRegressionTests(APITestCase):
 
 
 class SendEmailHttpApiTests(SimpleTestCase):
+    def test_sanitize_from_email_valid_rfc5322(self):
+        from apps.core.utils.send_email import sanitize_from_email
+        result = sanitize_from_email("StudyBuddy Africa <noreply@studybuddy.africa>")
+        self.assertEqual(result, "StudyBuddy Africa <noreply@studybuddy.africa>")
+
+    def test_sanitize_from_email_strips_outer_quotes(self):
+        from apps.core.utils.send_email import sanitize_from_email
+        result_double = sanitize_from_email('"StudyBuddy Africa <noreply@studybuddy.africa>"')
+        result_single = sanitize_from_email("'StudyBuddy Africa <noreply@studybuddy.africa>'")
+        self.assertEqual(result_double, "StudyBuddy Africa <noreply@studybuddy.africa>")
+        self.assertEqual(result_single, "StudyBuddy Africa <noreply@studybuddy.africa>")
+
+    def test_sanitize_from_email_strips_quotes_from_display_name(self):
+        from apps.core.utils.send_email import sanitize_from_email
+        result = sanitize_from_email('"StudyBuddy Africa" <noreply@studybuddy.africa>')
+        self.assertEqual(result, "StudyBuddy Africa <noreply@studybuddy.africa>")
+
+    def test_sanitize_from_email_fallbacks(self):
+        from apps.core.utils.send_email import sanitize_from_email, DEFAULT_FROM_EMAIL_SAFE
+        # Bare name string (cause of Resend 422 in testing sync)
+        self.assertEqual(sanitize_from_email("Studybuddy Africa"), DEFAULT_FROM_EMAIL_SAFE)
+        # Bare unbracketed email address
+        self.assertEqual(sanitize_from_email("noreply@studybuddy.africa"), DEFAULT_FROM_EMAIL_SAFE)
+        # Unverified domain
+        self.assertEqual(sanitize_from_email("StudyBuddy <admin@gmail.com>"), DEFAULT_FROM_EMAIL_SAFE)
+        # None and empty string
+        self.assertEqual(sanitize_from_email(None), DEFAULT_FROM_EMAIL_SAFE)
+        self.assertEqual(sanitize_from_email(""), DEFAULT_FROM_EMAIL_SAFE)
+
+    def test_sanitize_from_email_preserves_other_studybuddy_senders(self):
+        from apps.core.utils.send_email import sanitize_from_email
+        result = sanitize_from_email("StudyBuddy Support <support@studybuddy.africa>")
+        self.assertEqual(result, "StudyBuddy Support <support@studybuddy.africa>")
+
     @patch("apps.core.utils.send_email.requests.post")
     def test_send_email_via_resend(self, mock_post):
         mock_post.return_value.status_code = 200
         mock_post.return_value.raise_for_status.return_value = None
 
-        with self.settings(RESEND_API_KEY="re_test_12345"):
+        with self.settings(RESEND_API_KEY="re_test_12345", DEFAULT_FROM_EMAIL='"StudyBuddy Africa <noreply@studybuddy.africa>"'):
             from apps.core.utils.send_email import send_email
             result = send_email(
                 to_email="test@example.com",
@@ -210,6 +244,24 @@ class SendEmailHttpApiTests(SimpleTestCase):
             args, kwargs = mock_post.call_args
             self.assertEqual(args[0], "https://api.resend.com/emails")
             self.assertIn("Bearer re_test_12345", kwargs["headers"]["Authorization"])
+            self.assertEqual(kwargs["json"]["from"], "StudyBuddy Africa <noreply@studybuddy.africa>")
+
+    @patch("apps.core.utils.send_email.requests.post")
+    def test_send_email_via_resend_with_bare_name_setting_falls_back(self, mock_post):
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.raise_for_status.return_value = None
+
+        with self.settings(RESEND_API_KEY="re_test_12345", DEFAULT_FROM_EMAIL="Studybuddy Africa"):
+            from apps.core.utils.send_email import send_email
+            result = send_email(
+                to_email="test@example.com",
+                subject="Test Bare Name Fallback",
+                text_body="Hello Resend",
+            )
+            self.assertTrue(result)
+            mock_post.assert_called_once()
+            _, kwargs = mock_post.call_args
+            self.assertEqual(kwargs["json"]["from"], "StudyBuddy Africa <noreply@studybuddy.africa>")
 
     @patch("apps.core.utils.send_email.requests.post")
     def test_send_email_via_brevo(self, mock_post):
