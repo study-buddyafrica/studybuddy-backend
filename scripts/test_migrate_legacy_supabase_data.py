@@ -199,6 +199,29 @@ class TestMigrationTransformations(unittest.TestCase):
         self.migrator.migrate_revision_materials(legacy_cur, target_cur)
         self.assertEqual(self.migrator.stats.stats["revision_materials"]["inserted"], 1)
 
+    def test_subject_deduplication_and_fk_mapping(self):
+        legacy_cur = MagicMock()
+        target_cur = MagicMock()
+
+        sub_id_1 = str(uuid.uuid4())
+        sub_id_2 = str(uuid.uuid4())
+
+        # Legacy table has duplicate subjects (same name, different UUIDs)
+        legacy_cur.fetchall.return_value = [
+            {"id": sub_id_1, "name": "Mathematics", "description": ""},
+            {"id": sub_id_2, "name": "mathematics", "description": ""},
+        ]
+
+        self.migrator.migrate_subjects(legacy_cur, target_cur)
+
+        # Confirm deduplication: only 1 inserted, 1 skipped
+        self.assertEqual(self.migrator.stats.stats["subjects"]["inserted"], 1)
+        self.assertEqual(self.migrator.stats.stats["subjects"]["skipped"], 1)
+
+        # Confirm both legacy UUIDs map to the canonical subject UUID
+        self.assertEqual(self.migrator.legacy_to_canonical_subject_id[sub_id_1], sub_id_1)
+        self.assertEqual(self.migrator.legacy_to_canonical_subject_id[sub_id_2], sub_id_1)
+
 
 if __name__ == "__main__":
     unittest.main()

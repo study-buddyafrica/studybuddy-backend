@@ -35,6 +35,7 @@ import logging
 import os
 import re
 import sys
+import time
 import urllib.request
 import uuid
 from datetime import datetime
@@ -166,13 +167,19 @@ class PostgRESTCursorAdapter:
             "apikey": self.api_key,
             "Authorization": f"Bearer {self.api_key}",
         }
-        try:
-            req = urllib.request.Request(endpoint, headers=headers)
-            with urllib.request.urlopen(req) as resp:
-                self.rows = json.loads(resp.read().decode())
-        except Exception as e:
-            logger.error(f"PostgREST extraction failed for {table}: {e}")
-            self.rows = []
+        for attempt in range(3):
+            try:
+                req = urllib.request.Request(endpoint, headers=headers)
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    self.rows = json.loads(resp.read().decode())
+                    return
+            except Exception as e:
+                logger.warning(f"PostgREST extraction attempt {attempt + 1}/3 failed for {table}: {e}")
+                if attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+                else:
+                    logger.error(f"PostgREST extraction permanently failed for {table}: {e}")
+                    self.rows = []
 
     def fetchall(self) -> List[Dict[str, Any]]:
         return self.rows
@@ -306,6 +313,9 @@ class LegacyDataMigrator:
         self.migrated_teacher_ids: Set[str] = set()
         self.migrated_course_ids: Set[str] = set()
         self.migrated_topic_ids: Set[str] = set()
+        self.legacy_to_canonical_subject_id: Dict[str, str] = {}
+        self.legacy_to_canonical_grade_id: Dict[str, str] = {}
+        self.legacy_to_canonical_user_id: Dict[str, str] = {}
 
     def connect_db(self, url: str, read_only: bool = False, is_target: bool = False):
         try:
@@ -446,7 +456,7 @@ class LegacyDataMigrator:
 
             grade_id = str(row["id"])
             if norm_level in self.grade_map:
-                self.grade_map[norm_level] = self.grade_map[norm_level]
+                self.legacy_to_canonical_grade_id[grade_id] = self.grade_map[norm_level]
                 self.stats.increment(table, "skipped")
                 continue
 
@@ -462,12 +472,16 @@ class LegacyDataMigrator:
                 )
                 res = target_cur.fetchone()
                 if res:
-                    self.grade_map[norm_level] = str(res["id"])
+                    canonical_id = str(res["id"])
+                    self.grade_map[norm_level] = canonical_id
+                    self.legacy_to_canonical_grade_id[grade_id] = canonical_id
                     self.stats.increment(table, "inserted")
                 else:
+                    self.legacy_to_canonical_grade_id[grade_id] = self.grade_map[norm_level]
                     self.stats.increment(table, "skipped")
             else:
                 self.grade_map[norm_level] = grade_id
+                self.legacy_to_canonical_grade_id[grade_id] = grade_id
                 self.stats.increment(table, "inserted")
 
     # ---------------------------------------------------------
@@ -481,20 +495,33 @@ class LegacyDataMigrator:
         legacy_cur.execute("SELECT id, name, description, created_at, updated_at FROM subjects;")
         legacy_rows = legacy_cur.fetchall()
 
+        raw_map = {str(r["id"]): (r.get("name") or "").strip() for r in legacy_rows}
+
+        def resolve_subject_name(sid: str, depth: int = 0) -> str:
+            if depth > 10:
+                return raw_map.get(sid, sid)
+            name = raw_map.get(sid, "")
+            if name in raw_map:
+                return resolve_subject_name(name, depth + 1)
+            return name
+
         for row in legacy_rows:
             self.stats.increment(table, "extracted")
-            name = (row.get("name") or "").strip()
-            if not name:
-                self.quarantine(table, row.get("id"), "Subject name is empty", row)
+            raw_sid = str(row["id"])
+            resolved_name = resolve_subject_name(raw_sid)
+            if not resolved_name:
+                self.quarantine(table, raw_sid, "Subject name is empty", row)
                 continue
 
-            clean_key = name.lower()
-            subject_id = str(row["id"])
+            clean_key = resolved_name.strip().lower()
 
             if clean_key in self.subject_map:
+                canonical_id = self.subject_map[clean_key]
+                self.legacy_to_canonical_subject_id[raw_sid] = canonical_id
                 self.stats.increment(table, "skipped")
                 continue
 
+            canonical_id = raw_sid
             if not self.dry_run:
                 target_cur.execute(
                     """
@@ -506,13 +533,11 @@ class LegacyDataMigrator:
                       updated_at = NOW()
                     RETURNING id;
                     """,
-                    (subject_id, name, row.get("description"), row.get("created_at")),
+                    (canonical_id, resolved_name, row.get("description"), row.get("created_at")),
                 )
-                self.subject_map[clean_key] = subject_id
-                self.stats.increment(table, "inserted")
-            else:
-                self.subject_map[clean_key] = subject_id
-                self.stats.increment(table, "inserted")
+            self.subject_map[clean_key] = canonical_id
+            self.legacy_to_canonical_subject_id[raw_sid] = canonical_id
+            self.stats.increment(table, "inserted")
 
     # ---------------------------------------------------------
     # Step 4: Schools
@@ -591,6 +616,7 @@ class LegacyDataMigrator:
             if email in self.user_email_map:
                 existing_target_id = self.user_email_map[email]
                 logger.info(f"User email collision: {email} exists in target as {existing_target_id}. Preserving target account.")
+                self.legacy_to_canonical_user_id[legacy_id] = existing_target_id
                 self.migrated_user_ids.add(existing_target_id)
                 self.stats.increment(table, "skipped")
                 continue
@@ -627,11 +653,13 @@ class LegacyDataMigrator:
                 target_user_id = str(res["id"])
                 self.user_email_map[email] = target_user_id
                 self.user_username_set.add(username.lower())
+                self.legacy_to_canonical_user_id[legacy_id] = target_user_id
                 self.migrated_user_ids.add(target_user_id)
                 self.stats.increment(table, "inserted")
             else:
                 self.user_email_map[email] = legacy_id
                 self.user_username_set.add(username.lower())
+                self.legacy_to_canonical_user_id[legacy_id] = legacy_id
                 self.migrated_user_ids.add(legacy_id)
                 self.stats.increment(table, "inserted")
 
@@ -685,7 +713,8 @@ class LegacyDataMigrator:
         for row in legacy_rows:
             self.stats.increment(table, "extracted")
             profile_id = str(row["id"])
-            user_id = str(row.get("user_id"))
+            raw_user_id = str(row.get("user_id"))
+            user_id = self.legacy_to_canonical_user_id.get(raw_user_id, raw_user_id)
 
             if user_id not in self.migrated_user_ids:
                 self.quarantine(table, profile_id, f"Associated user_id {user_id} was not migrated", row)
@@ -796,9 +825,14 @@ class LegacyDataMigrator:
         for row in legacy_rows:
             self.stats.increment(table, "extracted")
             tp_id = str(row.get("teacherprofile_id") or row.get("teacher_profile_id"))
-            gr_id = str(row.get("grade_id"))
+            raw_gr_id = str(row.get("grade_id"))
 
             if tp_id not in self.migrated_teacher_ids:
+                continue
+
+            gr_id = self.legacy_to_canonical_grade_id.get(raw_gr_id, raw_gr_id)
+            if gr_id not in self.grade_map.values():
+                logger.warning(f"Teacher {tp_id} references invalid/unresolved grade {raw_gr_id}. Skipping M2M link.")
                 continue
 
             pair = (tp_id, gr_id)
@@ -847,9 +881,14 @@ class LegacyDataMigrator:
         for row in legacy_rows:
             self.stats.increment(table, "extracted")
             tp_id = str(row.get("teacherprofile_id") or row.get("teacher_profile_id"))
-            sub_id = str(row.get("subject_id"))
+            raw_sub_id = str(row.get("subject_id"))
 
             if tp_id not in self.migrated_teacher_ids:
+                continue
+
+            sub_id = self.legacy_to_canonical_subject_id.get(raw_sub_id, raw_sub_id)
+            if sub_id not in self.subject_map.values():
+                logger.warning(f"Teacher {tp_id} references invalid/unresolved subject {raw_sub_id}. Skipping M2M link.")
                 continue
 
             pair = (tp_id, sub_id)
@@ -889,9 +928,11 @@ class LegacyDataMigrator:
                 self.quarantine(table, course_id, "Course title is empty", row)
                 continue
 
-            subject_id = str(row.get("subject_id")) if row.get("subject_id") else None
+            raw_subject_id = str(row.get("subject_id")) if row.get("subject_id") else None
+            subject_id = self.legacy_to_canonical_subject_id.get(raw_subject_id, raw_subject_id) if raw_subject_id else None
             teacher_id = str(row.get("teacher_id")) if row.get("teacher_id") else None
-            grade_id = str(row.get("grade_id")) if row.get("grade_id") else None
+            raw_grade_id = str(row.get("grade_id")) if row.get("grade_id") else None
+            grade_id = self.legacy_to_canonical_grade_id.get(raw_grade_id, raw_grade_id) if raw_grade_id else None
 
             # Verify teacher FK
             if teacher_id and teacher_id not in self.migrated_teacher_ids:
@@ -899,9 +940,13 @@ class LegacyDataMigrator:
                 teacher_id = None
 
             # Verify subject FK (non-nullable in Course model)
-            if not subject_id:
+            if not subject_id or subject_id not in self.subject_map.values():
                 # Fallback to General Studies
                 subject_id = self.subject_map.get("general studies") or next(iter(self.subject_map.values()), None)
+
+            # Verify grade FK (nullable in Course model)
+            if grade_id and grade_id not in self.grade_map.values():
+                grade_id = None
 
             price = row.get("price") or 0.00
             ed_level_id = self.education_level_map.get("k12")
